@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_saved_artists"
+        android:title="Saved Artists"
+        android:icon="@drawable/ic_saved_artists" />
+
+    <item
+        android:id="@+id/menu_settings"
+        android:title="Settings"
+        android:icon="@drawable/ic_settings" />
+
+    <item
+        android:id="@+id/fabSelectFolder"
+        android:title="Import by Files"
+        android:icon="@drawable/ic_folder" />
+</menu>

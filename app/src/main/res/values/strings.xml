@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TDX</string>
+    <string name="action_settings">Settings</string>
+    <string-array name="view_type_options">
+        <item>Artists</item>
+        <item>Releases</item>
+    </string-array>
+</resources>
