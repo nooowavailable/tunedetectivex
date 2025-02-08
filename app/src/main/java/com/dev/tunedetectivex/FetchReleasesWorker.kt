@@ -53,36 +53,22 @@ class FetchReleasesWorker(
     }
 
     override suspend fun doWork(): Result {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
         val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
         val retryAfter = sharedPreferences.getInt("retryAfter", 10)
-        Log.d(
-            TAG,
-            "Starting FetchReleasesWorker with delay: ${fetchDelay}ms and retryAfter: $retryAfter minutes"
-        )
-
+        Log.d(TAG, "Starting FetchReleasesWorker with delay: ${fetchDelay}ms and retryAfter: $retryAfter minutes")
 
         return try {
             setForeground(createForegroundInfo())
-            try {
-                if (fetchDelay > 0) {
-                    delay(fetchDelay)
-                }
-
-                fetchSavedArtists()
-                return Result.success()
-            } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "Error in FetchReleasesWorker: ${e.message}. Retrying in $retryAfter minutes."
-                )
-                return Result.retry()
+            if (fetchDelay > 0) {
+                delay(fetchDelay)
             }
+
+            fetchSavedArtists()
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}", e)
-            Result.failure()
+            Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}. Retrying in $retryAfter minutes.")
+            Result.retry()
         }
     }
 
@@ -102,8 +88,7 @@ class FetchReleasesWorker(
     }
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
         val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
         val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()
@@ -138,13 +123,7 @@ class FetchReleasesWorker(
                         else -> "Release"
                     }
 
-                    sendReleaseNotification(
-                        artist,
-                        latestRelease,
-                        releaseHash,
-                        releaseDateMillis,
-                        releaseType
-                    )
+                    sendReleaseNotification(artist, latestRelease, releaseHash, releaseDateMillis, releaseType)
                 } else {
                     Log.d(TAG, "No latest release found for artist ${artist.name}")
                 }
@@ -267,8 +246,7 @@ class FetchReleasesWorker(
             description = "Notifications for new releases from artists"
         }
 
-        val manager =
-            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(fetchChannel)
         manager.createNotificationChannel(releaseChannel)
     }
