@@ -2,6 +2,8 @@ package com.dev.tunedetectivex
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.Menu
@@ -55,7 +58,6 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -157,7 +159,6 @@ class MainActivity : AppCompatActivity() {
         updateSaveButton()
         clearPreviousSearch()
         setupApiService()
-        db = AppDatabase.getDatabase(applicationContext)
 
         fabMenu.setOnClickListener { view ->
             val popupMenu = PopupMenu(this, view)
@@ -212,6 +213,42 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        fun scheduleBackgroundJob(context: Context) {
+            val sharedPreferences = context.getSharedPreferences("TaskLog", MODE_PRIVATE)
+
+            val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 90)
+            val intervalInMillis = intervalInMinutes * 60 * 1000L
+
+            val nextTriggerTime = SystemClock.elapsedRealtime() + intervalInMillis
+            System.currentTimeMillis() + intervalInMillis
+
+            val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, BackgroundJobReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            alarmManager.setInexactRepeating(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                nextTriggerTime,
+                intervalInMillis,
+                pendingIntent
+            )
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                startActivity(intent)
+            }
+        }
+
+        db = AppDatabase.getDatabase(applicationContext)
+        scheduleBackgroundJob(this)
 
         editTextArtist.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         editTextArtist.setSingleLine()

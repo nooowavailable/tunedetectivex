@@ -19,6 +19,9 @@ import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,9 +29,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 
 class FetchReleasesWorker(
     context: Context,
@@ -53,22 +53,36 @@ class FetchReleasesWorker(
     }
 
     override suspend fun doWork(): Result {
-        val sharedPreferences = applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
         val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
         val retryAfter = sharedPreferences.getInt("retryAfter", 10)
-        Log.d(TAG, "Starting FetchReleasesWorker with delay: ${fetchDelay}ms and retryAfter: $retryAfter minutes")
+        Log.d(
+            TAG,
+            "Starting FetchReleasesWorker with delay: ${fetchDelay}ms and retryAfter: $retryAfter minutes"
+        )
+
 
         return try {
             setForeground(createForegroundInfo())
-            if (fetchDelay > 0) {
-                delay(fetchDelay)
-            }
+            try {
+                if (fetchDelay > 0) {
+                    delay(fetchDelay)
+                }
 
-            fetchSavedArtists()
+                fetchSavedArtists()
+                return Result.success()
+            } catch (e: Exception) {
+                Log.e(
+                    TAG,
+                    "Error in FetchReleasesWorker: ${e.message}. Retrying in $retryAfter minutes."
+                )
+                return Result.retry()
+            }
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}. Retrying in $retryAfter minutes.")
-            Result.retry()
+            Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}", e)
+            Result.failure()
         }
     }
 
@@ -88,7 +102,8 @@ class FetchReleasesWorker(
     }
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
-        val sharedPreferences = applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
         val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
         val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()
@@ -123,7 +138,13 @@ class FetchReleasesWorker(
                         else -> "Release"
                     }
 
-                    sendReleaseNotification(artist, latestRelease, releaseHash, releaseDateMillis, releaseType)
+                    sendReleaseNotification(
+                        artist,
+                        latestRelease,
+                        releaseHash,
+                        releaseDateMillis,
+                        releaseType
+                    )
                 } else {
                     Log.d(TAG, "No latest release found for artist ${artist.name}")
                 }
@@ -246,7 +267,8 @@ class FetchReleasesWorker(
             description = "Notifications for new releases from artists"
         }
 
-        val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val manager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(fetchChannel)
         manager.createNotificationChannel(releaseChannel)
     }
