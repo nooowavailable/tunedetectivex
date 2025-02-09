@@ -20,17 +20,6 @@ TuneDetectiveX empowers music enthusiasts to independently explore and monitor t
 - [Matrix (Chat) Room](https://matrix.to/#/!HKIBPXETQFYecRxILT:matrix.org?via=matrix.org)
 - [Reddit](https://www.reddit.com/user/nooowavailable/)
 
-## 📸 Screenshots
-
-<div style="display: flex; justify-content: space-around;">
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/homeScreen.png?raw=true" alt="Main Screen" width="300"/>
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/fabMenu.png?raw=true" alt="FAB Menu" width="300"/>
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/searchView.png?raw=true" alt="Artist Search" width="300"/>
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/artistSearchReleaseView.png?raw=true" alt="Search Artist Screen" width="300"/>
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/importScreen.png?raw=true" alt="Import Screen" width="300"/>
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/savedArtistsScreen.png?raw=true" alt="Saved Artists Screen" width="300"/>
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/screenshots/settingsScreen.png?raw=true" alt="Settings" width="300"/>
-</div>
 
 ## 📋 Requirements
 
