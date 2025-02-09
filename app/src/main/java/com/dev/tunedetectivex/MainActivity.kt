@@ -242,6 +242,18 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
             if (!alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(
+                    this,
+                    "Permission needed to schedule alarms.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                Toast.makeText(
+                    this,
+                    "Please enable it in settings.",
+                    Toast.LENGTH_LONG
+                ).show()
+
                 val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                 startActivity(intent)
             }
