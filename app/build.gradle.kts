@@ -12,6 +12,11 @@ android {
     namespace = "com.dev.tunedetectivex"
     compileSdk = 35
 
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "com.dev.tunedetectivex"
         minSdk = 31
