@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -20,6 +21,8 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             Log.d(TAG, "Device rebooted. Setting up WorkManager for FetchReleasesWorker.")
+
+            Toast.makeText(context, "TDX", Toast.LENGTH_LONG).show()
 
             val sharedPreferences =
                 context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
