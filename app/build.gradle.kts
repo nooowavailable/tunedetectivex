@@ -12,12 +12,17 @@ android {
     namespace = "com.dev.tunedetectivex"
     compileSdk = 35
 
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "com.dev.tunedetectivex"
         minSdk = 31
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1-alpha"
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
