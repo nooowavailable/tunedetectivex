@@ -35,11 +35,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
@@ -59,7 +54,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 
 class MainActivity : AppCompatActivity() {
@@ -430,21 +424,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFetchReleasesWorker() {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 90).toLong()
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val workRequest = PeriodicWorkRequestBuilder<FetchReleasesWorker>(
-            intervalInMinutes, TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "FetchReleasesWork",
-            ExistingPeriodicWorkPolicy.UPDATE,
-            workRequest
-        )
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 90)
+        WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
     }
 
     private fun setupApiService() {

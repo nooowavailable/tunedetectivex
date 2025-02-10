@@ -14,16 +14,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
-import java.util.concurrent.TimeUnit
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -80,6 +75,10 @@ class SettingsActivity : AppCompatActivity() {
             importBackupLauncher.launch(arrayOf("application/json"))
         }
 
+        findViewById<MaterialButton>(R.id.button_select_network_type).setOnClickListener {
+            showNetworkTypeDialog()
+        }
+
         val currentInterval = loadFetchInterval()
         val currentReleaseAge = loadReleaseAgePreference()
         val currentDelay = loadFetchDelay()
@@ -91,12 +90,13 @@ class SettingsActivity : AppCompatActivity() {
         releaseAgeSlider.value = currentReleaseAge.toFloat()
         updateReleaseAgeLabel(currentReleaseAge)
 
+
         releaseAgeSlider.addOnChangeListener { _, value, _ ->
             delayedUpdate {
                 val releaseAgeInWeeks = value.toInt()
                 updateReleaseAgeLabel(releaseAgeInWeeks)
                 saveReleaseAgePreference(releaseAgeInWeeks)
-                showToast("Release age set to $releaseAgeInWeeks weeks")
+                showToast("Saved!")
                 Log.d("SettingsActivity", "Release age updated and saved: $releaseAgeInWeeks weeks")
             }
         }
@@ -183,6 +183,25 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun showNetworkTypeDialog() {
+        val networkTypes = arrayOf("Wi-Fi Only", "Mobile Data Only", "Both")
+        val currentNetworkType = sharedPreferences.getString("networkType", "Both")
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Select Network Type")
+            .setSingleChoiceItems(
+                networkTypes,
+                networkTypes.indexOf(currentNetworkType)
+            ) { dialog, which ->
+                val selectedType = networkTypes[which]
+                editor.putString("networkType", selectedType).apply()
+                setupFetchReleasesWorker(loadFetchInterval())
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
     private fun scrollToView(view: View) {
         view.parent.requestChildFocus(view, view)
     }
@@ -239,27 +258,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupFetchReleasesWorker(intervalMinutes: Int) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(true)
-            .build()
-
-        val workRequest = PeriodicWorkRequestBuilder<FetchReleasesWorker>(
-            intervalMinutes.toLong(), TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "FetchReleasesWork",
-            ExistingPeriodicWorkPolicy.UPDATE,
-            workRequest
-        )
-        Toast.makeText(
-            this,
-            "Fetch interval set to $intervalMinutes minutes",
-            Toast.LENGTH_SHORT
-        ).show()
+        WorkManagerUtil.setupFetchReleasesWorker(this, intervalMinutes)
     }
 
     private fun showToast(message: String) {

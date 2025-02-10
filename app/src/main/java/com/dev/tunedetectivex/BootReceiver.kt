@@ -5,12 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit
 
 class BootReceiver : BroadcastReceiver() {
 
@@ -28,28 +22,7 @@ class BootReceiver : BroadcastReceiver() {
                 context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
             val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
 
-            setupFetchReleasesWorker(context, fetchInterval)
+            WorkManagerUtil.setupFetchReleasesWorker(context, fetchInterval)
         }
-    }
-
-    private fun setupFetchReleasesWorker(context: Context, intervalMinutes: Int) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(true)
-            .build()
-
-        val workRequest = PeriodicWorkRequestBuilder<FetchReleasesWorker>(
-            intervalMinutes.toLong(), TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "FetchReleasesWork",
-            ExistingPeriodicWorkPolicy.UPDATE,
-            workRequest
-        )
-
-        Log.d(TAG, "WorkManager set up with interval: $intervalMinutes minutes.")
     }
 }

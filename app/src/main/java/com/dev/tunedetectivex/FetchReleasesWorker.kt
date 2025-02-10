@@ -13,8 +13,10 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
+import androidx.work.NetworkType
 import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
@@ -54,31 +56,29 @@ class FetchReleasesWorker(
 
     override suspend fun doWork(): Result {
         val sharedPreferences =
-            applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
-        val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
-        val retryAfter = sharedPreferences.getInt("retryAfter", 10)
-        Log.d(
-            TAG,
-            "Starting FetchReleasesWorker with delay: ${fetchDelay}ms and retryAfter: $retryAfter minutes"
-        )
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Both")
 
+        val constraintsBuilder = Constraints.Builder()
+        when (networkType) {
+            "Wi-Fi Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.UNMETERED)
+            "Mobile Data Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+            "Both" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+        }
+
+        constraintsBuilder
+            .setRequiresBatteryNotLow(true)
+            .build()
+
+        setForeground(createForegroundInfo())
 
         return try {
-            setForeground(createForegroundInfo())
-            try {
-                if (fetchDelay > 0) {
-                    delay(fetchDelay)
-                }
-
-                fetchSavedArtists()
-                return Result.success()
-            } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "Error in FetchReleasesWorker: ${e.message}. Retrying in $retryAfter minutes."
-                )
-                return Result.retry()
+            val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
+            if (fetchDelay > 0) {
+                delay(fetchDelay)
             }
+
+            fetchSavedArtists()
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}", e)
