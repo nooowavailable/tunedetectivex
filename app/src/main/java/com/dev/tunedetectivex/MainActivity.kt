@@ -27,6 +27,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -82,6 +83,21 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        pushNotificationPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                Log.d(TAG, "Notification permission granted.")
+            } else {
+                Log.w(TAG, "Notification permission denied.")
+                Toast.makeText(
+                    this,
+                    "Notification permission is required for progress updates.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
