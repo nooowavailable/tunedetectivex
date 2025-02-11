@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
@@ -13,6 +14,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.appcompat.app.AppCompatActivity
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
@@ -29,6 +31,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var retryInput: EditText
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
+    private var isNetworkRequestsAllowed = true
+
 
     private val backupManager by lazy {
         val apiService = DeezerApiService.create()
@@ -37,19 +41,28 @@ class SettingsActivity : AppCompatActivity() {
 
 
     private val createBackupLauncher =
-        registerForActivityResult(ActivityResultContracts.CreateDocument()) { uri: Uri? ->
+        registerForActivityResult(CreateDocument("todo/todo")) { uri: Uri? ->
             uri?.let { backupManager.createBackup(it) }
         }
 
     private val importBackupLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-            uri?.let { backupManager.restoreBackup(it) }
+            if (isNetworkRequestsAllowed) {
+                uri?.let { backupManager.restoreBackup(it) }
+            } else {
+                Toast.makeText(
+                    this,
+                    "Selected network type is not available. Please check your connection.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
 
     private val updateHandler = Handler(Looper.getMainLooper())
     private var updateRunnable: Runnable? = null
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -78,6 +91,9 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.button_select_network_type).setOnClickListener {
             showNetworkTypeDialog()
         }
+
+        checkNetworkTypeAndSetFlag()
+
 
         val currentInterval = loadFetchInterval()
         val currentReleaseAge = loadReleaseAgePreference()
@@ -183,9 +199,15 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkNetworkTypeAndSetFlag() {
+        val networkType = sharedPreferences.getString("networkType", "Any")
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+    }
+
     private fun showNetworkTypeDialog() {
-        val networkTypes = arrayOf("Wi-Fi Only", "Mobile Data Only", "Both")
-        val currentNetworkType = sharedPreferences.getString("networkType", "Both")
+        val networkTypes = arrayOf("Wi-Fi Only", "Mobile Data Only", "Any")
+        val currentNetworkType = sharedPreferences.getString("networkType", "Any")
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Select Network Type")
@@ -196,6 +218,7 @@ class SettingsActivity : AppCompatActivity() {
                 val selectedType = networkTypes[which]
                 editor.putString("networkType", selectedType).apply()
                 setupFetchReleasesWorker(loadFetchInterval())
+                checkNetworkTypeAndSetFlag()
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
@@ -212,6 +235,7 @@ class SettingsActivity : AppCompatActivity() {
         updateHandler.postDelayed(updateRunnable!!, 1500)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateReleaseAgeLabel(weeks: Int) {
         releaseAgeLabel.text = "Notify releases within the last $weeks weeks"
     }
@@ -265,6 +289,7 @@ class SettingsActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
+    @SuppressLint("SetTextI18n")
     fun refreshSettingsUI() {
         intervalInput.setText(loadFetchInterval().toString())
         delayInput.setText(loadFetchDelay().toString())

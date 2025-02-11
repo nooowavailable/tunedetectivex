@@ -29,6 +29,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     private lateinit var trackAdapter: TrackAdapter
     private lateinit var apiService: DeezerApiService
     private lateinit var progressBar: ProgressBar
+    private var isNetworkRequestsAllowed = true
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +91,26 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(
+                "ReleaseDetailsActivity",
+                "Selected network type is not available. Skipping network requests."
+            )
+            Toast.makeText(
+                this,
+                "Selected network type is not available. Please check your connection.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     private fun showReleaseDetailsTutorial() {
         TapTargetSequence(this)
             .targets(
@@ -140,6 +162,12 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun fetchReleaseDetails(albumId: Long) {
+        checkNetworkTypeAndSetFlag()
+
+        if (!isNetworkRequestsAllowed) {
+            return
+        }
+
         showLoading(true)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -195,6 +223,12 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadTracklist(releaseId: Long) {
+        checkNetworkTypeAndSetFlag()
+
+        if (!isNetworkRequestsAllowed) {
+            return
+        }
+
         showLoading(true)
         lifecycleScope.launch(Dispatchers.IO) {
             try {

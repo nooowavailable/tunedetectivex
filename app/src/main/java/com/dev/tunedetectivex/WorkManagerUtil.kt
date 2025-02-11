@@ -41,6 +41,30 @@ object WorkManagerUtil {
         Log.d(TAG, "Scheduled FetchReleasesWorker with interval: $intervalInMinutes minutes")
     }
 
+    fun isSelectedNetworkTypeAvailable(context: Context, selectedType: String): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCapabilities =
+            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+
+        return when (selectedType) {
+            "Wi-Fi Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+            "Mobile Data Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
+            "Any" -> networkCapabilities != null && (
+                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    )
+
+            else -> {
+                Log.w(
+                    "WorkManagerUtil",
+                    "Unknown network type: $selectedType. Defaulting to 'Any'."
+                )
+                true
+            }
+        }
+    }
+
     private fun createConstraints(context: Context): Constraints? {
         if (!isNetworkConnected(context)) {
             Log.w(TAG, "No network connected. Cannot create constraints for FetchReleasesWorker.")
@@ -48,7 +72,7 @@ object WorkManagerUtil {
         }
 
         val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString(NETWORK_TYPE_KEY, "Both")
+        val networkType = sharedPreferences.getString(NETWORK_TYPE_KEY, "Any")
 
         val constraintsBuilder = Constraints.Builder()
             .setRequiresBatteryNotLow(true)
@@ -56,7 +80,7 @@ object WorkManagerUtil {
         when (networkType) {
             "Wi-Fi Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.UNMETERED)
             "Mobile Data Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
-            "Both" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+            "Any" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
             else -> {
                 Log.w(TAG, "Unknown network type: $networkType. Worker will not be scheduled.")
                 return null

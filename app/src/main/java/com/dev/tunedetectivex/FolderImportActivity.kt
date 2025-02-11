@@ -62,6 +62,7 @@ class FolderImportActivity : AppCompatActivity() {
     private var unknownArtists = 0
     private var failedImports = 0
     private val artistAlbumsCache = mutableMapOf<Long, List<DeezerAlbum>>()
+    private var isNetworkRequestsAllowed = true
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,8 +85,28 @@ class FolderImportActivity : AppCompatActivity() {
 
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         fabSelectFolder.setOnClickListener {
+            if (!isNetworkRequestsAllowed) {
+                Log.w(TAG, "Selected network type is not available. Skipping folder selection.")
+                Toast.makeText(
+                    this,
+                    "Selected network type is not available. Please check your connection.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
             selectMusicFolder()
         }
+
+        // Check network type and set flag
+        checkNetworkTypeAndSetFlag()
+    }
+
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
     }
 
     private val folderPickerLauncher =

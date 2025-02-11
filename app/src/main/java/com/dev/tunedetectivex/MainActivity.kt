@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Both")
+        val networkType = sharedPreferences.getString("networkType", "Any")
 
         isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
     }
@@ -494,13 +494,13 @@ class MainActivity : AppCompatActivity() {
         return when (selectedType) {
             "Wi-Fi Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
             "Mobile Data Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
-            "Both" -> networkCapabilities != null && (
+            "Any" -> networkCapabilities != null && (
                     networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                             networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                     )
 
             else -> {
-                Log.w(TAG, "Unknown network type: $selectedType. Defaulting to 'Both'.")
+                Log.w(TAG, "Unknown network type: $selectedType. Defaulting to 'Any'.")
                 true
             }
         }

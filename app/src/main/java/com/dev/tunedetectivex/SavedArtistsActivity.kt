@@ -1,10 +1,15 @@
 package com.dev.tunedetectivex
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -25,7 +30,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
@@ -42,6 +47,8 @@ class SavedArtistsActivity : AppCompatActivity() {
     private lateinit var artistAdapter: SavedArtistAdapter
     private lateinit var releaseAdapter: ReleaseAdapter
     private lateinit var progressBar: ProgressBar
+    private var isNetworkRequestsAllowed = true
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +98,22 @@ class SavedArtistsActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Toast.makeText(
+                this,
+                "Selected network type is not available. Please check your connection.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     private fun setupSpinner() {
         val adapter = ArrayAdapter.createFromResource(
             this,
@@ -130,9 +153,9 @@ class SavedArtistsActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name?.lowercase() ?: "" }
+            val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
             val tempList = savedArtists.map {
-                val artistName = it.name ?: "Unknown artist"
+                val artistName = it.name
                 Log.d("SavedArtistsActivity", "Loaded artist: ID=${it.id}, Name=$artistName")
                 SavedArtistItem(
                     id = it.id,
@@ -268,14 +291,25 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private fun loadSavedArtists() {
+        checkNetworkTypeAndSetFlag()
+
+        if (!isNetworkRequestsAllowed) {
+            Toast.makeText(
+                this,
+                "Selected network type is not available. Please check your connection.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         swipeRefreshLayout.isEnabled = false
         swipeRefreshLayout.isRefreshing = true
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name?.lowercase() ?: "" }
+                val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
                 val tempList = savedArtists.map {
-                    val artistName = it.name ?: "Unknown artist"
+                    val artistName = it.name
                     Log.d("SavedArtistsActivity", "Artists from DB: ID=${it.id}, Name=$artistName")
                     SavedArtistItem(
                         id = it.id,
@@ -302,9 +336,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                     tempList.replaceFirstOrAdd(
                         SavedArtistItem(
                             id = fetchedArtist.id,
-                            name = fetchedArtist.name ?: "Unknown artist",
-                            picture = fetchedArtist.picture_xl ?: fetchedArtist.picture_big
-                            ?: fetchedArtist.picture_medium ?: fetchedArtist.picture_small ?: "",
+                            name = fetchedArtist.name,
+                            picture = fetchedArtist.picture_xl,
                             isLoading = false
                         )
                     )
@@ -338,6 +371,20 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private suspend fun fetchArtistsByName(name: String): List<DeezerArtist> {
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+        val isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(
+                "SavedArtistsActivity",
+                "Selected network type is not available. Skipping network requests."
+            )
+            return emptyList()
+        }
+
         return try {
             val response = apiService.searchArtist(name).execute()
             if (response.isSuccessful) {
@@ -353,6 +400,20 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private suspend fun fetchArtistDetails(artist: SavedArtistItem): SavedArtistItem? {
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+        val isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(
+                "SavedArtistsActivity",
+                "Selected network type is not available. Skipping network requests."
+            )
+            return artist
+        }
+
         return try {
             val fetchedArtists = fetchArtistsByName(artist.name)
             val bestMatch = fetchedArtists.firstOrNull()
@@ -367,8 +428,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                 )
                 return artist.copy(
                     id = bestMatch.id,
-                    name = bestMatch.name ?: artist.name,
-                    picture = bestMatch.picture_xl ?: ""
+                    name = bestMatch.name,
+                    picture = bestMatch.picture_xl
                 )
             }
             Log.w("SavedArtistsActivity", "No match for artists: ${artist.name}")
@@ -395,6 +456,17 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun loadSavedReleases() {
+        // Check network type and set the flag
+        checkNetworkTypeAndSetFlag()
+
+        if (!isNetworkRequestsAllowed) {
+            Toast.makeText(
+                this,
+                "Selected network type is not available. Please check your connection.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return // Skip loading if the network type is not allowed
+        }
 
         swipeRefreshLayout.isEnabled = true
         progressBar.visibility = View.VISIBLE
@@ -444,11 +516,24 @@ class SavedArtistsActivity : AppCompatActivity() {
                 }
                 progressBar.visibility = View.GONE
             }
-
         }
     }
 
     private suspend fun fetchReleasesForArtist(artistId: Long): List<ReleaseItem> {
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+        val isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(
+                "SavedArtistsActivity",
+                "Selected network type is not available. Skipping network requests."
+            )
+            return emptyList()
+        }
+
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getArtistReleases(artistId, limit = 100).execute()
@@ -464,7 +549,10 @@ class SavedArtistsActivity : AppCompatActivity() {
                         )
                     } ?: emptyList()
                 } else {
-                    Log.e("SavedArtistsActivity", "Error when retrieving releases for Artist ID==$artistId: ${response.code()} ${response.message()}")
+                    Log.e(
+                        "SavedArtistsActivity",
+                        "Error when retrieving releases for Artist ID=$artistId: ${response.code()} ${response.message()}"
+                    )
                     emptyList()
                 }
             } catch (e: Exception) {
@@ -476,6 +564,20 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private suspend fun fetchArtistsBatch(artistIds: List<Long>): List<DeezerArtist> {
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+        val isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(
+                "SavedArtistsActivity",
+                "Selected network type is not available. Skipping network requests."
+            )
+            return emptyList()
+        }
+
         return coroutineScope {
             artistIds.chunked(10).flatMap { batch ->
                 batch.map { id ->
@@ -499,7 +601,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                         } catch (e: Exception) {
                             Log.e(
                                 "SavedArtistsActivity",
-                                "Error retrieving artist information:ID=$id, ${e.message}",
+                                "Error retrieving artist information: ID=$id, ${e.message}",
                                 e
                             )
                             null

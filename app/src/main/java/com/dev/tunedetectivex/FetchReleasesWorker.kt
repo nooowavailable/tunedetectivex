@@ -43,6 +43,7 @@ class FetchReleasesWorker(
 
     private val db = AppDatabase.getDatabase(context)
     private val apiService: DeezerApiService
+    private var isNetworkRequestsAllowed = true
 
     init {
         val retrofit = Retrofit.Builder()
@@ -55,9 +56,18 @@ class FetchReleasesWorker(
     override suspend fun doWork(): Result {
         setForeground(createForegroundInfo())
 
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any")
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(TAG, "Selected network type is not available. Skipping network requests.")
+            return Result.failure()
+        }
+
         return try {
-            val sharedPreferences =
-                applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
             val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
             if (fetchDelay > 0) {
                 delay(fetchDelay)
@@ -70,6 +80,7 @@ class FetchReleasesWorker(
             Result.failure()
         }
     }
+
 
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
         Log.d(TAG, "Fetching saved artists from database...")
