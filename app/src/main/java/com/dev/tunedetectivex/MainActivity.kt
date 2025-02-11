@@ -3,17 +3,17 @@ package com.dev.tunedetectivex
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.Menu
@@ -27,7 +27,6 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -55,7 +54,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-
 class MainActivity : AppCompatActivity() {
 
     companion object {
@@ -79,26 +77,11 @@ class MainActivity : AppCompatActivity() {
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
     private val fetchedArtists = mutableSetOf<Long>()
+    private var isNetworkRequestsAllowed = true
 
-    @SuppressLint("ObsoleteSdkInt")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        pushNotificationPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                Log.d(TAG, "Notification permission granted.")
-            } else {
-                Log.w(TAG, "Notification permission denied.")
-                Toast.makeText(
-                    this,
-                    "Notification permission is required for progress updates.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
@@ -122,30 +105,24 @@ class MainActivity : AppCompatActivity() {
         fabSelectFolder.visibility = View.GONE
         fabSettings.visibility = View.GONE
         fabSelectFolder.visibility = View.GONE
-
         fabSavedArtists.translationY = 0f
         fabSettings.translationY = 0f
         fabSelectFolder.translationY = 0f
 
         isFabMenuOpen = false
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFirstRun = sharedPreferences.getBoolean("isFirstRun", true)
+        val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val isFirstRun = appPreferences.getBoolean("isFirstRun", true)
 
         if (isFirstRun) {
             showTutorial()
-            sharedPreferences.edit().putBoolean("isFirstRun", false).apply()
+            appPreferences.edit().putBoolean("isFirstRun", false).apply()
         }
 
-        pushNotificationPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                Log.d(TAG, "Notification permission granted")
-            } else {
-                Log.w(TAG, "Notification permission denied")
-            }
-        }
+        val taskLogPreferences = getSharedPreferences("TaskLog", MODE_PRIVATE)
+        val intervalInMinutes = taskLogPreferences.getInt("fetchInterval", 90)
+
+        WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
         requestIgnoreBatteryOptimizations()
@@ -206,55 +183,26 @@ class MainActivity : AppCompatActivity() {
                 updateSaveButton()
             }
         }
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Toast.makeText(
+                this,
+                "Permission needed to schedule alarms.",
+                Toast.LENGTH_LONG
+            ).show()
 
-        fun scheduleBackgroundJob(context: Context) {
-            val sharedPreferences = context.getSharedPreferences("TaskLog", MODE_PRIVATE)
+            Toast.makeText(
+                this,
+                "Please enable it in settings.",
+                Toast.LENGTH_LONG
+            ).show()
 
-            val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 90)
-            val intervalInMillis = intervalInMinutes * 60 * 1000L
-
-            val nextTriggerTime = SystemClock.elapsedRealtime() + intervalInMillis
-            System.currentTimeMillis() + intervalInMillis
-
-            val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, BackgroundJobReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            alarmManager.setInexactRepeating(
-                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                nextTriggerTime,
-                intervalInMillis,
-                pendingIntent
-            )
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            startActivity(intent)
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-            if (!alarmManager.canScheduleExactAlarms()) {
-                Toast.makeText(
-                    this,
-                    "Permission needed to schedule alarms.",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Toast.makeText(
-                    this,
-                    "Please enable it in settings.",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                startActivity(intent)
-            }
-        }
 
         db = AppDatabase.getDatabase(applicationContext)
-        scheduleBackgroundJob(this)
 
         editTextArtist.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         editTextArtist.setSingleLine()
@@ -287,6 +235,13 @@ class MainActivity : AppCompatActivity() {
             saveArtist()
         }
 
+    }
+
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Both")
+
+        isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
     }
 
     private fun fetchAndCheckDiscography(artistId: Long, title: String) {
@@ -454,6 +409,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchSimilarArtists(artist: String) {
+        // Check network type and set the flag
+        checkNetworkTypeAndSetFlag()
+
+        if (!isNetworkRequestsAllowed) {
+            Log.w(TAG, "Selected network type is not available. Skipping network requests.")
+            Toast.makeText(
+                this,
+                "Selected network type is not available. Please check your connection.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         showLoading(true)
         setMenuButtonEnabled(false)
         swipeRefreshLayout.isRefreshing = true
@@ -486,24 +454,25 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun processSimilarArtists(artists: List<DeezerArtist>, index: Int) {
-        if (index >= artists.size) {
-            showLoading(false)
-            setMenuButtonEnabled(true)
-            return
-        }
+    private fun isSelectedNetworkTypeAvailable(selectedType: String): Boolean {
+        val connectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCapabilities =
+            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
 
-        val currentArtist = artists[index]
-        fetchLatestReleaseForArtist(
-            artistId = currentArtist.id,
-            onSuccess = { album ->
-                fetchAndCheckDiscography(currentArtist.id, album.title)
-                displayReleaseInfo(album)
-            },
-            onFailure = {
-                processSimilarArtists(artists, index + 1)
+        return when (selectedType) {
+            "Wi-Fi Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+            "Mobile Data Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
+            "Both" -> networkCapabilities != null && (
+                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    )
+
+            else -> {
+                Log.w(TAG, "Unknown network type: $selectedType. Defaulting to 'Both'.")
+                true
             }
-        )
+        }
     }
 
     private fun fetchLatestReleaseForArtist(
