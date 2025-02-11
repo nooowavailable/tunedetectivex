@@ -74,6 +74,19 @@
             app:trackThickness="8dp"
             app:trackCornerRadius="6dp" />
 
+        <!-- New TextView for Import Status -->
+        <TextView
+            android:id="@+id/statusTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:text="Press folder icon to start import"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/linearProgressIndicator" />
+
         <TextView
             android:id="@+id/textViewDetails"
             android:layout_width="0dp"
@@ -82,7 +95,7 @@
             android:text=""
             android:textSize="14sp"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/linearProgressIndicator"
+            app:layout_constraintTop_toBottomOf="@id/statusTextView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 

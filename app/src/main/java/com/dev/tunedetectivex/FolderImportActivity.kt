@@ -64,6 +64,8 @@ class FolderImportActivity : AppCompatActivity() {
     private var failedImports = 0
     private val artistAlbumsCache = mutableMapOf<Long, List<DeezerAlbum>>()
     private var isNetworkRequestsAllowed = true
+    private lateinit var statusTextView: TextView
+
 
 
 
@@ -85,10 +87,15 @@ class FolderImportActivity : AppCompatActivity() {
         textViewProgress = findViewById(R.id.textViewProgress)
         imageViewArtistCover = findViewById(R.id.imageViewArtistCover)
         textViewArtistName = findViewById(R.id.textViewArtistName)
+        statusTextView = findViewById(R.id.statusTextView)
+
 
         cardCurrentArtist.visibility = View.GONE
         linearProgressIndicator.visibility = View.GONE
         textViewProgress.visibility = View.GONE
+
+        updateImportStatus(false)
+
 
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         fabSelectFolder.setOnClickListener {
@@ -103,6 +110,14 @@ class FolderImportActivity : AppCompatActivity() {
             }
 
             showWarningDialog()
+        }
+    }
+
+    private fun updateImportStatus(isImporting: Boolean) {
+        if (isImporting) {
+            statusTextView.text = "Importing... Please wait."
+        } else {
+            statusTextView.text = "Press folder icon to start import"
         }
     }
 
@@ -176,6 +191,7 @@ class FolderImportActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun processMusicFolder(folderUri: Uri) {
         isImporting = true
+        updateImportStatus(isImporting)
         acquireWakeLock()
 
         lifecycleScope.launch(Dispatchers.Main) {
@@ -290,6 +306,7 @@ class FolderImportActivity : AppCompatActivity() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    updateImportStatus(false)
                     completeImportNotification()
                 }
             } catch (e: Exception) {
