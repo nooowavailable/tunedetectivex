@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +66,7 @@ class FolderImportActivity : AppCompatActivity() {
     private var isNetworkRequestsAllowed = true
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_folder_import)
@@ -73,6 +75,7 @@ class FolderImportActivity : AppCompatActivity() {
         createNotificationChannel()
         setupApiService()
         acquireWakeLock()
+        checkNetworkTypeAndSetFlag()
 
         db = AppDatabase.getDatabase(applicationContext)
         recyclerView = findViewById(R.id.recyclerViewMusicFiles)
@@ -82,6 +85,10 @@ class FolderImportActivity : AppCompatActivity() {
         textViewProgress = findViewById(R.id.textViewProgress)
         imageViewArtistCover = findViewById(R.id.imageViewArtistCover)
         textViewArtistName = findViewById(R.id.textViewArtistName)
+
+        cardCurrentArtist.visibility = View.GONE
+        linearProgressIndicator.visibility = View.GONE
+        textViewProgress.visibility = View.GONE
 
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         fabSelectFolder.setOnClickListener {
@@ -94,13 +101,27 @@ class FolderImportActivity : AppCompatActivity() {
                 ).show()
                 return@setOnClickListener
             }
-            selectMusicFolder()
-        }
 
-        // Check network type and set flag
-        checkNetworkTypeAndSetFlag()
+            showWarningDialog()
+        }
     }
 
+    private fun showWarningDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("⚠️ Warning ⚠️")
+            .setMessage(
+                "You are about to import a folder. Please note that you use this function at your own risk. 😬\n\n" +
+                        "• This feature is in beta and may result in your IP address being blocked by Deezer. 🤡\n" +
+                        "• It is recommended to use a VPN. 🕵️‍♂️"
+            )
+            .setPositiveButton("Proceed") { dialog, which ->
+                selectMusicFolder()
+            }
+            .setNegativeButton("Cancel") { dialog, which ->
+                dialog.dismiss()
+            }
+            .show()
+    }
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any")
@@ -156,6 +177,12 @@ class FolderImportActivity : AppCompatActivity() {
     private fun processMusicFolder(folderUri: Uri) {
         isImporting = true
         acquireWakeLock()
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            cardCurrentArtist.visibility = View.VISIBLE
+            linearProgressIndicator.visibility = View.VISIBLE
+            textViewProgress.visibility = View.VISIBLE
+        }
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -400,10 +427,13 @@ class FolderImportActivity : AppCompatActivity() {
     private suspend fun updateImportProgress(current: Int, total: Int, artistName: String?, status: String?) {
         currentProgress = current
         currentArtistName = artistName
+
         withContext(Dispatchers.Main) {
-            cardCurrentArtist.visibility = View.VISIBLE
-            linearProgressIndicator.visibility = View.VISIBLE
-            textViewProgress.visibility = View.VISIBLE
+            if (isImporting) {
+                cardCurrentArtist.visibility = View.VISIBLE
+                linearProgressIndicator.visibility = View.VISIBLE
+                textViewProgress.visibility = View.VISIBLE
+            }
 
             if (total > 0) {
                 val progressPercentage = (current * 100) / total
@@ -413,7 +443,6 @@ class FolderImportActivity : AppCompatActivity() {
                 val artistStatus = status ?: ""
                 textViewProgress.text = "Progress: $progressPercentage% ($current/$total)"
                 textViewArtistName.text = name
-
 
                 sendNotification(progressPercentage, "$name $artistStatus")
             } else {
