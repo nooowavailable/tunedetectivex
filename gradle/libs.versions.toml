@@ -1,6 +1,8 @@
 [versions]
 agp = "8.8.0"
 compiler = "4.14.2"
+fontawesome = "0.2.0"
+fontawesomeVersion = "0.0.5"
 glide = "4.12.0"
 kotlin = "1.9.0"
 coreKtx = "1.10.1"
@@ -25,6 +27,7 @@ workRuntimeKtx = "2.10.0"
 swiperefreshlayout = "1.1.0"
 
 [libraries]
+androidhive-fontawesome = { module = "info.androidhive:fontawesome", version.ref = "fontawesomeVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
@@ -33,6 +36,7 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "compiler" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+fontawesome = { module = "com.shirishkoirala:FontAwesome", version.ref = "fontawesome" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
