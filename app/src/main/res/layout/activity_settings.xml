@@ -106,7 +106,6 @@
             app:iconGravity="textStart"
             app:iconPadding="8dp" />
 
-
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
