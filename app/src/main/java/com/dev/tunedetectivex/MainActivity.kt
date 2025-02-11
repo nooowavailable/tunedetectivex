@@ -309,6 +309,7 @@ class MainActivity : AppCompatActivity() {
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
+        val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
 
         fabSavedArtists.visibility = View.VISIBLE
         fabSavedArtists.translationY = 0f
@@ -317,6 +318,10 @@ class MainActivity : AppCompatActivity() {
         fabSettings.visibility = View.VISIBLE
         fabSettings.translationY = 0f
         fabSettings.alpha = 1f
+
+        fabSelectFolder.visibility = View.VISIBLE
+        fabSelectFolder.translationY = 0f
+        fabSelectFolder.alpha = 1f
 
         fabMenu.visibility = View.VISIBLE
         fabMenu.alpha = 1f
@@ -338,7 +343,13 @@ class MainActivity : AppCompatActivity() {
                 TapTarget.forView(
                     fabSettings,
                     "Settings",
-                    "Tap here to manage the app settings such as notification intervals, and so on"
+                    "Tap here to manage the app settings such as notification intervals, and so on."
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
+                    fabSelectFolder,
+                    "Select Folder",
+                    "Tap here to select a folder for importing files or managing content."
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
@@ -351,8 +362,10 @@ class MainActivity : AppCompatActivity() {
 
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
+                    fabSelectFolder.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
+                    fabSelectFolder.translationY = 0f
                 }
 
                 override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {
@@ -367,8 +380,10 @@ class MainActivity : AppCompatActivity() {
 
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
+                    fabSelectFolder.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
+                    fabSelectFolder.translationY = 0f
                 }
             })
             .start()
