@@ -18,11 +18,7 @@ class BootReceiver : BroadcastReceiver() {
 
             Toast.makeText(context, "TDX", Toast.LENGTH_LONG).show()
 
-            val sharedPreferences =
-                context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
-            val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
-
-            WorkManagerUtil.setupFetchReleasesWorker(context, fetchInterval)
+            WorkManagerUtil.setupFetchReleasesWorker(context, 90)
         }
     }
 }

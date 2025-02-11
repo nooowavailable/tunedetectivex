@@ -13,10 +13,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
-import androidx.work.NetworkType
 import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
@@ -55,24 +53,11 @@ class FetchReleasesWorker(
     }
 
     override suspend fun doWork(): Result {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Both")
-
-        val constraintsBuilder = Constraints.Builder()
-        when (networkType) {
-            "Wi-Fi Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.UNMETERED)
-            "Mobile Data Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
-            "Both" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
-        }
-
-        constraintsBuilder
-            .setRequiresBatteryNotLow(true)
-            .build()
-
         setForeground(createForegroundInfo())
 
         return try {
+            val sharedPreferences =
+                applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
             val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
             if (fetchDelay > 0) {
                 delay(fetchDelay)

@@ -1,6 +1,9 @@
 package com.dev.tunedetectivex
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -10,21 +13,18 @@ import java.util.concurrent.TimeUnit
 
 object WorkManagerUtil {
 
+    private const val TAG = "WorkManagerUtil"
+    private const val WORK_NAME = "FetchReleasesWork"
+    private const val PREFS_NAME = "AppPreferences"
+    private const val NETWORK_TYPE_KEY = "networkType"
+
     fun setupFetchReleasesWorker(context: Context, intervalInMinutes: Int) {
-        val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Both")
+        val constraints = createConstraints(context)
 
-        val constraintsBuilder = Constraints.Builder()
-
-        when (networkType) {
-            "Wi-Fi Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.UNMETERED)
-            "Mobile Data Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
-            "Both" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+        if (constraints == null) {
+            Log.w(TAG, "Worker not scheduled due to lack of valid constraints.")
+            return
         }
-
-        val constraints = constraintsBuilder
-            .setRequiresBatteryNotLow(true)
-            .build()
 
         val workRequest = PeriodicWorkRequestBuilder<FetchReleasesWorker>(
             intervalInMinutes.toLong(), TimeUnit.MINUTES
@@ -33,9 +33,47 @@ object WorkManagerUtil {
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "FetchReleasesWork",
+            WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,
             workRequest
         )
+
+        Log.d(TAG, "Scheduled FetchReleasesWorker with interval: $intervalInMinutes minutes")
+    }
+
+    private fun createConstraints(context: Context): Constraints? {
+        if (!isNetworkConnected(context)) {
+            Log.w(TAG, "No network connected. Cannot create constraints for FetchReleasesWorker.")
+            return null
+        }
+
+        val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString(NETWORK_TYPE_KEY, "Both")
+
+        val constraintsBuilder = Constraints.Builder()
+            .setRequiresBatteryNotLow(true)
+
+        when (networkType) {
+            "Wi-Fi Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.UNMETERED)
+            "Mobile Data Only" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+            "Both" -> constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED)
+            else -> {
+                Log.w(TAG, "Unknown network type: $networkType. Worker will not be scheduled.")
+                return null
+            }
+        }
+
+        return constraintsBuilder.build()
+    }
+
+    private fun isNetworkConnected(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCapabilities =
+            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+        return networkCapabilities != null && (
+                networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                )
     }
 }
