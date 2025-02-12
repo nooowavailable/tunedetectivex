@@ -74,15 +74,15 @@
             app:trackThickness="8dp"
             app:trackCornerRadius="6dp" />
 
-        <!-- New TextView for Import Status -->
         <TextView
             android:id="@+id/statusTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="16dp"
-            android:text="Press folder icon to start import"
+            android:text="Press the folder icon to start import"
             android:textSize="18sp"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/linearProgressIndicator" />
@@ -117,6 +117,6 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:srcCompat="@drawable/ic_folder"
-            android:contentDescription="Ordner auswählen" />
+            android:contentDescription="Select Folder" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
