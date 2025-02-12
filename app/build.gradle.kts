@@ -21,8 +21,8 @@ android {
         applicationId = "com.dev.tunedetectivex"
         minSdk = 31
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2-alpha"
+        versionCode = 3
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
