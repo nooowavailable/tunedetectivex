@@ -113,6 +113,7 @@ class FolderImportActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateImportStatus(isImporting: Boolean) {
         if (isImporting) {
             statusTextView.text = "Importing... Please wait."
@@ -129,10 +130,10 @@ class FolderImportActivity : AppCompatActivity() {
                         "• This feature is in beta and may result in your IP address being blocked by Deezer. 🤡\n" +
                         "• It is recommended to use a VPN. 🕵️‍♂️"
             )
-            .setPositiveButton("Proceed") { dialog, which ->
+            .setPositiveButton("Proceed") { _, _ ->
                 selectMusicFolder()
             }
-            .setNegativeButton("Cancel") { dialog, which ->
+            .setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
@@ -192,6 +193,11 @@ class FolderImportActivity : AppCompatActivity() {
     private fun processMusicFolder(folderUri: Uri) {
         isImporting = true
         updateImportStatus(isImporting)
+        statusTextView.visibility = View.GONE
+
+        val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
+        fabSelectFolder.isEnabled = false
+
         acquireWakeLock()
 
         lifecycleScope.launch(Dispatchers.Main) {
@@ -315,6 +321,12 @@ class FolderImportActivity : AppCompatActivity() {
                 isImporting = false
                 releaseWakeLock()
                 Log.d(TAG, "Import completed: Successful imports: $successfulImports, Failed imports: $failedImports, Unknown artists: $unknownArtists")
+
+                // Re-enable the folder selection button
+                withContext(Dispatchers.Main) {
+                    fabSelectFolder.isEnabled = true
+                    statusTextView.visibility = View.VISIBLE
+                }
             }
         }
     }
