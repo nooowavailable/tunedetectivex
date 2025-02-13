@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
 
         requestNotificationPermission()
 //        requestIgnoreBatteryOptimizations()
-        setupFetchReleasesWorker()
+//        setupFetchReleasesWorker()
         updateSaveButton()
         clearPreviousSearch()
         setupApiService()
