@@ -30,11 +30,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
@@ -54,7 +49,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -141,13 +135,9 @@ class MainActivity : AppCompatActivity() {
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
-//        requestIgnoreBatteryOptimizations()
-//        setupFetchReleasesWorker()
         updateSaveButton()
         clearPreviousSearch()
         setupApiService()
-        schedulePeriodicWork()
-
 
         fabMenu.setOnClickListener { view ->
             val popupMenu = PopupMenu(this, view)
@@ -201,27 +191,8 @@ class MainActivity : AppCompatActivity() {
                 updateSaveButton()
             }
         }
-//        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-//        if (!alarmManager.canScheduleExactAlarms()) {
-//            Toast.makeText(
-//                this,
-//                "Permission needed to schedule alarms.",
-//                Toast.LENGTH_LONG
-//            ).show()
-//
-//            Toast.makeText(
-//                this,
-//                "Please enable it in settings.",
-//                Toast.LENGTH_LONG
-//            ).show()
-//
-//            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-//            startActivity(intent)
-//        }
-
 
         db = AppDatabase.getDatabase(applicationContext)
-
         editTextArtist.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         editTextArtist.setSingleLine()
         editTextArtist.setOnEditorActionListener { _, actionId, _ ->
@@ -260,22 +231,6 @@ class MainActivity : AppCompatActivity() {
         val networkType = sharedPreferences.getString("networkType", "Any")
 
         isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
-    }
-
-    private fun schedulePeriodicWork() {
-        val workRequest = PeriodicWorkRequestBuilder<FetchReleasesWorker>(15, TimeUnit.MINUTES)
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
-
-        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
-            "FetchReleasesWork",
-            ExistingPeriodicWorkPolicy.KEEP,
-            workRequest
-        )
     }
 
     private fun fetchAndCheckDiscography(artistId: Long, title: String) {
@@ -427,12 +382,6 @@ class MainActivity : AppCompatActivity() {
         progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-//    private fun setupFetchReleasesWorker() {
-//        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-//        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 15)
-//        WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
-//    }
-
     private fun setupApiService() {
         val retrofit = Retrofit.Builder()
             .baseUrl("https://api.deezer.com/")
@@ -458,7 +407,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchSimilarArtists(artist: String) {
-        // Check network type and set the flag
         checkNetworkTypeAndSetFlag()
 
         if (!isNetworkRequestsAllowed) {
@@ -674,17 +622,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-//    @SuppressLint("BatteryLife")
-//    private fun requestIgnoreBatteryOptimizations() {
-//        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-//        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-//            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-//                .setData(Uri.parse("package:$packageName"))
-//            startActivity(intent)
-//        }
-//    }
-
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.fab_menu, menu)
         return true

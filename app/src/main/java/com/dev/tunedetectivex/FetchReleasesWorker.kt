@@ -6,7 +6,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.os.Build
 import android.util.Log
@@ -14,7 +13,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
-import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
@@ -51,11 +49,12 @@ class FetchReleasesWorker(
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         apiService = retrofit.create(DeezerApiService::class.java)
+
+        createNotificationChannels()
+
     }
 
     override suspend fun doWork(): Result {
-        setForeground(createForegroundInfo())
-
         val sharedPreferences =
             applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any")
@@ -81,6 +80,7 @@ class FetchReleasesWorker(
         }
     }
 
+
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
         Log.d(TAG, "Fetching saved artists from database...")
         val savedArtists = db.savedArtistDao().getAll()
@@ -104,6 +104,14 @@ class FetchReleasesWorker(
         val currentTime = System.currentTimeMillis()
 
         try {
+            if (ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.w(TAG, "Notification permission not granted.")
+                return
+            }
             val response = apiService.getArtistReleases(artist.id, limit = 100).execute()
             if (response.isSuccessful) {
                 val albums = response.body()?.data ?: emptyList()
@@ -187,6 +195,7 @@ class FetchReleasesWorker(
                     channelId = RELEASE_CHANNEL_ID
                 )
 
+                Log.d(TAG, "Sending notification with channel ID: $RELEASE_CHANNEL_ID")
                 NotificationManagerCompat.from(applicationContext).notify(releaseHash, notification)
 
                 db.savedArtistDao()
@@ -231,40 +240,33 @@ class FetchReleasesWorker(
         return builder.build()
     }
 
-    private fun createForegroundInfo(): ForegroundInfo {
-        createNotificationChannels()
-
-        val notification = NotificationCompat.Builder(applicationContext, FETCH_CHANNEL_ID)
-            .setContentTitle("Checking for new releases")
-            .setContentText("Fetching latest artist releases...")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .build()
-
-        return ForegroundInfo(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-    }
-
     private fun createNotificationChannels() {
-        val fetchChannel = NotificationChannel(
-            FETCH_CHANNEL_ID,
-            "Background Fetch Notifications",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Silent notifications for background fetching of artist releases"
-        }
-
-        val releaseChannel = NotificationChannel(
-            RELEASE_CHANNEL_ID,
-            "New Release Notifications",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Notifications for new releases from artists"
-        }
-
         val manager =
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(fetchChannel)
-        manager.createNotificationChannel(releaseChannel)
+        val existingChannels = manager.notificationChannels.map { it.id }
+        if (!existingChannels.contains(FETCH_CHANNEL_ID)) {
+            val fetchChannel = NotificationChannel(
+                FETCH_CHANNEL_ID,
+                "Background Fetch Notifications",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Silent notifications for background fetching of artist releases"
+            }
+            manager.createNotificationChannel(fetchChannel)
+            Log.d(TAG, "Fetch channel created: $FETCH_CHANNEL_ID")
+        }
+
+        if (!existingChannels.contains(RELEASE_CHANNEL_ID)) {
+            val releaseChannel = NotificationChannel(
+                RELEASE_CHANNEL_ID,
+                "New Release Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for new releases from artists"
+            }
+            manager.createNotificationChannel(releaseChannel)
+            Log.d(TAG, "Release channel created: $RELEASE_CHANNEL_ID")
+        }
+
     }
 }
