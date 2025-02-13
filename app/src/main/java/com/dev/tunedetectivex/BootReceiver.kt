@@ -18,7 +18,7 @@ class BootReceiver : BroadcastReceiver() {
 
             Toast.makeText(context, "TDX", Toast.LENGTH_LONG).show()
 
-            WorkManagerUtil.setupFetchReleasesWorker(context, 90)
+            WorkManagerUtil.setupFetchReleasesWorker(context, 15)
         }
     }
 }

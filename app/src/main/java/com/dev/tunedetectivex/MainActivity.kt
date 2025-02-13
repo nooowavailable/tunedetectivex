@@ -2,7 +2,6 @@ package com.dev.tunedetectivex
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,6 +34,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
@@ -54,6 +58,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -135,9 +140,8 @@ class MainActivity : AppCompatActivity() {
             appPreferences.edit().putBoolean("isFirstRun", false).apply()
         }
 
-        val taskLogPreferences = getSharedPreferences("TaskLog", MODE_PRIVATE)
-        val intervalInMinutes = taskLogPreferences.getInt("fetchInterval", 90)
-
+        val intervalInMinutes =
+            getSharedPreferences("TaskLog", MODE_PRIVATE).getInt("fetchInterval", 15)
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
@@ -146,6 +150,8 @@ class MainActivity : AppCompatActivity() {
         updateSaveButton()
         clearPreviousSearch()
         setupApiService()
+        schedulePeriodicWork()
+
 
         fabMenu.setOnClickListener { view ->
             val popupMenu = PopupMenu(this, view)
@@ -199,23 +205,23 @@ class MainActivity : AppCompatActivity() {
                 updateSaveButton()
             }
         }
-        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-        if (!alarmManager.canScheduleExactAlarms()) {
-            Toast.makeText(
-                this,
-                "Permission needed to schedule alarms.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            Toast.makeText(
-                this,
-                "Please enable it in settings.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            startActivity(intent)
-        }
+//        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+//        if (!alarmManager.canScheduleExactAlarms()) {
+//            Toast.makeText(
+//                this,
+//                "Permission needed to schedule alarms.",
+//                Toast.LENGTH_LONG
+//            ).show()
+//
+//            Toast.makeText(
+//                this,
+//                "Please enable it in settings.",
+//                Toast.LENGTH_LONG
+//            ).show()
+//
+//            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+//            startActivity(intent)
+//        }
 
 
         db = AppDatabase.getDatabase(applicationContext)
@@ -258,6 +264,22 @@ class MainActivity : AppCompatActivity() {
         val networkType = sharedPreferences.getString("networkType", "Any")
 
         isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
+    }
+
+    private fun schedulePeriodicWork() {
+        val workRequest = PeriodicWorkRequestBuilder<FetchReleasesWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            "FetchReleasesWork",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
     }
 
     private fun fetchAndCheckDiscography(artistId: Long, title: String) {
@@ -411,7 +433,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupFetchReleasesWorker() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 90)
+        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 15)
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
     }
 

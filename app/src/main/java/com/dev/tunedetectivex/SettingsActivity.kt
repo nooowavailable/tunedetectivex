@@ -263,7 +263,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadFetchInterval(): Int {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return sharedPreferences.getInt("fetchInterval", 90)
+        return sharedPreferences.getInt("fetchInterval", 15)
     }
 
     private fun loadFetchDelay(): Int {

@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import com.google.gson.Gson
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -19,7 +19,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                 val artists = savedArtistDao.getAll()
                 val sharedPreferences =
                     context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
-                val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
+                val fetchInterval = sharedPreferences.getInt("fetchInterval", 15)
                 val releaseAgeWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
                 val fetchDelay = sharedPreferences.getInt("fetchDelay", 0)
                 val retryAfter = sharedPreferences.getInt("retryAfter", 10)
@@ -100,7 +100,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                                             id = release.id,
                                             title = release.title,
                                             artistName = artist.name,
-                                            albumArtUrl = release.cover_xl ?: "",
+                                            albumArtUrl = release.cover_xl,
                                             releaseDate = release.release_date
                                         )
                                     )

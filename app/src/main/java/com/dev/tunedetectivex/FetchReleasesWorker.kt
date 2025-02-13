@@ -81,7 +81,6 @@ class FetchReleasesWorker(
         }
     }
 
-
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
         Log.d(TAG, "Fetching saved artists from database...")
         val savedArtists = db.savedArtistDao().getAll()

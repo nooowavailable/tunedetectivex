@@ -10,7 +10,7 @@ class BackgroundJobReceiver : BroadcastReceiver() {
         Log.d("BackgroundJobReceiver", "Received broadcast to schedule background job.")
         context?.let {
             val sharedPreferences = it.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
-            val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
+            val fetchInterval = sharedPreferences.getInt("fetchInterval", 15)
             WorkManagerUtil.setupFetchReleasesWorker(it, fetchInterval)
             Log.d("BackgroundJobReceiver", "Background job scheduled.")
         }
