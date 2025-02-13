@@ -18,8 +18,6 @@ TuneDetectiveX empowers music enthusiasts to independently explore and monitor t
 
 - [X](https://x.com/nooowavailable)
 - [Matrix (Chat) Room](https://matrix.to/#/!HKIBPXETQFYecRxILT:matrix.org?via=matrix.org)
-- [Reddit](https://www.reddit.com/user/nooowavailable/)
-
 
 ## 📋 Requirements
 
