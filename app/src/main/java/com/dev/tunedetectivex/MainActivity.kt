@@ -1,19 +1,15 @@
 package com.dev.tunedetectivex
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.PowerManager
-import android.provider.Settings
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -145,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
-        requestIgnoreBatteryOptimizations()
+//        requestIgnoreBatteryOptimizations()
         setupFetchReleasesWorker()
         updateSaveButton()
         clearPreviousSearch()
@@ -679,15 +675,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("BatteryLife")
-    private fun requestIgnoreBatteryOptimizations() {
-        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                .setData(Uri.parse("package:$packageName"))
-            startActivity(intent)
-        }
-    }
+//    @SuppressLint("BatteryLife")
+//    private fun requestIgnoreBatteryOptimizations() {
+//        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+//        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+//            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+//                .setData(Uri.parse("package:$packageName"))
+//            startActivity(intent)
+//        }
+//    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.fab_menu, menu)
