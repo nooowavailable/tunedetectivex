@@ -427,11 +427,11 @@ class MainActivity : AppCompatActivity() {
         progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-    private fun setupFetchReleasesWorker() {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 15)
-        WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
-    }
+//    private fun setupFetchReleasesWorker() {
+//        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+//        val intervalInMinutes = sharedPreferences.getInt("fetchInterval", 15)
+//        WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
+//    }
 
     private fun setupApiService() {
         val retrofit = Retrofit.Builder()
