@@ -167,9 +167,13 @@ class SavedArtistsActivity : AppCompatActivity() {
             }.toMutableList()
 
             withContext(Dispatchers.Main) {
-                val adapter = SavedArtistAdapter { artist -> deleteArtistFromDb(artist) }
-                recyclerView.adapter = adapter
-                adapter.submitList(tempList)
+                // Update this line to include both parameters
+                artistAdapter = SavedArtistAdapter(
+                    onDelete = { artist -> deleteArtistFromDb(artist) },
+                    onArtistClick = { artist -> openArtistDiscography(artist) }
+                )
+                recyclerView.adapter = artistAdapter
+                artistAdapter.submitList(tempList)
             }
         }
     }
@@ -212,7 +216,10 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun setupRecyclerView() {
-        artistAdapter = SavedArtistAdapter { artist -> deleteArtistFromDb(artist) }
+        artistAdapter = SavedArtistAdapter(
+            onDelete = { artist -> deleteArtistFromDb(artist) },
+            onArtistClick = { artist -> openArtistDiscography(artist) }
+        )
         releaseAdapter = ReleaseAdapter { release ->
             val intent = Intent(this, ReleaseDetailsActivity::class.java).apply {
                 putExtra("releaseId", release.id)
@@ -224,6 +231,13 @@ class SavedArtistsActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = artistAdapter
         enableSwipeToDelete()
+    }
+
+    private fun openArtistDiscography(artist: SavedArtistItem) {
+        val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
+            putExtra("artistId", artist.id)
+        }
+        startActivity(intent)
     }
 
     private fun deleteArtistFromDb(artist: SavedArtistItem) {
@@ -536,7 +550,7 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getArtistReleases(artistId, limit = 100).execute()
+                val response = apiService.getArtistReleases(artistId, 0).execute()
                 if (response.isSuccessful) {
                     Log.d("SavedArtistsActivity", "API response successful for Artist ID=$artistId")
                     response.body()?.data?.map { release ->

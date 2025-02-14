@@ -36,6 +36,9 @@
             android:theme="@style/AppTheme"/>
         <activity android:name=".ReleaseDetailsActivity"
             android:theme="@style/AppTheme"/>
+        <activity
+            android:name=".ArtistDiscographyActivity"
+            android:theme="@style/AppTheme" />
 
         <activity
             android:name=".FolderImportActivity"

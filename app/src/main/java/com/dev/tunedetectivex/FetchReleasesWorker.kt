@@ -112,7 +112,7 @@ class FetchReleasesWorker(
                 Log.w(TAG, "Notification permission not granted.")
                 return
             }
-            val response = apiService.getArtistReleases(artist.id, limit = 100).execute()
+            val response = apiService.getArtistReleases(artist.id, 0).execute()
             if (response.isSuccessful) {
                 val albums = response.body()?.data ?: emptyList()
                 val latestRelease = albums.maxByOrNull { release ->

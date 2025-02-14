@@ -92,7 +92,8 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                                     profileImageUrl
                                 )
 
-                                val releases = apiService.getArtistReleases(artist.id, 100, 0).execute().body()?.data ?: emptyList()
+                                val releases = apiService.getArtistReleases(artist.id, 0).execute()
+                                    .body()?.data ?: emptyList()
 
                                 releases.forEach { release ->
                                     savedArtistDao.insertRelease(

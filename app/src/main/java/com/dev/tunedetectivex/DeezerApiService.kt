@@ -15,8 +15,7 @@ interface DeezerApiService {
     @GET("artist/{id}/albums")
     fun getArtistReleases(
         @Path("id") artistId: Long,
-        @Query("limit") limit: Int = 100,
-        @Query("index") offset: Int = 0,
+        @Query("index") offset: Int = 0
     ): Call<DeezerAlbumsResponse>
 
     @GET("album/{id}/tracks")

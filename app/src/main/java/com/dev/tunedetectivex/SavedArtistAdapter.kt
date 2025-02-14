@@ -1,6 +1,6 @@
 package com.dev.tunedetectivex
 
-import android.util.Log
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,7 +27,8 @@ data class SavedArtistItem(
 )
 
 class SavedArtistAdapter(
-    private val onDelete: (SavedArtistItem) -> Unit
+    private val onDelete: (SavedArtistItem) -> Unit,
+    private val onArtistClick: (SavedArtistItem) -> Unit
 ) : ListAdapter<SavedArtistItem, SavedArtistAdapter.SavedArtistViewHolder>(SavedArtistDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SavedArtistViewHolder {
@@ -38,7 +39,7 @@ class SavedArtistAdapter(
 
     override fun onBindViewHolder(holder: SavedArtistViewHolder, position: Int) {
         val artist = getItem(position)
-        holder.bind(artist)
+        holder.bind(artist, onArtistClick)
     }
 
     fun deleteItem(position: Int) {
@@ -49,14 +50,14 @@ class SavedArtistAdapter(
         submitList(updatedList)
     }
 
-
     class SavedArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val artistNameTextView: TextView = view.findViewById(R.id.textViewArtistName)
         private val profileImageView: ImageView = view.findViewById(R.id.imageViewProfile)
         private val progressBar: ProgressBar = view.findViewById(R.id.progressBarItemLoading)
         private val loadingStatusTextView: TextView = view.findViewById(R.id.textViewLoadingStatus)
 
-        fun bind(artist: SavedArtistItem) {
+        @SuppressLint("SetTextI18n")
+        fun bind(artist: SavedArtistItem, onArtistClick: (SavedArtistItem) -> Unit) {
             artistNameTextView.text = artist.name
 
             val profileImageUrl = artist.picture_xl
@@ -79,6 +80,10 @@ class SavedArtistAdapter(
             } else {
                 progressBar.visibility = View.GONE
                 loadingStatusTextView.visibility = View.GONE
+            }
+
+            profileImageView.setOnClickListener {
+                onArtistClick(artist)
             }
         }
     }

@@ -244,7 +244,7 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Log.d("MainActivity", "Fetching discography for artist ID: $artistId")
-                val response = apiService.getArtistReleases(artistId, limit = 100).execute()
+                val response = apiService.getArtistReleases(artistId, 0).execute()
                 if (response.isSuccessful) {
                     val releases = response.body()?.data
                     if (!releases.isNullOrEmpty()) {
@@ -477,7 +477,7 @@ class MainActivity : AppCompatActivity() {
         onSuccess: (DeezerAlbum) -> Unit,
         onFailure: () -> Unit
     ) {
-        apiService.getArtistReleases(artistId, limit = 100).enqueue(object : Callback<DeezerAlbumsResponse> {
+        apiService.getArtistReleases(artistId, 0).enqueue(object : Callback<DeezerAlbumsResponse> {
             override fun onResponse(call: Call<DeezerAlbumsResponse>, response: Response<DeezerAlbumsResponse>) {
                 if (response.isSuccessful) {
                     val releases = response.body()?.data ?: emptyList()
