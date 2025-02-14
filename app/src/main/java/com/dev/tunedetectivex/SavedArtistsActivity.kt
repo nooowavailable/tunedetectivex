@@ -167,7 +167,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             }.toMutableList()
 
             withContext(Dispatchers.Main) {
-                // Update this line to include both parameters
                 artistAdapter = SavedArtistAdapter(
                     onDelete = { artist -> deleteArtistFromDb(artist) },
                     onArtistClick = { artist -> openArtistDiscography(artist) }
@@ -177,10 +176,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             }
         }
     }
-
-
-
-
 
     private fun setupSearchView() {
         searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
@@ -235,7 +230,9 @@ class SavedArtistsActivity : AppCompatActivity() {
 
     private fun openArtistDiscography(artist: SavedArtistItem) {
         val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
-            putExtra("artistId", artist.id)
+            putExtra("artistId", artist.id) // Use artist.id instead of artistId
+            putExtra("artistName", artist.name) // Use artist.name
+            putExtra("artistImageUrl", artist.picture) // Use artist.picture
         }
         startActivity(intent)
     }

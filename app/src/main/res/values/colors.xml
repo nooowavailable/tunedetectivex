@@ -1,5 +1,8 @@
 <resources>
     <color name="color">#000000</color>
+    <color name="colorTr">#33000000</color>
+    <color name="colorInvert">#FFFFFF</color>
+    <color name="colorInvertTr">#33FFFFFF</color>
     <color name="md_theme_primary">#39693B</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
     <color name="md_theme_primaryContainer">#BAF0B7</color>

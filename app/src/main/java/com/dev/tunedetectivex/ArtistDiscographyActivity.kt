@@ -2,8 +2,11 @@ package com.dev.tunedetectivex
 
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
 import android.view.View
+import android.view.animation.AnimationUtils
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -31,12 +34,19 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_artist_discography)
 
+        val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         recyclerView = findViewById(R.id.recyclerViewDiscography)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         artistId = intent.getLongExtra("artistId", 0)
         artistName = intent.getStringExtra("artistName") ?: "Unknown Artist"
         artistImageUrl = intent.getStringExtra("artistImageUrl") ?: ""
+
+        supportActionBar?.title = artistName
 
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
@@ -95,26 +105,45 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun displayDiscography(releases: List<DeezerAlbum>) {
-        // Sort the releases by release date
         val sortedReleases = releases.sortedByDescending { release ->
             SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time
                 ?: 0L
         }
 
-        // Set the adapter for the RecyclerView
         val adapter = DiscographyAdapter(sortedReleases) { album ->
             Toast.makeText(this, "Clicked on: ${album.title}", Toast.LENGTH_SHORT).show()
         }
-        recyclerView.adapter = adapter // Ensure this is set after data is fetched
-
-        // Load the artist image
+        recyclerView.adapter = adapter
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
+        val textView: TextView = findViewById(R.id.textViewArtistName)
+
+        // Load the image into the ImageView
         Glide.with(this)
             .load(artistImageUrl)
-            .apply(RequestOptions.circleCropTransform())
+            .apply(
+                RequestOptions()
+                    .centerCrop()
+            ) // Maintain the aspect ratio
             .into(imageView)
 
-        // Ensure the RecyclerView is visible
+        // Set the artist name in the TextView
+        textView.text = artistName
+
+        // Apply fade-in animation to the TextView
+        val fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in)
+        textView.startAnimation(fadeInAnimation)
+
         recyclerView.visibility = View.VISIBLE
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }
