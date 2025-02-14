@@ -2,6 +2,7 @@ package com.dev.tunedetectivex
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -32,6 +33,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerViewDiscography)
         recyclerView.layoutManager = LinearLayoutManager(this)
+
         artistId = intent.getLongExtra("artistId", 0)
         artistName = intent.getStringExtra("artistName") ?: "Unknown Artist"
         artistImageUrl = intent.getStringExtra("artistImageUrl") ?: ""
@@ -58,6 +60,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             ) {
                 if (response.isSuccessful) {
                     val releases = response.body()?.data ?: emptyList()
+                    Log.d("ArtistDiscographyActivity", "Releases: $releases") // Log the releases
                     if (releases.isNotEmpty()) {
                         displayDiscography(releases)
                     } else {
@@ -92,20 +95,26 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun displayDiscography(releases: List<DeezerAlbum>) {
+        // Sort the releases by release date
         val sortedReleases = releases.sortedByDescending { release ->
             SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time
                 ?: 0L
         }
 
+        // Set the adapter for the RecyclerView
         val adapter = DiscographyAdapter(sortedReleases) { album ->
             Toast.makeText(this, "Clicked on: ${album.title}", Toast.LENGTH_SHORT).show()
         }
-        recyclerView.adapter = adapter
+        recyclerView.adapter = adapter // Ensure this is set after data is fetched
 
+        // Load the artist image
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
         Glide.with(this)
             .load(artistImageUrl)
             .apply(RequestOptions.circleCropTransform())
             .into(imageView)
+
+        // Ensure the RecyclerView is visible
+        recyclerView.visibility = View.VISIBLE
     }
 }
