@@ -15,8 +15,6 @@ TuneDetectiveX empowers music enthusiasts to independently explore and monitor t
 - **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
 
 ## 🌐 Socials (for certificate hash, updates, etc)
-
-- [X](https://x.com/nooowavailable)
 - [Matrix (Chat) Room](https://matrix.to/#/!HKIBPXETQFYecRxILT:matrix.org?via=matrix.org)
 
 ## 📋 Requirements
