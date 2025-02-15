@@ -15,8 +15,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageButton
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
@@ -57,9 +58,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pushNotificationPermissionLauncher: ActivityResultLauncher<String>
     private lateinit var recyclerViewArtists: RecyclerView
     private lateinit var editTextArtist: EditText
-    private lateinit var buttonSaveArtist: ImageButton
-    private lateinit var textViewAlbumTitle: TextView
-    private lateinit var textViewrelease_date: TextView
+    private lateinit var buttonFollowArtist: Button
     private lateinit var apiService: DeezerApiService
     private lateinit var db: AppDatabase
     private lateinit var discographyAdapter: DiscographyAdapter
@@ -71,6 +70,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerViewDiscography: RecyclerView
     private lateinit var toolbar: Toolbar
     private var isNetworkRequestsAllowed = true
+    private lateinit var textViewAlbumTitle: TextView
+    private lateinit var textViewReleaseDate: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,12 +100,14 @@ class MainActivity : AppCompatActivity() {
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
         recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         editTextArtist = findViewById(R.id.editTextArtist)
-        buttonSaveArtist = findViewById(R.id.buttonSaveArtist)
         progressIndicator = findViewById(R.id.progressBarLoading)
+        buttonFollowArtist = findViewById(R.id.buttonFollowArtist)
         notificationManager = NotificationManagerCompat.from(this)
         recyclerViewDiscography = findViewById(R.id.recyclerViewDiscography)
         recyclerViewDiscography.layoutManager = LinearLayoutManager(this)
         recyclerViewDiscography = findViewById(R.id.recyclerViewDiscography)
+        textViewAlbumTitle = findViewById(R.id.textViewAlbumTitle)
+        textViewReleaseDate = findViewById(R.id.textViewReleaseDate)
         toolbar.visibility = View.GONE
         recyclerViewDiscography.visibility = View.GONE
 
@@ -136,7 +139,6 @@ class MainActivity : AppCompatActivity() {
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
-        updateSaveButton()
         clearPreviousSearch()
         setupApiService()
 
@@ -187,10 +189,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 swipeRefreshLayout.isRefreshing = false
             }
-
-            if (selectedArtist != null) {
-                updateSaveButton()
-            }
         }
 
         db = AppDatabase.getDatabase(applicationContext)
@@ -221,10 +219,72 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        buttonSaveArtist.setOnClickListener {
-            saveArtist()
+        buttonFollowArtist.setOnClickListener {
+            followArtist()
         }
 
+        updateFollowButton()
+
+    }
+
+    private fun followArtist() {
+        val artist = selectedArtist ?: return
+        val releaseDate = textViewReleaseDate.text.toString()
+        val profileImageUrl = artist.getBestPictureUrl()
+        val releaseTitle = textViewAlbumTitle.text.toString()
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val existingArtist = db.savedArtistDao().getArtistById(artist.id)
+            if (existingArtist == null) {
+                db.savedArtistDao().insert(
+                    SavedArtist(
+                        id = artist.id,
+                        name = artist.name,
+                        lastReleaseDate = releaseDate,
+                        lastReleaseTitle = releaseTitle,
+                        profileImageUrl = profileImageUrl
+                    )
+                )
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "${artist.name} followed!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    updateFollowButton()
+                }
+            } else {
+                db.savedArtistDao().delete(existingArtist)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "${artist.name} unfollowed!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    updateFollowButton()
+                }
+            }
+        }
+    }
+
+    private fun updateFollowButton() {
+        val artist = selectedArtist
+        if (artist == null) {
+            buttonFollowArtist.visibility = View.GONE
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val existingArtist = db.savedArtistDao().getArtistById(artist.id)
+            withContext(Dispatchers.Main) {
+                if (existingArtist != null) {
+                    buttonFollowArtist.text = "Following"
+                } else {
+                    buttonFollowArtist.text = "Follow"
+                }
+                buttonFollowArtist.visibility = View.VISIBLE
+            }
+        }
     }
 
     private fun checkNetworkTypeAndSetFlag() {
@@ -391,8 +451,6 @@ class MainActivity : AppCompatActivity() {
         setMenuButtonEnabled(false)
         swipeRefreshLayout.isRefreshing = true
 
-        buttonSaveArtist.visibility = View.GONE
-
         apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
             override fun onResponse(
                 call: Call<DeezerSimilarArtistsResponse>,
@@ -448,6 +506,8 @@ class MainActivity : AppCompatActivity() {
 
                 findViewById<View>(R.id.logoContainer).visibility = View.GONE
                 findViewById<View>(R.id.searchBarCard).visibility = View.GONE
+
+                findViewById<FrameLayout>(R.id.imageContainer).visibility = View.VISIBLE
                 displayArtistInfo(artist)
                 loadArtistDiscography(artist.id)
             }
@@ -472,6 +532,7 @@ class MainActivity : AppCompatActivity() {
                     if (releases.isNotEmpty()) {
                         displayDiscography(releases)
                         recyclerViewDiscography.visibility = View.VISIBLE
+                        buttonFollowArtist.visibility = View.VISIBLE
                     } else {
                         Toast.makeText(
                             this@MainActivity,
@@ -510,8 +571,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayArtistInfo(artist: DeezerArtist) {
+        val imageContainer = findViewById<FrameLayout>(R.id.imageContainer)
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
         val textView: TextView = findViewById(R.id.textViewArtistNameToolbar)
+
+        imageContainer.visibility = View.VISIBLE
+        imageView.visibility = View.VISIBLE
 
         Glide.with(this)
             .load(artist.getBestPictureUrl())
@@ -522,27 +587,10 @@ class MainActivity : AppCompatActivity() {
 
         supportActionBar?.title = artist.name
         toolbar.visibility = View.VISIBLE
-        imageView.visibility = View.VISIBLE
+
+        buttonFollowArtist.visibility = View.VISIBLE
 
         loadArtistDiscography(artist.id)
-    }
-
-    private fun updateSaveButton() {
-        val artist = selectedArtist
-        if (artist == null) {
-            buttonSaveArtist.visibility = View.GONE
-            return
-        }
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val existingArtist = db.savedArtistDao().getArtistById(artist.id)
-            withContext(Dispatchers.Main) {
-                buttonSaveArtist.setImageResource(
-                    if (existingArtist != null) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
-                )
-                buttonSaveArtist.visibility = View.VISIBLE
-            }
-        }
     }
 
     private fun setMenuButtonEnabled(enabled: Boolean) {
@@ -552,45 +600,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun saveArtist() {
-        val artist = selectedArtist ?: return
-        val releaseDate = textViewrelease_date.text.toString()
-        val profileImageUrl = artist.getBestPictureUrl()
-        val releaseTitle = textViewAlbumTitle.text.toString()
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val existingArtist = db.savedArtistDao().getArtistById(artist.id)
-            if (existingArtist == null) {
-                db.savedArtistDao().insert(
-                    SavedArtist(
-                        id = artist.id,
-                        name = artist.name,
-                        lastReleaseDate = releaseDate,
-                        lastReleaseTitle = releaseTitle,
-                        profileImageUrl = profileImageUrl
-                    )
-                )
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "${artist.name} saved!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    updateSaveButton()
-                }
-            } else {
-                db.savedArtistDao().delete(existingArtist)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "${artist.name} removed from saved artists!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    updateSaveButton()
-                }
-            }
-        }
-    }
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         return false
     }
@@ -608,7 +617,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun clearPreviousSearch() {
         editTextArtist.text.clear()
-        buttonSaveArtist.visibility = View.GONE
         recyclerViewArtists.adapter = null
         recyclerViewArtists.visibility = View.GONE
 

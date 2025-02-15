@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
-import android.view.animation.AnimationUtils
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -70,7 +68,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             ) {
                 if (response.isSuccessful) {
                     val releases = response.body()?.data ?: emptyList()
-                    Log.d("ArtistDiscographyActivity", "Releases: $releases") // Log the releases
+                    Log.d("ArtistDiscographyActivity", "Releases: $releases")
                     if (releases.isNotEmpty()) {
                         displayDiscography(releases)
                     } else {
@@ -115,24 +113,14 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
-        val textView: TextView = findViewById(R.id.textViewArtistName)
 
-        // Load the image into the ImageView
         Glide.with(this)
             .load(artistImageUrl)
             .apply(
                 RequestOptions()
                     .centerCrop()
-            ) // Maintain the aspect ratio
+            )
             .into(imageView)
-
-        // Set the artist name in the TextView
-        textView.text = artistName
-
-        // Apply fade-in animation to the TextView
-        val fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in)
-        textView.startAnimation(fadeInAnimation)
-
         recyclerView.visibility = View.VISIBLE
     }
 

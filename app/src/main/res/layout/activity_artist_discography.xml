@@ -23,17 +23,6 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:scaleType="centerCrop" />
-
-        <TextView
-            android:id="@+id/textViewArtistName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-            android:background="@drawable/rounded_background"
-            android:padding="8dp"
-            android:textColor="@color/colorInvert"
-            android:textSize="24sp"
-            android:textStyle="bold" />
     </FrameLayout>
 
     <androidx.recyclerview.widget.RecyclerView

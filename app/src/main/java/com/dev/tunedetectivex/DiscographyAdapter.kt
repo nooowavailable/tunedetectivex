@@ -32,13 +32,18 @@ class DiscographyAdapter(
     class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val albumTitle: TextView = view.findViewById(R.id.textViewAlbumTitle)
         private val albumCover: ImageView = view.findViewById(R.id.imageViewAlbumCover)
+        private val releaseDate: TextView = view.findViewById(R.id.textViewReleaseDate)
 
         fun bind(album: DeezerAlbum) {
             albumTitle.text = album.title
+            releaseDate.text = album.release_date
+
             Glide.with(itemView.context)
                 .load(album.cover_xl)
-                .apply(RequestOptions().centerCrop())
-                .apply(RequestOptions().transform(RoundedCorners(20)))
+                .apply(
+                    RequestOptions()
+                        .transform(RoundedCorners(20))
+                )
                 .into(albumCover)
         }
     }
