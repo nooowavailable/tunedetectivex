@@ -564,7 +564,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         discographyAdapter = DiscographyAdapter(sortedReleases) { album ->
-            Toast.makeText(this, "Clicked on: ${album.title}", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
+                putExtra("releaseId", album.id)
+                putExtra("releaseTitle", album.title)
+                putExtra("artistName", selectedArtist?.name ?: "")
+                putExtra("albumArtUrl", album.cover_xl)
+            }
+            startActivity(intent)
         }
         recyclerViewDiscography.adapter = discographyAdapter
         recyclerViewDiscography.visibility = View.VISIBLE

@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
@@ -109,18 +110,22 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         }
 
         val adapter = DiscographyAdapter(sortedReleases) { album ->
-            Toast.makeText(this, "Clicked on: ${album.title}", Toast.LENGTH_SHORT).show()
+            Intent(this, ReleaseDetailsActivity::class.java).apply {
+                putExtra("releaseId", album.id)
+                putExtra("releaseTitle", album.title)
+                putExtra("artistName", artistName)
+                putExtra("albumArtUrl", album.cover_xl)
+            }.also { startActivity(it) }
         }
+
         recyclerView.adapter = adapter
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
 
         Glide.with(this)
             .load(artistImageUrl)
-            .apply(
-                RequestOptions()
-                    .centerCrop()
-            )
+            .apply(RequestOptions().centerCrop())
             .into(imageView)
+
         recyclerView.visibility = View.VISIBLE
     }
 

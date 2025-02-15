@@ -230,9 +230,9 @@ class SavedArtistsActivity : AppCompatActivity() {
 
     private fun openArtistDiscography(artist: SavedArtistItem) {
         val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
-            putExtra("artistId", artist.id) // Use artist.id instead of artistId
-            putExtra("artistName", artist.name) // Use artist.name
-            putExtra("artistImageUrl", artist.picture) // Use artist.picture
+            putExtra("artistId", artist.id)
+            putExtra("artistName", artist.name)
+            putExtra("artistImageUrl", artist.picture)
         }
         startActivity(intent)
     }
@@ -467,7 +467,6 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun loadSavedReleases() {
-        // Check network type and set the flag
         checkNetworkTypeAndSetFlag()
 
         if (!isNetworkRequestsAllowed) {
@@ -476,7 +475,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 "Selected network type is not available. Please check your connection.",
                 Toast.LENGTH_SHORT
             ).show()
-            return // Skip loading if the network type is not allowed
+            return
         }
 
         swipeRefreshLayout.isEnabled = true
