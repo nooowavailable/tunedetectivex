@@ -24,6 +24,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -31,14 +32,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,19 +58,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerViewArtists: RecyclerView
     private lateinit var editTextArtist: EditText
     private lateinit var buttonSaveArtist: ImageButton
-    private lateinit var textViewname: TextView
-    private lateinit var imageViewAlbumArt: ImageView
     private lateinit var textViewAlbumTitle: TextView
     private lateinit var textViewrelease_date: TextView
     private lateinit var apiService: DeezerApiService
     private lateinit var db: AppDatabase
+    private lateinit var discographyAdapter: DiscographyAdapter
     private var selectedArtist: DeezerArtist? = null
-    private lateinit var artistInfoCard: MaterialCardView
     private lateinit var progressIndicator: CircularProgressIndicator
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
-    private val fetchedArtists = mutableSetOf<Long>()
+    private lateinit var recyclerViewDiscography: RecyclerView
+    private lateinit var toolbar: Toolbar
     private var isNetworkRequestsAllowed = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,18 +91,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
         recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         editTextArtist = findViewById(R.id.editTextArtist)
         buttonSaveArtist = findViewById(R.id.buttonSaveArtist)
-        artistInfoCard = findViewById(R.id.artistInfoCard)
-        textViewname = findViewById(R.id.textViewname)
-        textViewAlbumTitle = findViewById(R.id.textViewAlbumTitle)
-        textViewrelease_date = findViewById(R.id.textViewrelease_date)
-        imageViewAlbumArt = findViewById(R.id.imageViewAlbumArt)
         progressIndicator = findViewById(R.id.progressBarLoading)
         notificationManager = NotificationManagerCompat.from(this)
+        recyclerViewDiscography = findViewById(R.id.recyclerViewDiscography)
+        recyclerViewDiscography.layoutManager = LinearLayoutManager(this)
+        recyclerViewDiscography = findViewById(R.id.recyclerViewDiscography)
+        toolbar.visibility = View.GONE
+        recyclerViewDiscography.visibility = View.GONE
 
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
@@ -231,39 +232,6 @@ class MainActivity : AppCompatActivity() {
         val networkType = sharedPreferences.getString("networkType", "Any")
 
         isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
-    }
-
-    private fun fetchAndCheckDiscography(artistId: Long, title: String) {
-        if (fetchedArtists.contains(artistId)) {
-            Log.d("MainActivity", "Already fetched discography for artist ID: $artistId")
-            return
-        }
-
-        fetchedArtists.add(artistId)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                Log.d("MainActivity", "Fetching discography for artist ID: $artistId")
-                val response = apiService.getArtistReleases(artistId, 0).execute()
-                if (response.isSuccessful) {
-                    val releases = response.body()?.data
-                    if (!releases.isNullOrEmpty()) {
-                        val match = releases.firstOrNull { it.title.equals(title, ignoreCase = true) }
-                        if (match != null) {
-                            Log.d("MainActivity", "Match found: ${match.title} in discography")
-                        } else {
-                            Log.d("MainActivity", "No matching release found for title: $title")
-                        }
-                    } else {
-                        Log.d("MainActivity", "No releases found for artist ID: $artistId")
-                    }
-                } else {
-                    Log.e("MainActivity", "Deezer API error: ${response.code()} ${response.message()}")
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error fetching discography from Deezer", e)
-            }
-        }
     }
 
     private fun toggleFabMenu() {
@@ -424,7 +392,6 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout.isRefreshing = true
 
         buttonSaveArtist.visibility = View.GONE
-        artistInfoCard.visibility = View.GONE
 
         apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
             override fun onResponse(
@@ -472,56 +439,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchLatestReleaseForArtist(
-        artistId: Long,
-        onSuccess: (DeezerAlbum) -> Unit,
-        onFailure: () -> Unit
-    ) {
-        apiService.getArtistReleases(artistId, 0).enqueue(object : Callback<DeezerAlbumsResponse> {
-            override fun onResponse(call: Call<DeezerAlbumsResponse>, response: Response<DeezerAlbumsResponse>) {
-                if (response.isSuccessful) {
-                    val releases = response.body()?.data ?: emptyList()
-                    if (releases.isNotEmpty()) {
-                        val latestRelease = releases.maxByOrNull { release ->
-                            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time ?: 0L
-                        }
-                        latestRelease?.let {
-                            fetchAndCheckDiscography(artistId, it.title)
-                            onSuccess(it)
-                        } ?: onFailure()
-                    } else {
-                        Log.d(TAG, "No Releases found for Artist ID: $artistId")
-                        onFailure()
-                    }
-                } else {
-                    Log.e(TAG, "Error when retrieving releases for Artist ID=$artistId: ${response.code()} ${response.message()}")
-                    onFailure()
-                }
-            }
-
-            override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
-                Log.e(TAG, "Error when retrieving releases for Artist ID=$artistId: ${t.message}", t)
-                onFailure()
-            }
-        })
-    }
-
     private fun displayArtists(artists: List<DeezerArtist>) {
         if (artists.isNotEmpty()) {
             recyclerViewArtists.visibility = View.VISIBLE
             val adapter = SimilarArtistsAdapter(this, artists) { artist ->
                 selectedArtist = artist
                 recyclerViewArtists.visibility = View.GONE
-                fetchLatestReleaseForArtist(
-                    artistId = artist.id,
-                    onSuccess = { album ->
-                        fetchAndCheckDiscography(artist.id, album.title)
-                        displayReleaseInfo(album)
-                    },
-                    onFailure = {
-                        Toast.makeText(this, "No releases found for ${artist.name}.", Toast.LENGTH_SHORT).show()
-                    }
-                )
+
+                findViewById<View>(R.id.logoContainer).visibility = View.GONE
+                findViewById<View>(R.id.searchBarCard).visibility = View.GONE
+                displayArtistInfo(artist)
+                loadArtistDiscography(artist.id)
             }
             recyclerViewArtists.adapter = adapter
             showLoading(false)
@@ -533,29 +461,70 @@ class MainActivity : AppCompatActivity() {
         setMenuButtonEnabled(true)
     }
 
+    private fun loadArtistDiscography(artistId: Long) {
+        apiService.getArtistReleases(artistId).enqueue(object : Callback<DeezerAlbumsResponse> {
+            override fun onResponse(
+                call: Call<DeezerAlbumsResponse>,
+                response: Response<DeezerAlbumsResponse>
+            ) {
+                if (response.isSuccessful) {
+                    val releases = response.body()?.data ?: emptyList()
+                    if (releases.isNotEmpty()) {
+                        displayDiscography(releases)
+                        recyclerViewDiscography.visibility = View.VISIBLE
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "No releases found for this artist.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Error fetching discography.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
 
-    private fun displayReleaseInfo(album: DeezerAlbum) {
-        artistInfoCard.visibility = View.VISIBLE
-        textViewname.text = selectedArtist?.name ?: "Unknown Artist"
-        textViewAlbumTitle.text = album.title
+            override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
+                Toast.makeText(this@MainActivity, "Error fetching discography.", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        })
+    }
 
-        val formattedDate = try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-            val date = inputFormat.parse(album.release_date)
-            date?.let { outputFormat.format(it) }
-        } catch (_: Exception) {
-            album.release_date
+
+    private fun displayDiscography(releases: List<DeezerAlbum>) {
+        val sortedReleases = releases.sortedByDescending { release ->
+            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time
+                ?: 0L
         }
-        textViewrelease_date.text = formattedDate
 
-        val coverUrl = album.cover_xl
+        discographyAdapter = DiscographyAdapter(sortedReleases) { album ->
+            Toast.makeText(this, "Clicked on: ${album.title}", Toast.LENGTH_SHORT).show()
+        }
+        recyclerViewDiscography.adapter = discographyAdapter
+        recyclerViewDiscography.visibility = View.VISIBLE
+    }
+
+    private fun displayArtistInfo(artist: DeezerArtist) {
+        val imageView: ImageView = findViewById(R.id.imageViewArtist)
+        val textView: TextView = findViewById(R.id.textViewArtistNameToolbar)
+
         Glide.with(this)
-            .load(coverUrl)
-            .apply(RequestOptions().transform(RoundedCorners(40)))
-            .into(imageViewAlbumArt)
+            .load(artist.getBestPictureUrl())
+            .apply(RequestOptions().centerCrop())
+            .into(imageView)
 
-        updateSaveButton()
+        textView.text = artist.name
+
+        supportActionBar?.title = artist.name
+        toolbar.visibility = View.VISIBLE
+        imageView.visibility = View.VISIBLE
+
+        loadArtistDiscography(artist.id)
     }
 
     private fun updateSaveButton() {
@@ -623,8 +592,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.fab_menu, menu)
-        return true
+        return false
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -641,7 +609,6 @@ class MainActivity : AppCompatActivity() {
     private fun clearPreviousSearch() {
         editTextArtist.text.clear()
         buttonSaveArtist.visibility = View.GONE
-        artistInfoCard.visibility = View.GONE
         recyclerViewArtists.adapter = null
         recyclerViewArtists.visibility = View.GONE
 
