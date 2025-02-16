@@ -80,16 +80,23 @@
                 android:id="@+id/imageViewArtist"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
+                android:scaleType="fitCenter"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonFollowArtist"
-                android:layout_width="wrap_content"
+                android:layout_width="120dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="12dp"
                 android:layout_gravity="bottom|end"
-                android:padding="12dp"
-                android:text="Follow" />
+                android:minWidth="120dp"
+                android:text="Save"
+                app:backgroundTint="?attr/colorPrimary"
+                app:cornerRadius="6dp"
+                app:icon="@drawable/ic_save"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:strokeColor="?attr/colorOnPrimary" />
         </FrameLayout>
 
         <androidx.recyclerview.widget.RecyclerView

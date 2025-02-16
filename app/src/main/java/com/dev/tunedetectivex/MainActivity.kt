@@ -15,7 +15,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -36,6 +35,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +58,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pushNotificationPermissionLauncher: ActivityResultLauncher<String>
     private lateinit var recyclerViewArtists: RecyclerView
     private lateinit var editTextArtist: EditText
-    private lateinit var buttonFollowArtist: Button
     private lateinit var apiService: DeezerApiService
     private lateinit var db: AppDatabase
     private lateinit var discographyAdapter: DiscographyAdapter
@@ -72,6 +71,8 @@ class MainActivity : AppCompatActivity() {
     private var isNetworkRequestsAllowed = true
     private lateinit var textViewAlbumTitle: TextView
     private lateinit var textViewReleaseDate: TextView
+    private lateinit var buttonFollowArtist: MaterialButton
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,12 +97,12 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        buttonFollowArtist = findViewById(R.id.buttonFollowArtist)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
         recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         editTextArtist = findViewById(R.id.editTextArtist)
         progressIndicator = findViewById(R.id.progressBarLoading)
-        buttonFollowArtist = findViewById(R.id.buttonFollowArtist)
         notificationManager = NotificationManagerCompat.from(this)
         recyclerViewDiscography = findViewById(R.id.recyclerViewDiscography)
         recyclerViewDiscography.layoutManager = LinearLayoutManager(this)
@@ -224,7 +225,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateFollowButton()
-
     }
 
     private fun followArtist() {
@@ -248,7 +248,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@MainActivity,
-                        "${artist.name} followed!",
+                        "${artist.name} saved!",
                         Toast.LENGTH_SHORT
                     ).show()
                     updateFollowButton()
@@ -258,7 +258,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@MainActivity,
-                        "${artist.name} unfollowed!",
+                        "${artist.name} removed from saved!",
                         Toast.LENGTH_SHORT
                     ).show()
                     updateFollowButton()
@@ -278,9 +278,11 @@ class MainActivity : AppCompatActivity() {
             val existingArtist = db.savedArtistDao().getArtistById(artist.id)
             withContext(Dispatchers.Main) {
                 if (existingArtist != null) {
-                    buttonFollowArtist.text = "Following"
+                    buttonFollowArtist.text = "Saved"
+                    buttonFollowArtist.setIconResource(R.drawable.ic_saved)
                 } else {
-                    buttonFollowArtist.text = "Follow"
+                    buttonFollowArtist.text = "Save"
+                    buttonFollowArtist.setIconResource(R.drawable.ic_save)
                 }
                 buttonFollowArtist.visibility = View.VISIBLE
             }
@@ -532,7 +534,7 @@ class MainActivity : AppCompatActivity() {
                     if (releases.isNotEmpty()) {
                         displayDiscography(releases)
                         recyclerViewDiscography.visibility = View.VISIBLE
-                        buttonFollowArtist.visibility = View.VISIBLE
+                        updateFollowButton()
                     } else {
                         Toast.makeText(
                             this@MainActivity,
@@ -590,12 +592,12 @@ class MainActivity : AppCompatActivity() {
             .into(imageView)
 
         textView.text = artist.name
-
         supportActionBar?.title = artist.name
         toolbar.visibility = View.VISIBLE
 
         buttonFollowArtist.visibility = View.VISIBLE
 
+        updateFollowButton()
         loadArtistDiscography(artist.id)
     }
 
