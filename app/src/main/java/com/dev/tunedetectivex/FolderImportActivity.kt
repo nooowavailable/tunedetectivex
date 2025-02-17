@@ -171,7 +171,7 @@ class FolderImportActivity : AppCompatActivity() {
             PowerManager.PARTIAL_WAKE_LOCK,
             "TuneDetectiveX:ImportWakeLock"
         )
-        wakeLock.acquire(90 * 60 * 1000L)
+        wakeLock.acquire(30 * 60 * 1000L)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 

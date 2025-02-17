@@ -1,11 +1,14 @@
 package com.dev.tunedetectivex
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -90,6 +93,10 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.button_select_network_type).setOnClickListener {
             showNetworkTypeDialog()
+        }
+
+        findViewById<MaterialButton>(R.id.button_request_battery_optimization).setOnClickListener {
+            requestIgnoreBatteryOptimizations()
         }
 
         checkNetworkTypeAndSetFlag()
@@ -199,6 +206,22 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("BatteryLife")
+    private fun requestIgnoreBatteryOptimizations() {
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                .setData(Uri.parse("package:$packageName"))
+            startActivity(intent)
+        } else {
+            Toast.makeText(
+                this,
+                "Battery optimization is already ignored for this app.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     private fun checkNetworkTypeAndSetFlag() {
         val networkType = sharedPreferences.getString("networkType", "Any")
         isNetworkRequestsAllowed =
@@ -232,7 +255,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun delayedUpdate(action: () -> Unit) {
         updateRunnable?.let { updateHandler.removeCallbacks(it) }
         updateRunnable = Runnable { action() }
-        updateHandler.postDelayed(updateRunnable!!, 1500)
+        updateHandler.postDelayed(updateRunnable!!, 1000)
     }
 
     @SuppressLint("SetTextI18n")
@@ -263,12 +286,12 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadFetchInterval(): Int {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return sharedPreferences.getInt("fetchInterval", 90)
+        return sharedPreferences.getInt("fetchInterval", 15)
     }
 
     private fun loadFetchDelay(): Int {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return sharedPreferences.getInt("fetchDelay", 10)
+        return sharedPreferences.getInt("fetchDelay", 0)
     }
 
     private fun loadRetryAfterFailure(): Int {

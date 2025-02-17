@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val intervalInMinutes =
-            getSharedPreferences("TaskLog", MODE_PRIVATE).getInt("fetchInterval", 15)
+            getSharedPreferences("TaskLog", MODE_PRIVATE).getInt("fetchInterval", 30)
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
