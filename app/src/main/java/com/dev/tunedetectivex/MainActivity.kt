@@ -35,6 +35,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -74,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notificationManager: NotificationManagerCompat
     private val fetchedArtists = mutableSetOf<Long>()
     private var isNetworkRequestsAllowed = true
+    private lateinit var buttonOpenDiscography: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,6 +107,7 @@ class MainActivity : AppCompatActivity() {
         textViewrelease_date = findViewById(R.id.textViewrelease_date)
         imageViewAlbumArt = findViewById(R.id.imageViewAlbumArt)
         progressIndicator = findViewById(R.id.progressBarLoading)
+        buttonOpenDiscography = findViewById(R.id.button_open_discography)
         notificationManager = NotificationManagerCompat.from(this)
 
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
@@ -222,6 +225,12 @@ class MainActivity : AppCompatActivity() {
 
         buttonSaveArtist.setOnClickListener {
             saveArtist()
+        }
+
+        buttonOpenDiscography.setOnClickListener {
+            selectedArtist?.let { artist ->
+                openArtistDiscography(artist)
+            } ?: Toast.makeText(this, "No artist selected.", Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -529,6 +538,7 @@ class MainActivity : AppCompatActivity() {
             val adapter = SimilarArtistsAdapter(this, artists) { artist ->
                 selectedArtist = artist
                 recyclerViewArtists.visibility = View.GONE
+                buttonOpenDiscography.visibility = View.VISIBLE
                 fetchLatestReleaseForArtist(
                     artistId = artist.id,
                     onSuccess = { album ->
@@ -552,6 +562,15 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "No similar artists found.", Toast.LENGTH_SHORT).show()
         }
         setMenuButtonEnabled(true)
+    }
+
+    private fun openArtistDiscography(artist: DeezerArtist) {
+        val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
+            putExtra("artistId", artist.id)
+            putExtra("artistName", artist.name)
+            putExtra("artistImageUrl", artist.getBestPictureUrl())
+        }
+        startActivity(intent)
     }
 
 
