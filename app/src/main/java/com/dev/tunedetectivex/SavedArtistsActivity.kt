@@ -694,6 +694,12 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 TapTarget.forView(
                     recyclerView,
+                    "Artist Picture",
+                    "Tap on an artist's picture to view their complete discography."
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
+                    recyclerView,
                     "Newest releases",
                     "Select 'Latest Releases' from the dropdown to see the latest releases from all saved artists."
                 ).transparentTarget(true).cancelable(false)
