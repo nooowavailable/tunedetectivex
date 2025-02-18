@@ -322,7 +322,6 @@ class FolderImportActivity : AppCompatActivity() {
                 releaseWakeLock()
                 Log.d(TAG, "Import completed: Successful imports: $successfulImports, Failed imports: $failedImports, Unknown artists: $unknownArtists")
 
-                // Re-enable the folder selection button
                 withContext(Dispatchers.Main) {
                     fabSelectFolder.isEnabled = true
                     statusTextView.visibility = View.VISIBLE

@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -51,22 +52,34 @@ class FetchReleasesWorker(
         apiService = retrofit.create(DeezerApiService::class.java)
 
         createNotificationChannels()
-
     }
 
     override suspend fun doWork(): Result {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-        isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+        wakeDevice()
 
-        if (!isNetworkRequestsAllowed) {
-            Log.w(TAG, "Selected network type is not available. Skipping network requests.")
-            return Result.failure()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.w(TAG, "Notification permission not granted. Skipping work.")
+                return Result.failure()
+            }
         }
 
         return try {
+            val sharedPreferences =
+                applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            val networkType = sharedPreferences.getString("networkType", "Any")
+            isNetworkRequestsAllowed =
+                WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+
+            if (!isNetworkRequestsAllowed) {
+                Log.w(TAG, "Selected network type is not available. Skipping network requests.")
+                return Result.failure()
+            }
+
             val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
             if (fetchDelay > 0) {
                 delay(fetchDelay)
@@ -77,9 +90,47 @@ class FetchReleasesWorker(
         } catch (e: Exception) {
             Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}", e)
             Result.failure()
+        } finally {
+            NotificationManagerCompat.from(applicationContext).cancel(1)
         }
     }
 
+    private fun wakeDevice() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.w(TAG, "Notification permission not granted. Skipping wake device.")
+                return
+            }
+        }
+
+        val powerManager =
+            applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "TuneDetectiveX:ImportWakeLock"
+        )
+        wakeLock.acquire(5 * 60 * 1000L /*5 minutes*/)
+
+        val notification = createForegroundNotification()
+        NotificationManagerCompat.from(applicationContext).notify(1, notification)
+
+        wakeLock.release()
+    }
+
+    private fun createForegroundNotification(): Notification {
+        val builder = NotificationCompat.Builder(applicationContext, FETCH_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Fetching Releases")
+            .setContentText("Fetching new releases from your saved artists.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(true)
+
+        return builder.build()
+    }
 
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
         Log.d(TAG, "Fetching saved artists from database...")
@@ -243,30 +294,22 @@ class FetchReleasesWorker(
     private fun createNotificationChannels() {
         val manager =
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val existingChannels = manager.notificationChannels.map { it.id }
-        if (!existingChannels.contains(FETCH_CHANNEL_ID)) {
-            val fetchChannel = NotificationChannel(
-                FETCH_CHANNEL_ID,
-                "Background Fetch Notifications",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Silent notifications for background fetching of artist releases"
-            }
-            manager.createNotificationChannel(fetchChannel)
-            Log.d(TAG, "Fetch channel created: $FETCH_CHANNEL_ID")
+        val fetchChannel = NotificationChannel(
+            FETCH_CHANNEL_ID,
+            "Background Fetch Notifications",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Silent notifications for background fetching of artist releases"
         }
+        manager.createNotificationChannel(fetchChannel)
 
-        if (!existingChannels.contains(RELEASE_CHANNEL_ID)) {
-            val releaseChannel = NotificationChannel(
-                RELEASE_CHANNEL_ID,
-                "New Release Notifications",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for new releases from artists"
-            }
-            manager.createNotificationChannel(releaseChannel)
-            Log.d(TAG, "Release channel created: $RELEASE_CHANNEL_ID")
+        val releaseChannel = NotificationChannel(
+            RELEASE_CHANNEL_ID,
+            "New Release Notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Notifications for new releases from artists"
         }
-
+        manager.createNotificationChannel(releaseChannel)
     }
 }
