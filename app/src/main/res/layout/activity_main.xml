@@ -183,6 +183,8 @@
             android:contentDescription="Save Artist"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            android:translationZ="10dp"
+            app:elevation="8dp"
             app:srcCompat="@drawable/ic_save_artist" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -194,6 +196,8 @@
             app:srcCompat="@drawable/ic_folder"
             android:layout_margin="16dp"
             app:layout_constraintBottom_toTopOf="@id/fabSettings"
+            android:translationZ="10dp"
+            app:elevation="8dp"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -205,6 +209,8 @@
             app:srcCompat="@drawable/ic_settings"
             android:layout_margin="16dp"
             app:layout_constraintBottom_toTopOf="@id/fabSavedArtists"
+            android:translationZ="10dp"
+            app:elevation="8dp"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -216,6 +222,8 @@
             app:srcCompat="@drawable/ic_artists"
             android:layout_margin="16dp"
             app:layout_constraintBottom_toTopOf="@id/fabMenu"
+            android:translationZ="10dp"
+            app:elevation="8dp"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -228,7 +236,9 @@
             android:layout_margin="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:alpha="0.9" />
+            android:alpha="0.9"
+            android:translationZ="10dp"
+            app:elevation="8dp" />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progressBarLoading"
