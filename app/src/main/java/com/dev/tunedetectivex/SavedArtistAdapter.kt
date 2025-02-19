@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -22,8 +21,7 @@ data class SavedArtistItem(
     val picture_small: String? = null,
     val picture_medium: String? = null,
     val picture_big: String? = null,
-    val picture_xl: String? = null,
-    var isLoading: Boolean = false
+    val picture_xl: String? = null
 )
 
 class SavedArtistAdapter(
@@ -53,8 +51,6 @@ class SavedArtistAdapter(
     class SavedArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val artistNameTextView: TextView = view.findViewById(R.id.textViewArtistName)
         private val profileImageView: ImageView = view.findViewById(R.id.imageViewProfile)
-        private val progressBar: ProgressBar = view.findViewById(R.id.progressBarItemLoading)
-        private val loadingStatusTextView: TextView = view.findViewById(R.id.textViewLoadingStatus)
 
         @SuppressLint("SetTextI18n")
         fun bind(artist: SavedArtistItem, onArtistClick: (SavedArtistItem) -> Unit) {
@@ -73,16 +69,11 @@ class SavedArtistAdapter(
                 .error(R.drawable.placeholder_image)
                 .into(profileImageView)
 
-            if (artist.isLoading) {
-                progressBar.visibility = View.VISIBLE
-                loadingStatusTextView.visibility = View.VISIBLE
-                loadingStatusTextView.text = "Loading details..."
-            } else {
-                progressBar.visibility = View.GONE
-                loadingStatusTextView.visibility = View.GONE
+            profileImageView.setOnClickListener {
+                onArtistClick(artist)
             }
 
-            profileImageView.setOnClickListener {
+            artistNameTextView.setOnClickListener {
                 onArtistClick(artist)
             }
         }

@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -15,14 +14,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Cache
@@ -41,12 +40,10 @@ class SavedArtistsActivity : AppCompatActivity() {
     private lateinit var spinnerViewType: Spinner
     private lateinit var db: AppDatabase
     private lateinit var apiService: DeezerApiService
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var searchView: androidx.appcompat.widget.SearchView
     private var allArtists: List<SavedArtistItem> = emptyList()
     private lateinit var artistAdapter: SavedArtistAdapter
     private lateinit var releaseAdapter: ReleaseAdapter
-    private lateinit var progressBar: ProgressBar
     private var isNetworkRequestsAllowed = true
 
 
@@ -54,22 +51,17 @@ class SavedArtistsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_saved_artists)
 
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerView = findViewById(R.id.recyclerViewSavedArtists)
         spinnerViewType = findViewById(R.id.spinnerViewType)
         searchView = findViewById(R.id.searchViewArtists)
-        progressBar = findViewById(R.id.progressBar)
-
 
         db = AppDatabase.getDatabase(applicationContext)
 
         setupApiService()
+        setupRecyclerView()
         setupRecyclerViewWithPlaceholder()
         setupSearchView()
         setupSpinner()
-        setupRecyclerView()
-
-
 
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isFirstRunSavedArtists = sharedPreferences.getBoolean("isFirstRunSavedArtists", true)
@@ -79,22 +71,25 @@ class SavedArtistsActivity : AppCompatActivity() {
             sharedPreferences.edit().putBoolean("isFirstRunSavedArtists", false).apply()
         }
 
-        swipeRefreshLayout.setOnRefreshListener {
-            progressBar.visibility = View.VISIBLE
 
-            lifecycleScope.launch {
-                val selectedPosition = spinnerViewType.selectedItemPosition
-                if (selectedPosition == 0) {
-                    allArtists.forEach { artist ->
-                        showRealtimeIndicator(artist.id)
+
+        lifecycleScope.launch {
+            val selectedPosition = spinnerViewType.selectedItemPosition
+            if (selectedPosition == 0) {
+                val jobs = mutableListOf<Job>()
+
+                allArtists.forEach { artist ->
+                    val job = launch {
                         fetchArtistDetails(artist)
                     }
-                } else {
-                    loadSavedReleases()
+                    jobs.add(job)
                 }
-                progressBar.visibility = View.GONE
-                swipeRefreshLayout.isRefreshing = false
+
+                jobs.joinAll()
+            } else {
+                loadSavedReleases()
             }
+
         }
     }
 
@@ -155,11 +150,9 @@ class SavedArtistsActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
             val tempList = savedArtists.map {
-                val artistName = it.name
-                Log.d("SavedArtistsActivity", "Loaded artist: ID=${it.id}, Name=$artistName")
                 SavedArtistItem(
                     id = it.id,
-                    name = artistName,
+                    name = it.name,
                     lastReleaseTitle = it.lastReleaseTitle,
                     lastReleaseDate = it.lastReleaseDate,
                     picture = it.profileImageUrl ?: ""
@@ -215,6 +208,7 @@ class SavedArtistsActivity : AppCompatActivity() {
             onDelete = { artist -> deleteArtistFromDb(artist) },
             onArtistClick = { artist -> openArtistDiscography(artist) }
         )
+
         releaseAdapter = ReleaseAdapter { release ->
             val intent = Intent(this, ReleaseDetailsActivity::class.java).apply {
                 putExtra("releaseId", release.id)
@@ -223,6 +217,7 @@ class SavedArtistsActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = artistAdapter
         enableSwipeToDelete()
@@ -313,27 +308,21 @@ class SavedArtistsActivity : AppCompatActivity() {
             return
         }
 
-        swipeRefreshLayout.isEnabled = false
-        swipeRefreshLayout.isRefreshing = true
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
                 val tempList = savedArtists.map {
-                    val artistName = it.name
-                    Log.d("SavedArtistsActivity", "Artists from DB: ID=${it.id}, Name=$artistName")
                     SavedArtistItem(
                         id = it.id,
-                        name = artistName,
+                        name = it.name,
                         lastReleaseTitle = it.lastReleaseTitle,
                         lastReleaseDate = it.lastReleaseDate,
-                        picture = it.profileImageUrl ?: "",
-                        isLoading = true
+                        picture = it.profileImageUrl ?: ""
                     )
                 }.toMutableList()
 
                 withContext(Dispatchers.Main) {
-                    updateArtistList(tempList)
+                    artistAdapter.submitList(tempList)
                 }
 
                 val artistIds = savedArtists.map { it.id }
@@ -342,28 +331,25 @@ class SavedArtistsActivity : AppCompatActivity() {
                 fetchedArtists.forEach { fetchedArtist ->
                     Log.d(
                         "SavedArtistsActivity",
-                        "API data: ID=${fetchedArtist.id}, Name=${fetchedArtist.name}, Bild=${fetchedArtist.picture_xl}"
+                        "API data: ID=${fetchedArtist.id}, Name=${fetchedArtist.name}, Picture=${fetchedArtist.picture_xl}"
                     )
                     tempList.replaceFirstOrAdd(
                         SavedArtistItem(
                             id = fetchedArtist.id,
                             name = fetchedArtist.name,
-                            picture = fetchedArtist.picture_xl,
-                            isLoading = false
+                            picture = fetchedArtist.picture_xl
                         )
                     )
                 }
 
                 withContext(Dispatchers.Main) {
                     allArtists = tempList.toList()
-                    updateArtistList(allArtists)
+                    artistAdapter.submitList(allArtists)
                 }
             } catch (e: Exception) {
                 Log.e("SavedArtistsActivity", "Error loading the artists: ${e.message}", e)
             } finally {
                 withContext(Dispatchers.Main) {
-                    swipeRefreshLayout.isRefreshing = false
-                    swipeRefreshLayout.isEnabled = true
                 }
             }
         }
@@ -377,11 +363,7 @@ class SavedArtistsActivity : AppCompatActivity() {
             add(newItem)
         }
     }
-
-
-
-
-    private suspend fun fetchArtistsByName(name: String): List<DeezerArtist> {
+    private fun fetchArtistsByName(name: String): List<DeezerArtist> {
         val sharedPreferences =
             applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any")
@@ -424,14 +406,13 @@ class SavedArtistsActivity : AppCompatActivity() {
             )
             return artist
         }
-
         return try {
             val fetchedArtists = fetchArtistsByName(artist.name)
             val bestMatch = fetchedArtists.firstOrNull()
             if (bestMatch != null) {
                 Log.d(
                     "SavedArtistsActivity",
-                    "Best matching: ID=${bestMatch.id}, Name=${bestMatch.name}, Bild=${bestMatch.picture_xl}"
+                    "Best matching: ID=${bestMatch.id}, Name=${bestMatch.name}, Picture=${bestMatch.picture_xl}"
                 )
                 db.savedArtistDao().updateArtistDetails(
                     artistId = bestMatch.id,
@@ -452,19 +433,9 @@ class SavedArtistsActivity : AppCompatActivity() {
                 e
             )
             artist
+        } finally {
         }
     }
-
-
-
-    private fun showRealtimeIndicator(artistId: Long) {
-        lifecycleScope.launch {
-            updateArtistLoadingState(artistId, true)
-            delay(1000)
-            updateArtistLoadingState(artistId, false)
-        }
-    }
-
 
     private fun loadSavedReleases() {
         checkNetworkTypeAndSetFlag()
@@ -477,9 +448,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             ).show()
             return
         }
-
-        swipeRefreshLayout.isEnabled = true
-        progressBar.visibility = View.VISIBLE
 
         lifecycleScope.launch(Dispatchers.IO) {
             val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
@@ -524,7 +492,6 @@ class SavedArtistsActivity : AppCompatActivity() {
                     showReleasesTutorial()
                     sharedPreferences.edit().putBoolean("isFirstRunReleases", false).apply()
                 }
-                progressBar.visibility = View.GONE
             }
         }
     }
@@ -598,13 +565,15 @@ class SavedArtistsActivity : AppCompatActivity() {
                                 response.body()?.also {
                                     Log.d(
                                         "SavedArtistsActivity",
-                                        "API response successful: ID=$id, Name=${it.name}, Bild=${it.picture_xl}"
+                                        "API response successful: ID=$id, Name=${it.name}, Picture=${it.picture_xl}"
                                     )
                                 }
                             } else {
                                 Log.e(
                                     "SavedArtistsActivity",
-                                    "Faulty API response for ID=$id: ${response.errorBody()?.string()}"
+                                    "Faulty API response for ID=$id: ${
+                                        response.errorBody()?.string()
+                                    }"
                                 )
                                 null
                             }
@@ -621,7 +590,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             }
         }
     }
-
 
     private fun setupApiService() {
         val cacheSize = (5 * 1024 * 1024).toLong()
@@ -647,23 +615,6 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         apiService = retrofit.create(DeezerApiService::class.java)
     }
-
-
-    private fun updateArtistLoadingState(artistId: Long, isLoading: Boolean) {
-        lifecycleScope.launch(Dispatchers.Main) {
-            val updatedArtists = allArtists.map { artist ->
-                if (artist.id == artistId) {
-                    artist.copy(isLoading = isLoading)
-                } else {
-                    artist
-                }
-            }
-            allArtists = updatedArtists
-            updateArtistList(allArtists)
-        }
-    }
-
-
 
     private fun deleteArtist(artistItem: SavedArtistItem) {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -734,12 +685,6 @@ class SavedArtistsActivity : AppCompatActivity() {
                     recyclerView,
                     "Latest releases",
                     "Here you can see the latest releases of all saved artists. Tap on a release to view details such as the track list."
-                ).transparentTarget(true).cancelable(false),
-
-                TapTarget.forView(
-                    swipeRefreshLayout,
-                    "Refresh",
-                    "Pull down the list to load the latest releases."
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
