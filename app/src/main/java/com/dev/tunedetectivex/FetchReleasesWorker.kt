@@ -232,11 +232,9 @@ class FetchReleasesWorker(
             try {
                 val albumArtBitmap = Glide.with(applicationContext)
                     .asBitmap()
-                    .load(album.cover_xl)
+                    .load(album.getBestCoverUrl())
                     .submit()
                     .get()
-
-                Log.d(TAG, "Album artwork successfully loaded for ${album.title}")
 
                 val notification = createNotification(
                     artist = artist,
