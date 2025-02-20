@@ -266,6 +266,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun saveFetchInterval(minutes: Int) {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         sharedPreferences.edit().putInt("fetchInterval", minutes).apply()
+        Log.d("SettingsActivity", "Fetch interval saved: $minutes minutes")
         setupFetchReleasesWorker(minutes)
     }
 

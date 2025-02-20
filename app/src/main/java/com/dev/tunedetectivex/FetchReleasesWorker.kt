@@ -163,9 +163,12 @@ class FetchReleasesWorker(
                 Log.w(TAG, "Notification permission not granted.")
                 return
             }
+
             val response = apiService.getArtistReleases(artist.id, 0).execute()
             if (response.isSuccessful) {
                 val albums = response.body()?.data ?: emptyList()
+                Log.d(TAG, "API Response for artist ${artist.name}: $albums")
+
                 val latestRelease = albums.maxByOrNull { release ->
                     SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time ?: 0L
                 }
@@ -192,6 +195,9 @@ class FetchReleasesWorker(
                         else -> "Release"
                     }
 
+                    val coverUrl = latestRelease.getBestCoverUrl()
+                    Log.d(TAG, "Cover URL for latest release ${latestRelease.title}: $coverUrl")
+
                     sendReleaseNotification(
                         artist,
                         latestRelease,
@@ -203,7 +209,12 @@ class FetchReleasesWorker(
                     Log.d(TAG, "No latest release found for artist ${artist.name}")
                 }
             } else {
-                Log.e(TAG, "Failed to fetch releases for artist ${artist.name}")
+                Log.e(
+                    TAG,
+                    "Failed to fetch releases for artist ${artist.name}: ${
+                        response.errorBody()?.string()
+                    }"
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for new release: ${e.message}", e)

@@ -13,10 +13,10 @@ import java.util.concurrent.TimeUnit
 
 object WorkManagerUtil {
 
-    private const val TAG = "WorkManagerUtil"
-    private const val WORK_NAME = "FetchReleasesWork"
     private const val PREFS_NAME = "AppPreferences"
     private const val NETWORK_TYPE_KEY = "networkType"
+    private const val TAG = "WorkManagerUtil"
+    private const val WORK_NAME = "FetchReleasesWork"
 
     fun setupFetchReleasesWorker(context: Context, intervalInMinutes: Int) {
         val constraints = createConstraints(context)
