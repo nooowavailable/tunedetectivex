@@ -24,8 +24,7 @@ TuneDetectiveX empowers music enthusiasts to independently explore and monitor t
   - `INTERNET`
   - `POST_NOTIFICATIONS`
   - `FOREGROUND_SERVICE_DATA_SYNC`
-  - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
-  - `SCHEDULE_EXACT_ALARM`
+  - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (optionally)
   - `RECEIVE_BOOT_COMPLETED`
   - `WAKE_LOCK`
 
