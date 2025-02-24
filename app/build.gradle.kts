@@ -11,6 +11,7 @@ plugins {
 android {
     namespace = "com.dev.tunedetectivex"
     compileSdk = 35
+    flavorDimensions += "default"
 
     dependenciesInfo {
         includeInApk = false
@@ -18,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.dev.tunedetectivex"
+        applicationId = "com.tunedetectivex.nooowavailable"
         minSdk = 31
         targetSdk = 35
         versionCode = 5
@@ -28,13 +29,27 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    productFlavors {
+        create("github") {
+            dimension = "default"
+            applicationId = "com.tunedetectivex.github"
+            versionName = "1.1-github"
+        }
+
+        create("accrescent") {
+            dimension = "default"
+            applicationId = "com.tunedetectivex.accrescent"
+            versionName = "1.1-accrescent"
         }
     }
 
