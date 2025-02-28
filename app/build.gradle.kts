@@ -5,7 +5,7 @@ buildscript {
 plugins {
     id("kotlin-android")
     id("kotlin-kapt")
-    id("com.android.application") version "8.8.1"
+    id("com.android.application") version "8.8.2"
 }
 
 android {
