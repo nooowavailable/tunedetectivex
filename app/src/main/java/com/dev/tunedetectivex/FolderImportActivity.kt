@@ -66,9 +66,6 @@ class FolderImportActivity : AppCompatActivity() {
     private var isNetworkRequestsAllowed = true
     private lateinit var statusTextView: TextView
 
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_folder_import)
@@ -115,35 +112,31 @@ class FolderImportActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun updateImportStatus(isImporting: Boolean) {
-        if (isImporting) {
-            statusTextView.text = "Importing... Please wait."
+        statusTextView.text = if (isImporting) {
+            "Importing... Please wait."
         } else {
-            statusTextView.text = "Press folder icon to start import"
+            "Press folder icon to start import"
         }
     }
 
     private fun showWarningDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("⚠️ Warning ⚠️")
+            .setTitle("⚠️ Important Warning ⚠️")
             .setMessage(
-                "You are about to import a folder. Please note that you use this function at your own risk. 😬\n\n" +
-                        "• This feature is in beta and may result in your IP address being blocked by Deezer. 🤡\n" +
-                        "• It is recommended to use a VPN. 🕵️‍♂️"
+                "You are about to enter the music importing feature of the application! 🎶✨\n\n" +
+                        "This feature will scan your selected folder for audio files, extracting relevant details such as artist names and album titles, and saving them to your library. 📚💾\n\n" +
+                        "Please be aware that this feature is currently in beta. To avoid the risk of being temporarily blocked by Deezer, use a VPN while accessing this feature. Alternatively, you can add artists manually if you prefer not to take that risk.\n\n" +
+                        "Are you ready to proceed? 🚀"
             )
-            .setPositiveButton("Proceed") { _, _ ->
-                selectMusicFolder()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
+            .setPositiveButton("Proceed with Caution! 🎉") { _, _ -> selectMusicFolder() }
+            .setNegativeButton("Cancel 😱") { dialog, _ -> dialog.dismiss() }
             .show()
     }
+
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-
-        isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
     }
 
     private val folderPickerLauncher =
@@ -158,11 +151,11 @@ class FolderImportActivity : AppCompatActivity() {
         }
 
     private fun setupApiService() {
-        val retrofit = Retrofit.Builder()
+        apiService = Retrofit.Builder()
             .baseUrl("https://api.deezer.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        apiService = retrofit.create(DeezerApiService::class.java)
+            .create(DeezerApiService::class.java)
     }
 
     private fun acquireWakeLock() {
@@ -189,15 +182,12 @@ class FolderImportActivity : AppCompatActivity() {
         return fullPath.replace("primary:", "").substringAfterLast("/")
     }
 
-    @SuppressLint("SetTextI18n")
     private fun processMusicFolder(folderUri: Uri) {
         isImporting = true
         updateImportStatus(isImporting)
         statusTextView.visibility = View.GONE
 
-        val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
-        fabSelectFolder.isEnabled = false
-
+        findViewById<FloatingActionButton>(R.id.fabSelectFolder).isEnabled = false
         acquireWakeLock()
 
         lifecycleScope.launch(Dispatchers.Main) {
@@ -238,67 +228,7 @@ class FolderImportActivity : AppCompatActivity() {
                             val releaseTitle = extractReleaseTitleMetadata(fileUri)
 
                             if (!mainArtistName.isNullOrEmpty()) {
-                                val existingArtist = db.savedArtistDao().getArtistByName(mainArtistName)
-                                val artistId = existingArtist?.id
-
-                                if (artistId != null) {
-                                    Log.d(TAG, "Artist $mainArtistName is already saved. Skipping...")
-                                    withContext(Dispatchers.Main) {
-                                        textViewArtistName.text = "$mainArtistName (Already Saved)"
-                                        updateImportProgress(current, total, mainArtistName, "Skipped")
-                                    }
-                                } else {
-                                    val artistIds = fetchArtistIdByName(mainArtistName)
-                                    var foundArtist = false
-
-                                    for (newArtistId in artistIds) {
-                                        val cachedAlbums = artistAlbumsCache[newArtistId]
-                                        val albums = if (cachedAlbums != null) {
-                                            Log.d(TAG, "Using cached albums for artist: $mainArtistName")
-                                            cachedAlbums
-                                        } else {
-                                            val response = apiService.getArtistReleases(newArtistId).execute()
-                                            if (response.isSuccessful) {
-                                                val fetchedAlbums = response.body()?.data ?: emptyList()
-                                                artistAlbumsCache[newArtistId] = fetchedAlbums
-                                                Log.d(TAG, "Caching albums for artist: $mainArtistName")
-                                                fetchedAlbums
-                                            } else {
-                                                failedImports++
-                                                Log.d(TAG, "Failed to fetch releases for artist: $mainArtistName with ID: $newArtistId")
-                                                emptyList()
-                                            }
-                                        }
-
-                                        if (checkArtistReleases(albums, releaseTitle)) {
-                                            saveArtistIfNotExists(newArtistId, mainArtistName)
-                                            successfulImports++
-                                            Log.d(TAG, "Saved new artist: $mainArtistName with ID: $newArtistId because of matching release title: $releaseTitle")
-                                            foundArtist = true
-                                            break
-                                        } else {
-                                            failedImports++
-                                            Log.d(TAG, "Did not save artist: $mainArtistName with ID: $newArtistId because no matching release title was found.")
-                                        }
-                                    }
-
-                                    if (!foundArtist) {
-                                        Log.d(TAG, "No matching artist found for: $mainArtistName")
-                                    }
-                                }
-
-                                val coverUrl = fetchCoverUrl(mainArtistName)
-                                if (!coverUrl.isNullOrEmpty()) {
-                                    withContext(Dispatchers.Main) {
-                                        Glide.with(this@FolderImportActivity)
-                                            .load(coverUrl)
-                                            .placeholder(R.drawable.placeholder_image)
-                                            .circleCrop()
-                                            .into(imageViewArtistCover)
-
-                                        textViewArtistName.text = mainArtistName
-                                    }
-                                }
+                                handleArtistImport(mainArtistName, releaseTitle, current, total)
                             } else {
                                 unknownArtists++
                             }
@@ -318,15 +248,103 @@ class FolderImportActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing folder: ${e.message}", e)
             } finally {
-                isImporting = false
-                releaseWakeLock()
-                Log.d(TAG, "Import completed: Successful imports: $successfulImports, Failed imports: $failedImports, Unknown artists: $unknownArtists")
+                finalizeImport()
+            }
+        }
+    }
 
-                withContext(Dispatchers.Main) {
-                    fabSelectFolder.isEnabled = true
-                    statusTextView.visibility = View.VISIBLE
+    @SuppressLint("SetTextI18n")
+    private suspend fun handleArtistImport(
+        mainArtistName: String,
+        releaseTitle: String?,
+        current: Int,
+        total: Int
+    ) {
+        val existingArtist = db.savedArtistDao().getArtistByName(mainArtistName)
+        val artistId = existingArtist?.id
+
+        if (artistId != null) {
+            Log.d(TAG, "Artist $mainArtistName is already saved. Skipping...")
+            return
+        }
+
+        val artistIds = fetchArtistIdByName(mainArtistName)
+        var foundArtist = false
+
+        for (newArtistId in artistIds) {
+            val cachedAlbums = artistAlbumsCache[newArtistId]
+            val albums = if (cachedAlbums != null) {
+                Log.d(TAG, "Using cached albums for artist: $mainArtistName")
+                cachedAlbums
+            } else {
+                val response = apiService.getArtistReleases(newArtistId).execute()
+                if (response.isSuccessful) {
+                    val fetchedAlbums = response.body()?.data ?: emptyList()
+                    artistAlbumsCache[newArtistId] = fetchedAlbums
+                    Log.d(TAG, "Caching albums for artist: $mainArtistName")
+                    fetchedAlbums
+                } else {
+                    failedImports++
+                    Log.d(
+                        TAG,
+                        "Failed to fetch releases for artist: $mainArtistName with ID: $newArtistId"
+                    )
+                    emptyList()
                 }
             }
+
+            if (checkArtistReleases(albums, releaseTitle)) {
+                val coverUrl = fetchCoverUrl(mainArtistName)
+
+                saveArtistIfNotExists(newArtistId, mainArtistName, coverUrl)
+                successfulImports++
+                Log.d(
+                    TAG,
+                    "Saved new artist: $mainArtistName with ID: $newArtistId because of matching release title: $releaseTitle"
+                )
+                foundArtist = true
+
+                if (!coverUrl.isNullOrEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Glide.with(this@FolderImportActivity)
+                            .load(coverUrl)
+                            .placeholder(R.drawable.placeholder_image)
+                            .error(R.drawable.error_image)
+                            .circleCrop()
+                            .into(imageViewArtistCover)
+
+                        textViewArtistName.text = mainArtistName
+                    }
+                } else {
+                    Log.d(TAG, "No cover URL found for artist: $mainArtistName")
+                }
+
+                break
+            } else {
+                failedImports++
+                Log.d(
+                    TAG,
+                    "Did not save artist: $mainArtistName with ID: $newArtistId because no matching release title was found."
+                )
+            }
+        }
+
+        if (!foundArtist) {
+            Log.d(TAG, "No matching artist found for: $mainArtistName")
+        }
+    }
+
+    private suspend fun finalizeImport() {
+        isImporting = false
+        releaseWakeLock()
+        Log.d(
+            TAG,
+            "Import completed: Successful imports: $successfulImports, Failed imports: $failedImports, Unknown artists: $unknownArtists"
+        )
+
+        withContext(Dispatchers.Main) {
+            findViewById<FloatingActionButton>(R.id.fabSelectFolder).isEnabled = true
+            statusTextView.visibility = View.VISIBLE
         }
     }
 
@@ -344,13 +362,18 @@ class FolderImportActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun saveArtistIfNotExists(artistId: Long, artistName: String) {
+    private suspend fun saveArtistIfNotExists(
+        artistId: Long,
+        artistName: String,
+        coverUrl: String?
+    ) {
         val existingArtist = db.savedArtistDao().getArtistById(artistId)
         if (existingArtist == null) {
             db.savedArtistDao().insert(
                 SavedArtist(
                     id = artistId,
-                    name = artistName
+                    name = artistName,
+                    profileImageUrl = coverUrl
                 )
             )
         }
@@ -380,23 +403,16 @@ class FolderImportActivity : AppCompatActivity() {
         return try {
             if (artistName.isNullOrEmpty()) return null
 
-            val cachedUrl = ArtistImageCache.get(artistName)
-            if (cachedUrl != null) {
-                return cachedUrl
-            }
-
             val response = apiService.searchArtist(artistName).execute()
             if (response.isSuccessful) {
                 val artist = response.body()?.data?.firstOrNull()
-                val imageUrl = artist?.getBestPictureUrl()
-                if (imageUrl != null) {
-                    ArtistImageCache.put(artistName, imageUrl)
-                }
-                imageUrl
+                artist?.getBestPictureUrl()
             } else {
+                Log.e(TAG, "Error fetching cover URL for artist: $artistName")
                 null
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception fetching cover URL for artist: $artistName", e)
             null
         }
     }
@@ -468,9 +484,9 @@ class FolderImportActivity : AppCompatActivity() {
                 linearProgressIndicator.progress = progressPercentage
 
                 val name = artistName ?: "Unknown Artist"
-                val artistStatus = status ?: ""
+                val artistStatus = status?.let { "($it)" } ?: ""
                 textViewProgress.text = "Progress: $progressPercentage% ($current/$total)"
-                textViewArtistName.text = name
+                textViewArtistName.text = "$name $artistStatus"
 
                 sendNotification(progressPercentage, "$name $artistStatus")
             } else {

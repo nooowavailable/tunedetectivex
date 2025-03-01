@@ -93,4 +93,5 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.taptargetview)
+    implementation(libs.androidx.activity.ktx)
 }
