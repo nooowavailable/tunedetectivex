@@ -29,7 +29,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
@@ -70,7 +69,6 @@ class MainActivity : AppCompatActivity() {
     private var selectedArtist: DeezerArtist? = null
     private lateinit var artistInfoCard: MaterialCardView
     private lateinit var progressIndicator: CircularProgressIndicator
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
     private val fetchedArtists = mutableSetOf<Long>()
@@ -96,7 +94,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
         recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         editTextArtist = findViewById(R.id.editTextArtist)
@@ -182,19 +179,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, FolderImportActivity::class.java))
         }
 
-        swipeRefreshLayout.setOnRefreshListener {
-            val searchQuery = editTextArtist.text.toString().trim()
-            if (searchQuery.isNotEmpty()) {
-                fetchSimilarArtists(searchQuery)
-            } else {
-                swipeRefreshLayout.isRefreshing = false
-            }
-
-            if (selectedArtist != null) {
-                updateSaveButton()
-            }
-        }
-
         db = AppDatabase.getDatabase(applicationContext)
         editTextArtist.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         editTextArtist.setSingleLine()
@@ -216,7 +200,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         editTextArtist.setOnFocusChangeListener { view, hasFocus ->
-            if (hasFocus) {
+            if (!hasFocus) {
+                val artistName = editTextArtist.text.toString().trim()
+                if (artistName.isNotEmpty()) {
+                    fetchSimilarArtists(artistName)
+                }
+            } else {
                 val inputMethodManager =
                     getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                 inputMethodManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
@@ -434,7 +423,6 @@ class MainActivity : AppCompatActivity() {
 
         showLoading(true)
         setMenuButtonEnabled(false)
-        swipeRefreshLayout.isRefreshing = true
 
         buttonSaveArtist.visibility = View.GONE
         artistInfoCard.visibility = View.GONE
@@ -444,7 +432,6 @@ class MainActivity : AppCompatActivity() {
                 call: Call<DeezerSimilarArtistsResponse>,
                 response: Response<DeezerSimilarArtistsResponse>
             ) {
-                swipeRefreshLayout.isRefreshing = false
                 val artists = response.body()?.data ?: emptyList()
 
                 if (artists.isNotEmpty()) {
@@ -456,7 +443,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<DeezerSimilarArtistsResponse>, t: Throwable) {
-                swipeRefreshLayout.isRefreshing = false
                 showLoading(false)
                 setMenuButtonEnabled(true)
                 Toast.makeText(this@MainActivity, "Error loading artists.", Toast.LENGTH_SHORT).show()
