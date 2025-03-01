@@ -422,21 +422,21 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        showLoading(true) // Show loading indicator
+        showLoading(true)
         setMenuButtonEnabled(false)
 
         buttonSaveArtist.visibility = View.GONE
         artistInfoCard.visibility = View.GONE
 
-        Log.d(TAG, "Fetching similar artists for: $artist") // Log the artist being searched
+        Log.d(TAG, "Fetching similar artists for: $artist")
 
         apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
             override fun onResponse(
                 call: Call<DeezerSimilarArtistsResponse>,
                 response: Response<DeezerSimilarArtistsResponse>
             ) {
-                showLoading(false) // Hide loading indicator
-                Log.d(TAG, "Response received: ${response.code()}") // Log the response code
+                showLoading(false)
+                Log.d(TAG, "Response received: ${response.code()}")
                 val artists = response.body()?.data ?: emptyList()
 
                 if (artists.isNotEmpty()) {
@@ -452,9 +452,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<DeezerSimilarArtistsResponse>, t: Throwable) {
-                showLoading(false) // Hide loading indicator
+                showLoading(false)
                 setMenuButtonEnabled(true)
-                Log.e(TAG, "Error loading artists: ${t.message}", t) // Log the error
+                Log.e(TAG, "Error loading artists: ${t.message}", t)
                 Toast.makeText(this@MainActivity, "Error loading artists.", Toast.LENGTH_SHORT).show()
             }
         })
@@ -487,11 +487,15 @@ class MainActivity : AppCompatActivity() {
         onSuccess: (DeezerAlbum) -> Unit,
         onFailure: () -> Unit
     ) {
+        showLoading(true)
+
         apiService.getArtistReleases(artistId, 0).enqueue(object : Callback<DeezerAlbumsResponse> {
             override fun onResponse(
                 call: Call<DeezerAlbumsResponse>,
                 response: Response<DeezerAlbumsResponse>
             ) {
+                showLoading(false)
+
                 if (response.isSuccessful) {
                     val releases = response.body()?.data ?: emptyList()
                     if (releases.isNotEmpty()) {
@@ -503,7 +507,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         latestRelease?.let {
                             fetchAndCheckDiscography(artistId, it.title)
-                            onSuccess(it) // Ensure this is called with the latest release
+                            onSuccess(it)
                         } ?: onFailure()
                     } else {
                         Log.d(TAG, "No Releases found for Artist ID: $artistId")
@@ -519,6 +523,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
+                showLoading(false)
                 Log.e(
                     TAG,
                     "Error when retrieving releases for Artist ID=$artistId: ${t.message}",
@@ -530,6 +535,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayArtists(artists: List<DeezerArtist>) {
+        showLoading(false)
+
         if (artists.isNotEmpty()) {
             recyclerViewArtists.visibility = View.VISIBLE
             val adapter = SimilarArtistsAdapter(this, artists) { artist ->
@@ -553,23 +560,25 @@ class MainActivity : AppCompatActivity() {
             }
             recyclerViewArtists.adapter = adapter
             recyclerViewArtists.layoutManager =
-                LinearLayoutManager(this) // Ensure layout manager is set
-            showLoading(false)
+                LinearLayoutManager(this)
         } else {
             recyclerViewArtists.visibility = View.GONE
-            showLoading(false)
             Toast.makeText(this, "No similar artists found.", Toast.LENGTH_SHORT).show()
         }
         setMenuButtonEnabled(true)
     }
 
     private fun openArtistDiscography(artist: DeezerArtist) {
+        showLoading(true)
+
         val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
             putExtra("artistId", artist.id)
             putExtra("artistName", artist.name)
             putExtra("artistImageUrl", artist.getBestPictureUrl())
         }
+
         startActivity(intent)
+        showLoading(false)
     }
 
 
