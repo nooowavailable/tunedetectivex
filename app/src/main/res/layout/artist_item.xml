@@ -11,9 +11,9 @@
 
     <ImageView
         android:id="@+id/artistImage"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginEnd="8dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginEnd="16dp"
         android:clipToOutline="true"
         android:scaleType="centerCrop"
         tools:ignore="ContentDescription,UnusedAttribute" />
@@ -23,5 +23,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="18sp"
+        android:layout_gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
         android:textStyle="bold" />
 </LinearLayout>
