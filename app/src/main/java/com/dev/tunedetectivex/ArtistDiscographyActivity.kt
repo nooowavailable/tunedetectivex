@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +29,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     private var artistId: Long = 0
     private lateinit var artistName: String
     private lateinit var artistImageUrl: String
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,13 +46,17 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         artistId = intent.getLongExtra("artistId", 0)
         artistName = intent.getStringExtra("artistName") ?: "Unknown Artist"
         artistImageUrl = intent.getStringExtra("artistImageUrl") ?: ""
-
+        progressBar = findViewById(R.id.progressBarLoading)
         supportActionBar?.title = artistName
 
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
 
         loadArtistDiscography()
+    }
+
+    private fun showLoading(isLoading: Boolean) {
+        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
     private fun setupApiService() {
@@ -62,11 +68,15 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun loadArtistDiscography() {
+        showLoading(true)
+
         apiService.getArtistReleases(artistId).enqueue(object : Callback<DeezerAlbumsResponse> {
             override fun onResponse(
                 call: Call<DeezerAlbumsResponse>,
                 response: Response<DeezerAlbumsResponse>
             ) {
+                showLoading(false)
+
                 if (response.isSuccessful) {
                     val releases = response.body()?.data ?: emptyList()
                     Log.d("ArtistDiscographyActivity", "Releases: $releases")
@@ -93,6 +103,8 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
+                showLoading(false)
+
                 Log.e("ArtistDiscographyActivity", "Error fetching discography", t)
                 Toast.makeText(
                     this@ArtistDiscographyActivity,
