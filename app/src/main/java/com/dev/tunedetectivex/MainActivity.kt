@@ -19,6 +19,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -37,7 +38,6 @@ import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private var selectedArtist: DeezerArtist? = null
     private lateinit var artistInfoCard: MaterialCardView
-    private lateinit var progressIndicator: CircularProgressIndicator
+    private lateinit var progressBar: ProgressBar
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
     private val fetchedArtists = mutableSetOf<Long>()
@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         textViewAlbumTitle = findViewById(R.id.textViewAlbumTitle)
         textViewrelease_date = findViewById(R.id.textViewrelease_date)
         imageViewAlbumArt = findViewById(R.id.imageViewAlbumArt)
-        progressIndicator = findViewById(R.id.progressBarLoading)
+        progressBar = findViewById(R.id.progressBarLoading)
         buttonOpenDiscography = findViewById(R.id.button_open_discography)
         notificationManager = NotificationManagerCompat.from(this)
 
@@ -381,7 +381,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLoading(isLoading: Boolean) {
-        progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+        Log.d(TAG, "Loading state: $isLoading")
+        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
     private fun setupApiService() {
@@ -421,34 +422,44 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        showLoading(true)
+        showLoading(true) // Show loading indicator
         setMenuButtonEnabled(false)
 
         buttonSaveArtist.visibility = View.GONE
         artistInfoCard.visibility = View.GONE
+
+        Log.d(TAG, "Fetching similar artists for: $artist") // Log the artist being searched
 
         apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
             override fun onResponse(
                 call: Call<DeezerSimilarArtistsResponse>,
                 response: Response<DeezerSimilarArtistsResponse>
             ) {
+                showLoading(false) // Hide loading indicator
+                Log.d(TAG, "Response received: ${response.code()}") // Log the response code
                 val artists = response.body()?.data ?: emptyList()
 
                 if (artists.isNotEmpty()) {
                     displayArtists(artists)
                 } else {
-                    showLoading(false)
-                    setMenuButtonEnabled(true)
+                    Toast.makeText(
+                        this@MainActivity,
+                        "No similar artists found.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+                setMenuButtonEnabled(true)
             }
 
             override fun onFailure(call: Call<DeezerSimilarArtistsResponse>, t: Throwable) {
-                showLoading(false)
+                showLoading(false) // Hide loading indicator
                 setMenuButtonEnabled(true)
+                Log.e(TAG, "Error loading artists: ${t.message}", t) // Log the error
                 Toast.makeText(this@MainActivity, "Error loading artists.", Toast.LENGTH_SHORT).show()
             }
         })
     }
+
 
     private fun isSelectedNetworkTypeAvailable(selectedType: String): Boolean {
         val connectivityManager =
@@ -492,7 +503,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         latestRelease?.let {
                             fetchAndCheckDiscography(artistId, it.title)
-                            onSuccess(it)
+                            onSuccess(it) // Ensure this is called with the latest release
                         } ?: onFailure()
                     } else {
                         Log.d(TAG, "No Releases found for Artist ID: $artistId")
@@ -541,6 +552,8 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             recyclerViewArtists.adapter = adapter
+            recyclerViewArtists.layoutManager =
+                LinearLayoutManager(this) // Ensure layout manager is set
             showLoading(false)
         } else {
             recyclerViewArtists.visibility = View.GONE
@@ -569,9 +582,10 @@ class MainActivity : AppCompatActivity() {
             val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
             val date = inputFormat.parse(album.release_date)
-            date?.let { outputFormat.format(it) }
-        } catch (_: Exception) {
-            album.release_date
+            date?.let { outputFormat.format(it) } ?: "Unknown Date"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing release date: ${e.message}")
+            "Unknown Date"
         }
         textViewrelease_date.text = formattedDate
 
