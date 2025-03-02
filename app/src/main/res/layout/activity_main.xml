@@ -20,9 +20,9 @@
                 android:id="@+id/logoContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:paddingStart="15dp"
+                tools:ignore="RtlSymmetry">
 
                 <ImageView
                     android:id="@+id/appLogo"
@@ -37,9 +37,9 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
-                android:text="TDX"
-                android:textStyle="bold"
-                    android:textSize="24sp" />
+                    android:text="TDX"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -48,7 +48,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="32dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 app:boxCornerRadiusBottomEnd="30dp"
                 app:boxCornerRadiusBottomStart="30dp"
                 app:boxCornerRadiusTopEnd="30dp"
@@ -90,7 +90,7 @@
                         android:id="@+id/imageViewAlbumArt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                    android:scaleType="centerCrop"
+                        android:scaleType="centerCrop"
                         android:adjustViewBounds="true" />
 
                     <TextView
@@ -139,8 +139,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-            android:translationZ="0dp"
-            tools:listitem="@layout/artist_item" />
+                android:translationZ="0dp"
+                tools:listitem="@layout/artist_item" />
 
         </LinearLayout>
 
