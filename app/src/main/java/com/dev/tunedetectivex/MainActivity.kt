@@ -37,7 +37,9 @@ import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -139,6 +141,11 @@ class MainActivity : AppCompatActivity() {
         clearPreviousSearch()
         setupApiService()
 
+        val searchLayout: TextInputLayout = findViewById(R.id.searchLayout)
+        searchLayout.setEndIconOnClickListener {
+            showSearchHistory()
+        }
+
         fabMenu.setOnClickListener { view ->
             val popupMenu = PopupMenu(this, view)
             popupMenu.menuInflater.inflate(R.menu.fab_menu, popupMenu.menu)
@@ -185,6 +192,7 @@ class MainActivity : AppCompatActivity() {
         editTextArtist.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
                 val artistName = editTextArtist.text.toString().trim()
+                Log.d(TAG, "Artist name entered: $artistName")
                 if (artistName.isNotEmpty()) {
                     fetchSimilarArtists(artistName)
                 }
@@ -221,7 +229,6 @@ class MainActivity : AppCompatActivity() {
                 openArtistDiscography(artist)
             } ?: Toast.makeText(this, "No artist selected.", Toast.LENGTH_SHORT).show()
         }
-
     }
 
     private fun checkNetworkTypeAndSetFlag() {
@@ -229,6 +236,73 @@ class MainActivity : AppCompatActivity() {
         val networkType = sharedPreferences.getString("networkType", "Any")
 
         isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
+    }
+
+    private fun saveSearchHistory(artist: DeezerArtist) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val history = SearchHistory(
+                artistName = artist.name,
+                profileImageUrl = artist.getBestPictureUrl(),
+                artistId = artist.id
+            )
+            db.searchHistoryDao().insert(history)
+        }
+    }
+
+    private fun showSearchHistory() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val historyList = db.searchHistoryDao().getAllHistory()
+            withContext(Dispatchers.Main) {
+                if (historyList.isNotEmpty()) {
+                    val recyclerView = RecyclerView(this@MainActivity)
+                    recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
+                    recyclerView.adapter =
+                        SearchHistoryAdapter(this@MainActivity, historyList) { historyItem ->
+                            val artist = DeezerArtist(
+                                id = historyItem.artistId,
+                                name = historyItem.artistName,
+                                picture = historyItem.profileImageUrl,
+                                picture_small = "",
+                                picture_medium = "",
+                                picture_big = "",
+                                picture_xl = ""
+                            )
+
+                            this@MainActivity.selectedArtist = artist
+
+                            Log.d(TAG, "Selected artist: ${selectedArtist?.name}")
+
+                            buttonSaveArtist.visibility = View.GONE
+
+                            fetchLatestReleaseForArtist(artist.id,
+                                onSuccess = { album ->
+                                    displayReleaseInfo(album)
+                                    buttonSaveArtist.visibility = View.VISIBLE
+                                },
+                                onFailure = {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "No releases found for ${artist.name}.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
+                        }
+
+                    MaterialAlertDialogBuilder(this@MainActivity)
+                        .setTitle("Search History")
+                        .setView(recyclerView)
+                        .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                        .show()
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "No search history found.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
     }
 
     private fun fetchAndCheckDiscography(artistId: Long, title: String) {
@@ -460,7 +534,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-
     private fun isSelectedNetworkTypeAvailable(selectedType: String): Boolean {
         val connectivityManager =
             getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -543,11 +616,17 @@ class MainActivity : AppCompatActivity() {
                 selectedArtist = artist
                 recyclerViewArtists.visibility = View.GONE
                 buttonOpenDiscography.visibility = View.VISIBLE
+
+                buttonSaveArtist.visibility = View.GONE
+
+                saveSearchHistory(artist)
                 fetchLatestReleaseForArtist(
                     artistId = artist.id,
                     onSuccess = { album ->
                         fetchAndCheckDiscography(artist.id, album.title)
                         displayReleaseInfo(album)
+
+                        buttonSaveArtist.visibility = View.VISIBLE
                     },
                     onFailure = {
                         Toast.makeText(
@@ -559,8 +638,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             recyclerViewArtists.adapter = adapter
-            recyclerViewArtists.layoutManager =
-                LinearLayoutManager(this)
+            recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         } else {
             recyclerViewArtists.visibility = View.GONE
             Toast.makeText(this, "No similar artists found.", Toast.LENGTH_SHORT).show()
@@ -584,6 +662,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun displayReleaseInfo(album: DeezerAlbum) {
         artistInfoCard.visibility = View.VISIBLE
+
+        Log.d(TAG, "Displaying release info for artist: ${selectedArtist?.name}")
+
         textViewname.text = selectedArtist?.name ?: "Unknown Artist"
         textViewAlbumTitle.text = album.title
 

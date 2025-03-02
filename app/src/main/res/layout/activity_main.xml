@@ -55,6 +55,9 @@
                 app:boxCornerRadiusTopStart="30dp"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
+                app:endIconContentDescription="Search History"
+                app:endIconDrawable="@drawable/ic_history"
+                app:endIconMode="custom"
                 app:startIconDrawable="@drawable/ic_search">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -141,7 +144,6 @@
 
         </LinearLayout>
 
-        <!-- Save Artist Button on the left -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:id="@+id/buttonSaveArtist"
@@ -154,7 +156,6 @@
             android:contentDescription="Save Artist"
             app:srcCompat="@drawable/ic_save_artist" />
 
-        <!-- Menu FAB on the right -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:id="@+id/fabMenu"
@@ -168,7 +169,6 @@
             android:contentDescription="Menu"
             app:srcCompat="@drawable/ic_menu" />
 
-        <!-- Other FABs positioned to the right -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:id="@+id/fabSavedArtists"

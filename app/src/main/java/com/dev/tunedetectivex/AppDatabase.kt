@@ -6,12 +6,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [SavedArtist::class, SentNotification::class, ReleaseItem::class],
-    version = 1,
+    entities = [SavedArtist::class, SentNotification::class, ReleaseItem::class, SearchHistory::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun savedArtistDao(): SavedArtistDao
+    abstract fun searchHistoryDao(): SavedArtistDao.SearchHistoryDao
 
     companion object {
         @Volatile

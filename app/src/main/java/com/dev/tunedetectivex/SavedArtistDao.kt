@@ -42,6 +42,21 @@ interface SavedArtistDao {
     @Query("SELECT * FROM saved_artist WHERE name = :artistName LIMIT 1")
     suspend fun getArtistByName(artistName: String): SavedArtist?
 
-    @Query("SELECT * FROM sent_notification")
-    suspend fun getNotifications(): List<SentNotification>
+//    @Query("SELECT * FROM sent_notification")
+//    suspend fun getNotifications(): List<SentNotification>
+
+    @Dao
+    interface SearchHistoryDao {
+        @Insert(onConflict = OnConflictStrategy.REPLACE)
+        suspend fun insert(history: SearchHistory)
+
+        @Query("SELECT * FROM search_history ORDER BY id DESC")
+        suspend fun getAllHistory(): List<SearchHistory>
+
+        @Delete
+        suspend fun delete(history: SearchHistory)
+
+        @Query("DELETE FROM search_history")
+        suspend fun clearHistory()
+    }
 }

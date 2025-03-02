@@ -24,3 +24,11 @@ data class SentNotification(
     @PrimaryKey(autoGenerate = true) val notificationHash: Int,
     val date: Long
 )
+
+@Entity(tableName = "search_history")
+data class SearchHistory(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val artistName: String,
+    val profileImageUrl: String,
+    val artistId: Long
+)
