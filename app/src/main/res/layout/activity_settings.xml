@@ -18,7 +18,7 @@
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="General Settings"
+            android:text="@string/general_settings"
             android:textSize="14sp"
             android:textColor="@color/md_theme_onBackground"
             android:layout_marginBottom="12dp" />
@@ -27,20 +27,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:hint="Fetch Interval (in minutes)">
+            android:hint="@string/intervalInput">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/intervalInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:inputType="number"
+                tools:ignore="TouchTargetSizeCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/releaseAgeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Notifications for releases within the last 4 weeks"
+            android:text="@string/releaseAgeLabel"
             android:layout_marginBottom="8dp"
             android:textSize="16sp" />
 
@@ -57,7 +58,7 @@
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delay and Retry Settings"
+            android:text="@string/delayretry"
             android:textSize="14sp"
             android:textColor="@color/md_theme_onBackground"
             android:layout_marginBottom="12dp" />
@@ -66,33 +67,35 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:hint="Fetch Delay (seconds)">
+            android:hint="@string/FetchDelay">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/delayInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:inputType="number"
+                tools:ignore="TouchTargetSizeCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:hint="Retry After (minutes)">
+            android:hint="@string/Retry">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/retryInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:inputType="number"
+                tools:ignore="TouchTargetSizeCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="Battery and Network"
+            android:text="@string/BatteryNetwork"
             android:textColor="@color/md_theme_onBackground"
             android:textSize="16sp" />
 
@@ -104,36 +107,38 @@
             android:weightSum="2">
 
             <com.google.android.material.button.MaterialButton
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:id="@+id/button_request_battery_optimization"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:padding="8dp"
-                android:text="Battery Restrictions"
+                android:text="@string/BatteryRestrictions"
                 app:icon="@drawable/ic_battery"
                 app:iconGravity="textStart"
-                app:iconPadding="8dp" />
+                app:iconPadding="8dp"
+                tools:ignore="TextContrastCheck" />
 
             <com.google.android.material.button.MaterialButton
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:id="@+id/button_select_network_type"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:padding="8dp"
-                android:text="Select Network Type"
+                android:text="@string/SelectNetworkType"
                 app:icon="@drawable/ic_network"
                 app:iconGravity="textStart"
-                app:iconPadding="8dp" />
+                app:iconPadding="8dp"
+                tools:ignore="TextContrastCheck" />
         </LinearLayout>
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Backup and Restore"
+            android:text="@string/BackupandRestore"
             android:textSize="14sp"
             android:textColor="@color/md_theme_onBackground"
             android:layout_marginBottom="12dp" />
@@ -147,28 +152,30 @@
             android:weightSum="2">
 
             <com.google.android.material.button.MaterialButton
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:id="@+id/button_backup"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:text="Backup Data"
+                android:layout_weight="1"
+                android:text="@string/BackupData"
                 app:icon="@drawable/ic_backup"
                 app:iconGravity="textStart"
-                app:iconPadding="8dp" />
+                app:iconPadding="8dp"
+                tools:ignore="TextContrastCheck" />
 
             <com.google.android.material.button.MaterialButton
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:id="@+id/button_restore"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="Restore Data"
+                android:layout_weight="1"
+                android:text="@string/RestoreData"
                 app:icon="@drawable/ic_restore"
                 app:iconGravity="textStart"
-                app:iconPadding="8dp" />
+                app:iconPadding="8dp"
+                tools:ignore="TextContrastCheck" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

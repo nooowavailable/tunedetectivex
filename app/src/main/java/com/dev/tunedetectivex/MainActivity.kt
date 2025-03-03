@@ -225,7 +225,7 @@ class MainActivity : AppCompatActivity() {
         buttonOpenDiscography.setOnClickListener {
             selectedArtist?.let { artist ->
                 openArtistDiscography(artist)
-            } ?: Toast.makeText(this, "No artist selected.", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -271,8 +271,8 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     val dialog = MaterialAlertDialogBuilder(this@MainActivity)
-                        .setTitle("Search History")
-                        .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                        .setTitle(R.string.SearchHistory)
+                        .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
                         .create()
 
                     val adapter = SearchHistoryAdapter(
@@ -305,7 +305,10 @@ class MainActivity : AppCompatActivity() {
                                 onFailure = {
                                     Toast.makeText(
                                         this@MainActivity,
-                                        "No releases found for ${artist.name}.",
+                                        getString(
+                                            R.string.no_releases_found_for_artist,
+                                            artist.name
+                                        ),
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     showLoading(false)
@@ -324,7 +327,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@MainActivity,
-                        "No search history found.",
+                        getString(R.string.no_search_history_found),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -422,33 +425,33 @@ class MainActivity : AppCompatActivity() {
             .targets(
                 TapTarget.forView(
                     fabMenu,
-                    "Main menu",
-                    "Tap here to open the menu and see more options."
+                    getString(R.string.tutorial_main_menu_title),
+                    getString(R.string.tutorial_main_menu_message)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     fabSavedArtists,
-                    "Saved artists",
-                    "Tap here to view your saved artists, including their latest releases."
+                    getString(R.string.tutorial_saved_artists_title),
+                    getString(R.string.tutorial_saved_artists_message)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     fabSettings,
-                    "Settings",
-                    "Tap here to manage the app settings such as notification intervals, and so on."
+                    getString(R.string.tutorial_settings_title),
+                    getString(R.string.tutorial_settings_message)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     fabSelectFolder,
-                    "Select Folder",
-                    "Tap here to select a folder for importing files or managing content."
+                    getString(R.string.tutorial_select_folder_title),
+                    getString(R.string.tutorial_select_folder_message)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
                 override fun onSequenceFinish() {
                     Toast.makeText(
                         this@MainActivity,
-                        "Tutorial completed! Have lots of fun with the app.",
+                        getString(R.string.tutorial_completed_message),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -461,12 +464,13 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {
+                    // Optional: Handle each step if needed
                 }
 
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@MainActivity,
-                        "Tutorial aborted.",
+                        getString(R.string.tutorial_aborted_message),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -512,7 +516,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchSimilarArtists(artist: String) {
         if (artist.isBlank()) {
-            Toast.makeText(this, "Please enter an artist name.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.please_enter_artist_name), Toast.LENGTH_SHORT)
+                .show()
             return
         }
 
@@ -520,11 +525,8 @@ class MainActivity : AppCompatActivity() {
 
         if (!isNetworkRequestsAllowed) {
             Log.w(TAG, "Selected network type is not available. Skipping network requests.")
-            Toast.makeText(
-                this,
-                "Selected network type is not available. Please check your connection.",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT)
+                .show()
             return
         }
 
@@ -550,7 +552,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@MainActivity,
-                        "No similar artists found.",
+                        getString(R.string.no_similar_artists_found),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -561,7 +563,11 @@ class MainActivity : AppCompatActivity() {
                 showLoading(false)
                 setMenuButtonEnabled(true)
                 Log.e(TAG, "Error loading artists: ${t.message}", t)
-                Toast.makeText(this@MainActivity, "Error loading artists.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.error_loading_artists),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
@@ -661,7 +667,7 @@ class MainActivity : AppCompatActivity() {
                     onFailure = {
                         Toast.makeText(
                             this,
-                            "No releases found for ${artist.name}.",
+                            getString(R.string.no_releases_found_for_artist, artist.name),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -671,7 +677,8 @@ class MainActivity : AppCompatActivity() {
             recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         } else {
             recyclerViewArtists.visibility = View.GONE
-            Toast.makeText(this, "No similar artists found.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_similar_artists_found), Toast.LENGTH_SHORT)
+                .show()
         }
         setMenuButtonEnabled(true)
     }
@@ -695,7 +702,7 @@ class MainActivity : AppCompatActivity() {
 
         Log.d(TAG, "Displaying release info for artist: ${selectedArtist?.name}")
 
-        textViewname.text = selectedArtist?.name ?: "Unknown Artist"
+        textViewname.text = selectedArtist?.name ?: getString(R.string.unknown_artist)
         textViewAlbumTitle.text = album.title
 
         val formattedDate = try {
@@ -764,7 +771,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@MainActivity,
-                        "${artist.name} saved!",
+                        getString(R.string.artist_saved, artist.name),
                         Toast.LENGTH_SHORT
                     ).show()
                     updateSaveButton()
@@ -774,7 +781,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@MainActivity,
-                        "${artist.name} removed from saved artists!",
+                        getString(R.string.artist_removed, artist.name),
                         Toast.LENGTH_SHORT
                     ).show()
                     updateSaveButton()

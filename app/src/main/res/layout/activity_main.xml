@@ -22,7 +22,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:paddingStart="15dp"
-                tools:ignore="RtlSymmetry">
+                tools:ignore="RtlSymmetry,UseCompoundDrawables">
 
                 <ImageView
                     android:id="@+id/appLogo"
@@ -37,7 +37,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
-                    android:text="TDX"
+                    android:text="@string/app_name"
                     android:textSize="20sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -64,10 +64,11 @@
                     android:id="@+id/editTextArtist"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Search for an artist"
+                    android:hint="@string/editTextArtist"
                     android:imeOptions="actionSearch"
                     android:inputType="text"
-                    android:singleLine="true" />
+                    android:singleLine="true"
+                    tools:ignore="VisualLintTextFieldSize" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.card.MaterialCardView
@@ -90,6 +91,7 @@
                         android:id="@+id/imageViewAlbumArt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:importantForAccessibility="no"
                         android:scaleType="centerCrop"
                         android:adjustViewBounds="true" />
 
@@ -99,7 +101,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:gravity="center"
-                        android:text="Artist Name"
+                        android:text="@string/textViewname"
                         android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
 
                     <TextView
@@ -108,7 +110,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:gravity="center"
-                        android:text="Album Title"
+                        android:text="@string/textViewAlbumTitle"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
                     <TextView
@@ -117,7 +119,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:gravity="center"
-                        android:text="Release Date"
+                        android:text="@string/textViewrelease_date"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
                     <com.google.android.material.button.MaterialButton
@@ -127,7 +129,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:padding="8dp"
-                        android:text="Discography"
+                        android:text="@string/button_open_discography"
                         app:icon="@drawable/ic_discography"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp" />
@@ -153,7 +155,7 @@
             android:layout_alignParentBottom="true"
             android:layout_marginStart="16dp"
             android:layout_marginBottom="16dp"
-            android:contentDescription="Save Artist"
+            android:contentDescription="@string/buttonSaveArtist"
             app:srcCompat="@drawable/ic_save_artist" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -166,8 +168,9 @@
             android:layout_margin="16dp"
             android:alpha="0.9"
             android:translationZ="10dp"
-            android:contentDescription="Menu"
-            app:srcCompat="@drawable/ic_menu" />
+            android:contentDescription="@string/fabMenu"
+            app:srcCompat="@drawable/ic_menu"
+            tools:ignore="RelativeOverlap" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
@@ -176,10 +179,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:layout_above="@id/fabMenu"
+            android:importantForAccessibility="no"
             android:translationZ="10dp"
             app:elevation="8dp"
             android:layout_alignParentEnd="true"
-            android:contentDescription="Saved Artists"
             app:srcCompat="@drawable/ic_saved_artists" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -189,10 +192,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:layout_above="@id/fabSavedArtists"
+            android:importantForAccessibility="no"
             android:translationZ="10dp"
             app:elevation="8dp"
             android:layout_alignParentEnd="true"
-            android:contentDescription="Settings"
             app:srcCompat="@drawable/ic_settings" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -202,9 +205,9 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:layout_above="@id/fabSettings"
+            android:importantForAccessibility="no"
             android:translationZ="10dp"
             android:layout_alignParentEnd="true"
-            android:contentDescription="Select Folder"
             app:elevation="8dp"
             app:srcCompat="@drawable/ic_folder" />
     </RelativeLayout>

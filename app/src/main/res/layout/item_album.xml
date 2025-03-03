@@ -9,6 +9,7 @@
         android:id="@+id/imageViewAlbumCover"
         android:layout_width="160dp"
         android:layout_height="160dp"
+        android:importantForAccessibility="no"
         android:scaleType="centerCrop" />
 
     <LinearLayout

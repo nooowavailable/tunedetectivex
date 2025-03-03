@@ -7,7 +7,7 @@
     android:paddingTop="16dp"
     android:fitsSystemWindows="true">
 
-<TextView
+    <TextView
         android:id="@+id/textViewHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

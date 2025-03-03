@@ -31,11 +31,12 @@
                     android:id="@+id/imageViewArtistCover"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
+                    android:contentDescription="@string/imageViewArtistCoverDesc"
                     android:scaleType="centerCrop"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    android:contentDescription="Artist Cover" />
+                    android:text="@string/importing_artist" />
 
                 <TextView
                     android:id="@+id/textViewArtistName"
@@ -44,7 +45,7 @@
                     android:layout_marginStart="16dp"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:text="Importing Artist..."
+                    android:text="@string/importing_artist"
                     app:layout_constraintStart_toEndOf="@id/imageViewArtistCover"
                     app:layout_constraintTop_toTopOf="@id/imageViewArtistCover"
                     app:layout_constraintEnd_toEndOf="parent" />
@@ -54,7 +55,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Progress: 0/0"
+                    android:text="@string/textViewProgress"
                     android:textSize="14sp"
                     app:layout_constraintTop_toBottomOf="@id/textViewArtistName"
                     app:layout_constraintStart_toStartOf="@id/textViewArtistName"
@@ -80,7 +81,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="16dp"
-            android:text="Press the folder icon to start import"
+            android:text="@string/statusTextView"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -115,9 +116,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
+            android:importantForAccessibility="no"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_folder"
-            android:contentDescription="Select Folder" />
+            app:srcCompat="@drawable/ic_folder" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

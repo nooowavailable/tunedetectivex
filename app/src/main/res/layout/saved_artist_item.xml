@@ -12,6 +12,7 @@
         android:id="@+id/imageViewProfile"
         android:layout_width="100dp"
         android:layout_height="100dp"
+        android:importantForAccessibility="no"
         android:scaleType="centerCrop"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"

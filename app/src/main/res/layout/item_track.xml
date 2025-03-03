@@ -33,5 +33,6 @@
         android:gravity="end"
         android:paddingStart="8dp"
         android:textColor="@android:color/darker_gray"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        tools:ignore="RtlSymmetry" />
 </LinearLayout>
