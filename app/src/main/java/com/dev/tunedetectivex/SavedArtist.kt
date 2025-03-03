@@ -28,7 +28,7 @@ data class SentNotification(
 @Entity(tableName = "search_history")
 data class SearchHistory(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val artistName: String,
-    val profileImageUrl: String,
+    var artistName: String,
+    var profileImageUrl: String,
     val artistId: Long
 )

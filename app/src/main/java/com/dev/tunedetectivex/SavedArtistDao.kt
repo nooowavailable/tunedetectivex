@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 
 @Dao
 interface SavedArtistDao {
@@ -42,16 +43,20 @@ interface SavedArtistDao {
     @Query("SELECT * FROM saved_artist WHERE name = :artistName LIMIT 1")
     suspend fun getArtistByName(artistName: String): SavedArtist?
 
-//    @Query("SELECT * FROM sent_notification")
-//    suspend fun getNotifications(): List<SentNotification>
 
     @Dao
     interface SearchHistoryDao {
         @Insert(onConflict = OnConflictStrategy.REPLACE)
-        suspend fun insert(history: SearchHistory)
+        suspend fun insert(searchHistory: SearchHistory)
 
-        @Query("SELECT * FROM search_history ORDER BY id DESC")
+        @Update
+        suspend fun update(searchHistory: SearchHistory)
+
+        @Query("SELECT * FROM search_history")
         suspend fun getAllHistory(): List<SearchHistory>
+
+        @Query("SELECT * FROM search_history WHERE artistId = :artistId LIMIT 1")
+        suspend fun getHistoryByArtistId(artistId: Long): SearchHistory?
 
         @Delete
         suspend fun delete(history: SearchHistory)

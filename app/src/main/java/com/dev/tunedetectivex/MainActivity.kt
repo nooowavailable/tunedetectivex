@@ -11,8 +11,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -240,24 +238,47 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveSearchHistory(artist: DeezerArtist) {
         lifecycleScope.launch(Dispatchers.IO) {
+            val existingHistory = db.searchHistoryDao().getHistoryByArtistId(artist.id)
             val history = SearchHistory(
                 artistName = artist.name,
                 profileImageUrl = artist.getBestPictureUrl(),
                 artistId = artist.id
             )
-            db.searchHistoryDao().insert(history)
+
+            if (existingHistory == null) {
+                db.searchHistoryDao().insert(history)
+            } else {
+                existingHistory.artistName = artist.name
+                existingHistory.profileImageUrl = artist.getBestPictureUrl()
+                db.searchHistoryDao().update(existingHistory)
+            }
+
+            withContext(Dispatchers.Main) {
+                val historyList = db.searchHistoryDao().getAllHistory()
+                (recyclerViewArtists.adapter as? SearchHistoryAdapter)?.refreshHistory(historyList)
+            }
         }
     }
 
     private fun showSearchHistory() {
         lifecycleScope.launch(Dispatchers.IO) {
             val historyList = db.searchHistoryDao().getAllHistory()
+            val uniqueHistoryList = historyList.distinctBy { it.artistId }
             withContext(Dispatchers.Main) {
-                if (historyList.isNotEmpty()) {
-                    val recyclerView = RecyclerView(this@MainActivity)
-                    recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
-                    recyclerView.adapter =
-                        SearchHistoryAdapter(this@MainActivity, historyList) { historyItem ->
+                if (uniqueHistoryList.isNotEmpty()) {
+                    val recyclerView = RecyclerView(this@MainActivity).apply {
+                        layoutManager = LinearLayoutManager(this@MainActivity)
+                    }
+
+                    val dialog = MaterialAlertDialogBuilder(this@MainActivity)
+                        .setTitle("Search History")
+                        .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                        .create()
+
+                    val adapter = SearchHistoryAdapter(
+                        this@MainActivity,
+                        uniqueHistoryList.toMutableList(),
+                        { historyItem ->
                             val artist = DeezerArtist(
                                 id = historyItem.artistId,
                                 name = historyItem.artistName,
@@ -269,15 +290,17 @@ class MainActivity : AppCompatActivity() {
                             )
 
                             this@MainActivity.selectedArtist = artist
-
                             Log.d(TAG, "Selected artist: ${selectedArtist?.name}")
 
                             buttonSaveArtist.visibility = View.GONE
+
+                            showLoading(true)
 
                             fetchLatestReleaseForArtist(artist.id,
                                 onSuccess = { album ->
                                     displayReleaseInfo(album)
                                     buttonSaveArtist.visibility = View.VISIBLE
+                                    showLoading(false)
                                 },
                                 onFailure = {
                                     Toast.makeText(
@@ -285,15 +308,19 @@ class MainActivity : AppCompatActivity() {
                                         "No releases found for ${artist.name}.",
                                         Toast.LENGTH_SHORT
                                     ).show()
+                                    showLoading(false)
                                 }
                             )
-                        }
+                        },
+                        dialog
+                    )
 
-                    MaterialAlertDialogBuilder(this@MainActivity)
-                        .setTitle("Search History")
-                        .setView(recyclerView)
-                        .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-                        .show()
+                    recyclerView.adapter = adapter
+
+                    dialog.setView(recyclerView)
+                    dialog.show()
+
+                    adapter.refreshHistory(uniqueHistoryList)
                 } else {
                     Toast.makeText(
                         this@MainActivity,
@@ -484,6 +511,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchSimilarArtists(artist: String) {
+        if (artist.isBlank()) {
+            Toast.makeText(this, "Please enter an artist name.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         checkNetworkTypeAndSetFlag()
 
         if (!isNetworkRequestsAllowed) {
@@ -616,7 +648,6 @@ class MainActivity : AppCompatActivity() {
                 selectedArtist = artist
                 recyclerViewArtists.visibility = View.GONE
                 buttonOpenDiscography.visibility = View.VISIBLE
-
                 buttonSaveArtist.visibility = View.GONE
 
                 saveSearchHistory(artist)
@@ -625,7 +656,6 @@ class MainActivity : AppCompatActivity() {
                     onSuccess = { album ->
                         fetchAndCheckDiscography(artist.id, album.title)
                         displayReleaseInfo(album)
-
                         buttonSaveArtist.visibility = View.VISIBLE
                     },
                     onFailure = {
@@ -750,21 +780,6 @@ class MainActivity : AppCompatActivity() {
                     updateSaveButton()
                 }
             }
-        }
-    }
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.fab_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.menu_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
         }
     }
 

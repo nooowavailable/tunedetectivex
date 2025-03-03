@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.app.Dialog
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -12,8 +13,9 @@ import com.bumptech.glide.request.RequestOptions
 
 class SearchHistoryAdapter(
     private val context: Context,
-    private val historyList: List<SearchHistory>,
-    private val onItemClick: (SearchHistory) -> Unit
+    private val historyList: MutableList<SearchHistory>,
+    private val onItemClick: (SearchHistory) -> Unit,
+    private val dialog: Dialog
 ) : RecyclerView.Adapter<SearchHistoryAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -26,6 +28,7 @@ class SearchHistoryAdapter(
                 if (position != RecyclerView.NO_POSITION) {
                     val historyItem = historyList[position]
                     onItemClick(historyItem)
+                    dialog.dismiss()
                 }
             }
         }
@@ -49,5 +52,22 @@ class SearchHistoryAdapter(
 
     override fun getItemCount(): Int {
         return historyList.size
+    }
+
+    fun refreshHistory(newHistory: List<SearchHistory>) {
+        historyList.clear()
+
+        newHistory.forEach { newItem ->
+            if (!historyList.any { it.id == newItem.id }) {
+                historyList.add(newItem)
+            } else {
+                val existingItemIndex = historyList.indexOfFirst { it.id == newItem.id }
+                if (existingItemIndex != -1) {
+                    historyList[existingItemIndex] = newItem
+                }
+            }
+        }
+
+        notifyDataSetChanged()
     }
 }
