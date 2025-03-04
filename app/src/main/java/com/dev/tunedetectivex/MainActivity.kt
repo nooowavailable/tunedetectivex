@@ -232,7 +232,6 @@ class MainActivity : AppCompatActivity() {
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any")
-
         isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
     }
 
@@ -295,6 +294,17 @@ class MainActivity : AppCompatActivity() {
                             buttonSaveArtist.visibility = View.GONE
 
                             showLoading(true)
+
+                            checkNetworkTypeAndSetFlag()
+                            if (!isNetworkRequestsAllowed) {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    getString(R.string.network_type_not_available),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                showLoading(false)
+                                return@SearchHistoryAdapter
+                            }
 
                             fetchLatestReleaseForArtist(artist.id,
                                 onSuccess = { album ->
@@ -598,6 +608,12 @@ class MainActivity : AppCompatActivity() {
         onSuccess: (DeezerAlbum) -> Unit,
         onFailure: () -> Unit
     ) {
+        if (!isNetworkRequestsAllowed) {
+            Log.w(TAG, "Network requests not allowed. Skipping fetch for artist ID: $artistId")
+            onFailure()
+            return
+        }
+
         showLoading(true)
 
         apiService.getArtistReleases(artistId, 0).enqueue(object : Callback<DeezerAlbumsResponse> {
