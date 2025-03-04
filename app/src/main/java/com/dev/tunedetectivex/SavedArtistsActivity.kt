@@ -103,7 +103,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         if (!isNetworkRequestsAllowed) {
             Toast.makeText(
                 this,
-                "Selected network type is not available. Please check your connection.",
+                getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -244,7 +244,11 @@ class SavedArtistsActivity : AppCompatActivity() {
                 )
             )
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@SavedArtistsActivity, "${artist.name} has been deleted.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@SavedArtistsActivity,
+                    getString(R.string.artist_deleted, artist.name),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -273,7 +277,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                     recyclerView.adapter?.notifyItemChanged(viewHolder.adapterPosition)
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Deletion is only possible in the artist view.",
+                        getString(R.string.deletion_only_in_artist_view),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -302,7 +306,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         if (!isNetworkRequestsAllowed) {
             Toast.makeText(
                 this,
-                "Selected network type is not available. Please check your connection.",
+                getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
             return
@@ -443,7 +447,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         if (!isNetworkRequestsAllowed) {
             Toast.makeText(
                 this,
-                "Selected network type is not available. Please check your connection.",
+                getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
             return
@@ -633,33 +637,33 @@ class SavedArtistsActivity : AppCompatActivity() {
             .targets(
                 TapTarget.forView(
                     spinnerViewType,
-                    "Select view",
-                    "Choose here whether you want to display saved artists or their latest releases."
+                    getString(R.string.select_view_title),
+                    getString(R.string.select_view_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     recyclerView,
-                    "Saved artists",
-                    "Here you can see all saved artists with their latest releases. Tap on an artist to delete it."
+                    getString(R.string.saved_artists_title),
+                    getString(R.string.saved_artists_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     recyclerView,
-                    "Artist Picture",
-                    "Tap on an artist's picture to view their complete discography."
+                    getString(R.string.artist_picture_title),
+                    getString(R.string.artist_picture_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     recyclerView,
-                    "Newest releases",
-                    "Select 'Latest Releases' from the dropdown to see the latest releases from all saved artists."
+                    getString(R.string.newest_releases_title),
+                    getString(R.string.newest_releases_description)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
                 override fun onSequenceFinish() {
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Tutorial completed! Have fun with the app.",
+                        getString(R.string.tutorial_completed_artists),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -670,7 +674,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Tutorial canceled.",
+                        getString(R.string.tutorial_canceled_artists),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -683,15 +687,15 @@ class SavedArtistsActivity : AppCompatActivity() {
             .targets(
                 TapTarget.forView(
                     recyclerView,
-                    "Latest releases",
-                    "Here you can see the latest releases of all saved artists. Tap on a release to view details such as the track list."
+                    getString(R.string.latest_releases_title),
+                    getString(R.string.latest_releases_description)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
                 override fun onSequenceFinish() {
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Tutorial completed! Have fun discovering the releases.",
+                        getString(R.string.tutorial_completed_releases),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -702,7 +706,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Tutorial aborted.",
+                        getString(R.string.tutorial_aborted_releases),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

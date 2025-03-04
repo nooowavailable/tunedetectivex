@@ -75,6 +75,22 @@
     <string name="network_type_mobile">Nur mobile Daten</string>
     <string name="network_type_any">Beliebig</string>
     <string name="notify_releases_within_weeks">Veröffentlichungen der letzten %1$d Wochen benachrichtigen</string>
+    <string name="artist_deleted">%1$s wurde entfernt.</string>
+    <string name="deletion_only_in_artist_view">Löschen ist nur in der Künstleransicht möglich.</string>
+    <string name="select_view_title">Ansicht wählen</string>
+    <string name="select_view_description">Wähle zwischen gespeicherte Künstler oder ihre neuesten Veröffentlichungen aus.</string>
+    <string name="saved_artists_title">Gespeicherte Künstler</string>
+    <string name="saved_artists_description">Hier sehen Sie alle gespeicherten Künstler mit ihren neuesten Veröffentlichungen. Wische einen Künstler weg, um ihn zu löschen.</string>
+    <string name="artist_picture_title">Künstlerbild</string>
+    <string name="artist_picture_description">Tippe auf das Bild eines Künstlers, um seine vollständige Diskografie anzuzeigen.</string>
+    <string name="newest_releases_title">Neueste Releases</string>
+    <string name="newest_releases_description">Wähle „Neueste Veröffentlichungen“ aus dem Dropdown-Menü, um die neuesten Veröffentlichungen aller gespeicherten Künstler anzuzeigen.</string>
+    <string name="tutorial_completed_artists">Tutorial abgeschlossen! Viel Spaß mit der App.</string>
+    <string name="tutorial_canceled_artists">Tutorial abgebrochen.</string>
+    <string name="latest_releases_title">Neueste Veröffentlichungen</string>
+    <string name="latest_releases_description">Hier kannst du die neuesten Veröffentlichungen aller gespeicherten Künstler sehen. Tippen Sie auf eine Veröffentlichung, um Details wie die Titelliste anzuzeigen.</string>
+    <string name="tutorial_completed_releases">Tutorial abgeschlossen! Viel Spaß mit der App.</string>
+    <string name="tutorial_aborted_releases">Tutorial abgebrochen.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

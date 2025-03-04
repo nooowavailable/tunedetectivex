@@ -75,6 +75,22 @@
     <string name="network_type_mobile">Mobile Data Only</string>
     <string name="network_type_any">Any</string>
     <string name="notify_releases_within_weeks">Notify releases within the last %1$d weeks</string>
+    <string name="artist_deleted">%1$s has been deleted.</string>
+    <string name="deletion_only_in_artist_view">Deletion is only possible in the artist view.</string>
+    <string name="select_view_title">Select view</string>
+    <string name="select_view_description">Choose here whether you want to display saved artists or their latest releases.</string>
+    <string name="saved_artists_title">Saved artists</string>
+    <string name="saved_artists_description">Here you can see all saved artists with their latest releases. Tap on an artist to delete it.</string>
+    <string name="artist_picture_title">Artist Picture</string>
+    <string name="artist_picture_description">Tap on an artist's picture to view their complete discography.</string>
+    <string name="newest_releases_title">Newest releases</string>
+    <string name="newest_releases_description">Select 'Latest Releases' from the dropdown to see the latest releases from all saved artists.</string>
+    <string name="tutorial_completed_artists">Tutorial completed! Have fun with the app.</string>
+    <string name="tutorial_canceled_artists">Tutorial canceled.</string>
+    <string name="latest_releases_title">Latest releases</string>
+    <string name="latest_releases_description">Here you can see the latest releases of all saved artists. Tap on a release to view details such as the track list.</string>
+    <string name="tutorial_completed_releases">Tutorial completed! Have fun discovering the releases.</string>
+    <string name="tutorial_aborted_releases">Tutorial aborted.</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>
