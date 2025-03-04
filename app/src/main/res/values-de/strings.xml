@@ -91,6 +91,25 @@
     <string name="latest_releases_description">Hier kannst du die neuesten Veröffentlichungen aller gespeicherten Künstler sehen. Tippen Sie auf eine Veröffentlichung, um Details wie die Titelliste anzuzeigen.</string>
     <string name="tutorial_completed_releases">Tutorial abgeschlossen! Viel Spaß mit der App.</string>
     <string name="tutorial_aborted_releases">Tutorial abgebrochen.</string>
+    <string name="importing_status">Importiere… Bitte warten.</string>
+    <string name="press_folder_icon">Drücke auf das Ordnersymbol, um den Import zu starten.</string>
+    <string name="important_warning_title">⚠️ Wichtiger Warnhinweis ⚠️</string>
+    <string name="importing_feature_message">
+        Du bist dabei, die Musikimportfunktion der Anwendung zu nutzen! 🎶✨\n\n
+        Diese Funktion durchsucht deinen ausgewählten Ordner nach Audiodateien, extrahiert relevante Details wie Künstlernamen und Albumtitel und speichert sie in deiner Bibliothek. 📚💾\n\n
+        Bitte beachten, dass sich diese Funktion derzeit in der Betaphase befindet. Um das Risiko zu vermeiden, vorübergehend von Deezer blockiert zu werden, verwende eine VPN, während du auf diese Funktion zugreifst. Alternativ kannst du auch Künstler von Hand hinzufügen, wenn du dieses Risiko nicht eingehen möchtest.\n\n
+        Bereit, loszulegen? 🚀
+    </string>
+    <string name="proceed_with_caution">Mit Vorsicht vorgehen!🎉</string>
+    <string name="cancelE">Abbrechen 😱</string>
+    <string name="selected_folder">Ausgewählter Ordner: %1$s</string>
+    <string name="no_folder_selected">Kein Ordner ausgewählt</string>
+    <string name="preparing_import">Vorbereitung des Imports…</string>
+    <string name="loading_artist">Künstler wird geladen…</string>
+    <string name="import_completed">Import abgeschlossen</string>
+    <string name="import_artists">Importiere Künstler</string>
+    <string name="all_artists_imported">Alle Künstler erfolgreich importiert.</string>
+    <string name="progress_status">Fortschritt: %1$d%% - %2$s</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

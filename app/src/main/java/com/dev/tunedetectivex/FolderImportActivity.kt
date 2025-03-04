@@ -100,7 +100,7 @@ class FolderImportActivity : AppCompatActivity() {
                 Log.w(TAG, "Selected network type is not available. Skipping folder selection.")
                 Toast.makeText(
                     this,
-                    "Selected network type is not available. Please check your connection.",
+                    getString(R.string.network_type_not_available),
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
@@ -113,23 +113,18 @@ class FolderImportActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun updateImportStatus(isImporting: Boolean) {
         statusTextView.text = if (isImporting) {
-            "Importing... Please wait."
+            getString(R.string.importing_status)
         } else {
-            "Press folder icon to start import"
+            getString(R.string.press_folder_icon)
         }
     }
 
     private fun showWarningDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("⚠️ Important Warning ⚠️")
-            .setMessage(
-                "You are about to enter the music importing feature of the application! 🎶✨\n\n" +
-                        "This feature will scan your selected folder for audio files, extracting relevant details such as artist names and album titles, and saving them to your library. 📚💾\n\n" +
-                        "Please be aware that this feature is currently in beta. To avoid the risk of being temporarily blocked by Deezer, use a VPN while accessing this feature. Alternatively, you can add artists manually if you prefer not to take that risk.\n\n" +
-                        "Are you ready to proceed? 🚀"
-            )
-            .setPositiveButton("Proceed with Caution! 🎉") { _, _ -> selectMusicFolder() }
-            .setNegativeButton("Cancel 😱") { dialog, _ -> dialog.dismiss() }
+            .setTitle(getString(R.string.important_warning_title))
+            .setMessage(getString(R.string.importing_feature_message))
+            .setPositiveButton(getString(R.string.proceed_with_caution)) { _, _ -> selectMusicFolder() }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ -> dialog.dismiss() }
             .show()
     }
 
@@ -143,10 +138,15 @@ class FolderImportActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             if (uri != null) {
                 val folderName = extractFolderName(uri)
-                Toast.makeText(this, "Selected folder: $folderName", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    getString(R.string.selected_folder, folderName),
+                    Toast.LENGTH_SHORT
+                ).show()
                 processMusicFolder(uri)
             } else {
-                Toast.makeText(this, "No folder selected", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.no_folder_selected), Toast.LENGTH_SHORT)
+                    .show()
             }
         }
 
@@ -228,7 +228,7 @@ class FolderImportActivity : AppCompatActivity() {
                             val releaseTitle = extractReleaseTitleMetadata(fileUri)
 
                             if (!mainArtistName.isNullOrEmpty()) {
-                                handleArtistImport(mainArtistName, releaseTitle, current, total)
+                                handleArtistImport(mainArtistName, releaseTitle)
                             } else {
                                 unknownArtists++
                             }
@@ -256,9 +256,7 @@ class FolderImportActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private suspend fun handleArtistImport(
         mainArtistName: String,
-        releaseTitle: String?,
-        current: Int,
-        total: Int
+        releaseTitle: String?
     ) {
         val existingArtist = db.savedArtistDao().getArtistByName(mainArtistName)
         val artistId = existingArtist?.id
@@ -483,15 +481,16 @@ class FolderImportActivity : AppCompatActivity() {
                 val progressPercentage = (current * 100) / total
                 linearProgressIndicator.progress = progressPercentage
 
-                val name = artistName ?: "Unknown Artist"
+                val name = artistName ?: getString(R.string.unknown_artist)
                 val artistStatus = status?.let { "($it)" } ?: ""
-                textViewProgress.text = "Progress: $progressPercentage% ($current/$total)"
+                textViewProgress.text =
+                    getString(R.string.progress_status, progressPercentage, name)
                 textViewArtistName.text = "$name $artistStatus"
 
                 sendNotification(progressPercentage, "$name $artistStatus")
             } else {
-                textViewProgress.text = "Preparing import..."
-                textViewArtistName.text = "Loading artist..."
+                textViewProgress.text = getString(R.string.preparing_import)
+                textViewArtistName.text = getString(R.string.loading_artist)
                 linearProgressIndicator.isIndeterminate = true
             }
 
@@ -514,12 +513,18 @@ class FolderImportActivity : AppCompatActivity() {
         val notificationManager = NotificationManagerCompat.from(this)
 
         val isFinished = progressPercentage == 100
-        val title = if (isFinished) "Import completed" else "Import artists"
-        val contentText = if (isFinished) {
-            "All artists successfully imported."
+        val title = if (isFinished) {
+            getString(R.string.import_completed)
         } else {
-            "Progress: $progressPercentage% - $artistName"
+            getString(R.string.import_artists)
         }
+
+        val contentText = if (isFinished) {
+            getString(R.string.all_artists_imported)
+        } else {
+            getString(R.string.progress_status, progressPercentage, artistName)
+        }
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -528,11 +533,14 @@ class FolderImportActivity : AppCompatActivity() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setProgress(100, progressPercentage, false)
             .setOngoing(!isFinished)
+
         if (isFinished) {
             builder.setProgress(0, 0, false)
             builder.setOngoing(false)
         }
+
         notificationManager.notify(1, builder.build())
+
         if (isFinished) {
             Handler(Looper.getMainLooper()).postDelayed({
                 notificationManager.cancel(1)
@@ -546,7 +554,7 @@ class FolderImportActivity : AppCompatActivity() {
             cardCurrentArtist.visibility = View.GONE
             linearProgressIndicator.visibility = View.GONE
             textViewProgress.visibility = View.GONE
-            textViewProgress.text = "Import completed!"
+            textViewProgress.text = getString(R.string.import_completed)
             linearProgressIndicator.progress = 0
 
             val notificationManager = NotificationManagerCompat.from(this@FolderImportActivity)
