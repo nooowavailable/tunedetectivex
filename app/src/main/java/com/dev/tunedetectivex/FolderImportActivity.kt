@@ -125,7 +125,7 @@ class FolderImportActivity : AppCompatActivity() {
             .setTitle("⚠️ Warning ⚠️")
             .setMessage(
                 "You are about to import a folder. Please note that you use this function at your own risk. 😬\n\n" +
-                        "• This feature is in beta and may result in your IP address being blocked by Deezer. 🤡\n" +
+                        "• This feature is an Experimental Feature and may result in your IP address being blocked by Deezer. 🤡\n" +
                         "• It is recommended to use a VPN. 🕵️‍♂️"
             )
             .setPositiveButton("Proceed") { _, _ ->
