@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">TDX</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="importing_artist">Importieren  Künstler…</string>
+    <string name="artist_cover">Künstlerbild</string>
+    <string name="textViewProgress">Fortschritt: 0/0</string>
+    <string name="imageViewArtistCoverDesc">Bild des Künstlers</string>
+    <string name="fabSelectFolder">Ordner importieren (Metadaten)</string>
+    <string name="statusTextView">Drücken Sie auf den Ordner, um den Import von Metadaten zu starten.</string>
+    <string name="buttonSaveArtist">Künstler speichern</string>
+    <string name="fabMenu">Menü</string>
+    <string name="button_open_discography">Diskographie</string>
+    <string name="editTextArtist">Suche nach einem Künstler</string>
+    <string name="textViewname">Künstler Name</string>
+    <string name="textViewAlbumTitle">Album Titel</string>
+    <string name="textViewrelease_date">Erscheinungsdatum</string>
+    <string name="searchViewArtists">Suche nach einem Künstler…</string>
+    <string name="general_settings">Allgemeine Einstellungen</string>
+    <string name="intervalInput">Abrufintervall (in Minuten)</string>
+    <string name="releaseAgeLabel">Benachrichtigungen für Veröffentlichungen innerhalb der letzten 4 Wochen</string>
+    <string name="delayretry">Einstellungen für Zeitverzögerung und Neuversuch</string>
+    <string name="FetchDelay">Abruf-Verzögerung (in Sekunden)</string>
+    <string name="Retry">Wiederholung nach (in Minuten)</string>
+    <string name="BatteryNetwork">Batterie und Netzwerk</string>
+    <string name="BatteryRestrictions">Batterienutzung Einschränkungen</string>
+    <string name="SelectNetworkType">Netztyp wählen</string>
+    <string name="BackupandRestore">Backup und Wiederherstellung</string>
+    <string name="BackupData">Daten sichern</string>
+    <string name="RestoreData">Daten wiederherstellen</string>
+    <string name="Noartistselected">Kein Künstler ausgewählt.</string>
+    <string name="SearchHistory">Suchverlauf</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="no_releases_found_for_artist">Keine Veröffentlichungen gefunden für %1$s.</string>
+    <string name="no_search_history_found">Kein Suchverlauf gefunden.</string>
+    <string name="tutorial_main_menu_title">Hauptmenü</string>
+    <string name="tutorial_main_menu_message">Tippen Sie hier, um das Menü zu öffnen und weitere Optionen anzuzeigen.</string>
+    <string name="tutorial_saved_artists_title">Gespeicherte Künstler</string>
+    <string name="tutorial_saved_artists_message">Tippen Sie hier, um Ihre gespeicherten Künstler, einschließlich ihrer neuesten Veröffentlichungen, anzuzeigen.</string>
+    <string name="tutorial_settings_title">Einstellungen</string>
+    <string name="tutorial_settings_message">Tippen Sie hier, um die Einstellungen der App zu verwalten, z. B. die Benachrichtigungsintervalle usw.</string>
+    <string name="tutorial_select_folder_title">Ordner auswählen</string>
+    <string name="tutorial_select_folder_message">Tippen Sie hier, um einen Ordner für den Import von Dateien oder die Verwaltung von Inhalten auszuwählen.</string>
+    <string name="tutorial_completed_message">Tutorial abgeschlossen! Ich wünsche dir viel Spaß mit der App.</string>
+    <string name="tutorial_aborted_message">Tutorial abgebrochen.</string>
+    <string name="please_enter_artist_name">Bitte geben Sie den Namen des Künstlers ein.</string>
+    <string name="network_type_not_available">Der ausgewählte Netzwerktyp ist nicht verfügbar. Bitte überprüfen Sie Ihre Verbindung.</string>
+    <string name="no_similar_artists_found">Keine ähnlichen Künstler gefunden.</string>
+    <string name="error_loading_artists">Fehler beim Laden von Künstlern.</string>
+    <string name="unknown_artist">Unbekannter Künstler</string>
+    <string name="artist_saved">%1$s gespeichert!</string>
+    <string name="artist_removed">%1$s von gespeicherten Künstlern entfernt!</string>
+    <string-array name="view_type_options">
+        <item>Künstler</item>
+        <item>Veröffentlichungen</item>
+    </string-array>
+</resources>
