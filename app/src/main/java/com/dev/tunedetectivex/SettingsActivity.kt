@@ -55,7 +55,7 @@ class SettingsActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(
                     this,
-                    "Selected network type is not available. Please check your connection.",
+                    getString(R.string.network_type_not_available),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -119,8 +119,6 @@ class SettingsActivity : AppCompatActivity() {
                 val releaseAgeInWeeks = value.toInt()
                 updateReleaseAgeLabel(releaseAgeInWeeks)
                 saveReleaseAgePreference(releaseAgeInWeeks)
-                showToast("Saved!")
-                Log.d("SettingsActivity", "Release age updated and saved: $releaseAgeInWeeks weeks")
             }
         }
 
@@ -134,7 +132,7 @@ class SettingsActivity : AppCompatActivity() {
                 delayedUpdate {
                     if (interval != null && interval > 0) {
                         saveFetchInterval(interval)
-                        showToast("Fetch interval set to $interval minutes")
+                        showToast(getString(R.string.fetch_interval_set, interval))
                         Log.d(
                             "SettingsActivity",
                             "Fetch interval updated and saved: $interval minutes"
@@ -142,7 +140,7 @@ class SettingsActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this@SettingsActivity,
-                            "Invalid interval value.",
+                            getString(R.string.invalid_interval_value),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -160,12 +158,12 @@ class SettingsActivity : AppCompatActivity() {
                 delayedUpdate {
                     if (delay != null && delay > 0) {
                         saveFetchDelay(delay)
-                        showToast("Fetch delay set to $delay seconds")
+                        showToast(getString(R.string.fetch_delay_set, delay))
                         Log.d("SettingsActivity", "Fetch delay updated and saved: $delay seconds")
                     } else {
                         Toast.makeText(
                             this@SettingsActivity,
-                            "Invalid delay value.",
+                            getString(R.string.invalid_delay_value),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -183,7 +181,7 @@ class SettingsActivity : AppCompatActivity() {
                 delayedUpdate {
                     if (retry != null && retry > 0) {
                         saveRetryAfterFailure(retry)
-                        showToast("Retry after failure set to $retry minutes")
+                        showToast(getString(R.string.retry_after_failure_set, retry))
                         Log.d(
                             "SettingsActivity",
                             "Retry after failure updated and saved: $retry minutes"
@@ -191,7 +189,7 @@ class SettingsActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this@SettingsActivity,
-                            "Invalid retry value.",
+                            getString(R.string.invalid_retry_value),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -216,7 +214,7 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             Toast.makeText(
                 this,
-                "Battery optimization is already ignored for this app.",
+                getString(R.string.battery_optimization_ignored),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -229,11 +227,15 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showNetworkTypeDialog() {
-        val networkTypes = arrayOf("Wi-Fi Only", "Mobile Data Only", "Any")
+        val networkTypes = arrayOf(
+            getString(R.string.network_type_wifi),
+            getString(R.string.network_type_mobile),
+            getString(R.string.network_type_any)
+        )
         val currentNetworkType = sharedPreferences.getString("networkType", "Any")
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Select Network Type")
+            .setTitle(getString(R.string.select_network_type_title))
             .setSingleChoiceItems(
                 networkTypes,
                 networkTypes.indexOf(currentNetworkType)
@@ -244,7 +246,7 @@ class SettingsActivity : AppCompatActivity() {
                 checkNetworkTypeAndSetFlag()
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ -> dialog.dismiss() }
             .show()
     }
 
@@ -260,7 +262,7 @@ class SettingsActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun updateReleaseAgeLabel(weeks: Int) {
-        releaseAgeLabel.text = "Notify releases within the last $weeks weeks"
+        releaseAgeLabel.text = getString(R.string.notify_releases_within_weeks, weeks)
     }
 
     private fun saveFetchInterval(minutes: Int) {
@@ -328,45 +330,45 @@ class SettingsActivity : AppCompatActivity() {
             .targets(
                 TapTarget.forView(
                     intervalInput,
-                    "Fetch interval",
-                    "Here you can set how often new publications should be fetched (in minutes)."
+                    getString(R.string.fetch_interval_title),
+                    getString(R.string.fetch_interval_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     releaseAgeSlider,
-                    "Release-Age",
-                    "With this slider you can define how old releases can be to receive notifications (in weeks)."
+                    getString(R.string.release_age_title),
+                    getString(R.string.release_age_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     delayInput,
-                    "Delayed fetching",
-                    "Here you can set how many seconds should elapse between fetching."
+                    getString(R.string.delayed_fetching_title),
+                    getString(R.string.delayed_fetching_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     retryInput,
-                    "Retry Attempt",
-                    "Specify how long the app should wait after an error before it tries again (in minutes)."
+                    getString(R.string.retry_attempt_title),
+                    getString(R.string.retry_attempt_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     findViewById<MaterialButton>(R.id.button_backup),
-                    "Create backup",
-                    "Tap here to create a backup of your saved data."
+                    getString(R.string.create_backup_title),
+                    getString(R.string.create_backup_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     findViewById<MaterialButton>(R.id.button_restore),
-                    "Restore data",
-                    "Tap here to restore a previously created backup."
+                    getString(R.string.restore_data_title),
+                    getString(R.string.restore_data_description)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
                 override fun onSequenceFinish() {
                     Toast.makeText(
                         this@SettingsActivity,
-                        "Settings tutorial completed!",
+                        getString(R.string.settings_tutorial_completed),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -377,7 +379,7 @@ class SettingsActivity : AppCompatActivity() {
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@SettingsActivity,
-                        "Settings tutorial aborted.",
+                        getString(R.string.settings_tutorial_aborted),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

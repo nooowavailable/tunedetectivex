@@ -49,6 +49,32 @@
     <string name="unknown_artist">Unknown Artist</string>
     <string name="artist_saved">%1$s saved!</string>
     <string name="artist_removed">%1$s removed from saved artists!</string>
+    <string name="fetch_interval_title">Fetch interval</string>
+    <string name="fetch_interval_description">Here you can set how often new publications should be fetched (in minutes).</string>
+    <string name="release_age_title">Release-Age</string>
+    <string name="release_age_description">With this slider you can define how old releases can be to receive notifications (in weeks).</string>
+    <string name="delayed_fetching_title">Delayed fetching</string>
+    <string name="delayed_fetching_description">Here you can set how many seconds should elapse between fetching.</string>
+    <string name="retry_attempt_title">Retry Attempt</string>
+    <string name="retry_attempt_description">Specify how long the app should wait after an error before it tries again (in minutes).</string>
+    <string name="create_backup_title">Create backup</string>
+    <string name="create_backup_description">Tap here to create a backup of your saved data.</string>
+    <string name="restore_data_title">Restore data</string>
+    <string name="restore_data_description">Tap here to restore a previously created backup.</string>
+    <string name="settings_tutorial_completed">Settings tutorial completed!</string>
+    <string name="settings_tutorial_aborted">Settings tutorial aborted.</string>
+    <string name="fetch_interval_set">Fetch interval set to %1$d minutes</string>
+    <string name="invalid_interval_value">Invalid interval value.</string>
+    <string name="fetch_delay_set">Fetch delay set to %1$d seconds</string>
+    <string name="invalid_delay_value">Invalid delay value.</string>
+    <string name="retry_after_failure_set">Retry after failure set to %1$d minutes</string>
+    <string name="invalid_retry_value">Invalid retry value.</string>
+    <string name="battery_optimization_ignored">Battery optimization is already ignored for this app.</string>
+    <string name="select_network_type_title">Select Network Type</string>
+    <string name="network_type_wifi">Wi-Fi Only</string>
+    <string name="network_type_mobile">Mobile Data Only</string>
+    <string name="network_type_any">Any</string>
+    <string name="notify_releases_within_weeks">Notify releases within the last %1$d weeks</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>
