@@ -14,6 +14,17 @@ TuneDetectiveX empowers music enthusiasts to independently explore and monitor t
 - **🔔 Notifications**: Get notified about new releases from your saved artists.
 - **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
 
+## 📸 Screenshots
+
+<div style="display: flex; justify-content: center; flex-wrap: wrap;">
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/latest_release.png?raw=true" alt="Latest Release" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/artist_search.png?raw=true" alt="Screenshot 1" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/discography.png?raw=true" alt="Screenshot 2" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/saved_artists.png?raw=true" alt="Screenshot 3" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/releases_saved_artists.png?raw=true" alt="Screenshot 4" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/tut_main_screen.png?raw=true" alt="Screenshot 5" width="300" style="margin: 10px;" />
+</div>
+
 ## 🌐 Socials (for certificate hash, updates, etc)
 - [Matrix (Chat) Room](https://matrix.to/#/!HKIBPXETQFYecRxILT:matrix.org?via=matrix.org)
 
