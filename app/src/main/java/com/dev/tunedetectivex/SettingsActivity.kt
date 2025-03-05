@@ -353,6 +353,18 @@ class SettingsActivity : AppCompatActivity() {
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
+                    findViewById<MaterialButton>(R.id.button_request_battery_optimization),
+                    getString(R.string.request_battery_optimization_title),
+                    getString(R.string.request_battery_optimization_description)
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
+                    findViewById<MaterialButton>(R.id.button_select_network_type),
+                    getString(R.string.select_network_type_title),
+                    getString(R.string.select_network_type_description)
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
                     findViewById<MaterialButton>(R.id.button_backup),
                     getString(R.string.create_backup_title),
                     getString(R.string.create_backup_description)

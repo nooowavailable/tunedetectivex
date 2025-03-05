@@ -110,6 +110,9 @@
     <string name="import_artists">Importiere Künstler</string>
     <string name="all_artists_imported">Alle Künstler erfolgreich importiert.</string>
     <string name="progress_status">Fortschritt: %1$d%% - %2$s</string>
+    <string name="select_network_type_description">Wähle den bevorzugten Netzwerktyp für den Abruf von Updates.</string>
+    <string name="request_battery_optimization_title">Batterie-Optimierung</string>
+    <string name="request_battery_optimization_description">Bitte um Ignorieren von Akku-Optimierungen für bessere Leistung.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>
