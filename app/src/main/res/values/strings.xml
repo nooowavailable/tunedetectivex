@@ -113,6 +113,18 @@
     <string name="select_network_type_description">Choose your preferred network type for fetching updates.</string>
     <string name="request_battery_optimization_title">Battery Optimization</string>
     <string name="request_battery_optimization_description">Request to ignore battery optimizations for better performance.</string>
+    <string name="importing_message">Importing… Please wait.</string>
+    <string name="press_folder_icon_message">Press folder icon to start import</string>
+    <string name="warning_title">⚠️ Warning ⚠️</string>
+    <string name="import_warning_message">You are about to import a folder. Please note that you use this function at your own risk. 😬\n\n• This feature is an Experimental Feature and may result in your IP address being blocked by Deezer. 🤡\n• It is recommended to use a VPN. 🕵️‍♂️</string>
+    <string name="proceed_button">Proceed</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="import_progress_title">Import Progress</string>
+    <string name="selected_folder_message">Selected Folder: %1$s</string>
+    <string name="import_progress_description">Progress notifications for importing artists</string>
+    <string name="progress_message">Progress: %1$d%% (%2$d/%3$d)</string>
+    <string name="progress_artist_message">Progress: %1$d%% - %2$s</string>
+    <string name="import_completed_message">Import completed!</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

@@ -105,14 +105,26 @@
     <string name="selected_folder">Ausgewählter Ordner: %1$s</string>
     <string name="no_folder_selected">Kein Ordner ausgewählt</string>
     <string name="preparing_import">Vorbereitung des Imports…</string>
-    <string name="loading_artist">Künstler wird geladen…</string>
+    <string name="loading_artist">Künstler werden geladen…</string>
     <string name="import_completed">Import abgeschlossen</string>
     <string name="import_artists">Importiere Künstler</string>
-    <string name="all_artists_imported">Alle Künstler erfolgreich importiert.</string>
+    <string name="all_artists_imported">Alle Künstler wurden erfolgreich importiert.</string>
     <string name="progress_status">Fortschritt: %1$d%% - %2$s</string>
     <string name="select_network_type_description">Wähle den bevorzugten Netzwerktyp für den Abruf von Updates.</string>
     <string name="request_battery_optimization_title">Batterie-Optimierung</string>
     <string name="request_battery_optimization_description">Bitte um Ignorieren von Akku-Optimierungen für bessere Leistung.</string>
+    <string name="importing_message">Wird importiert… Bitte warten.</string>
+    <string name="press_folder_icon_message">Drücke auf das Ordner-Symbol, um den Import zu starten.</string>
+    <string name="warning_title">⚠️ Warnung ⚠️</string>
+    <string name="import_warning_message">Du bist dabei, einen Ordner zu importieren. Bitte beachten Sie, dass Sie diese Funktion auf eigene Gefahr nutzen. 😬\n\n- Diese Funktion ist eine experimentelle Funktion und kann dazu führen, dass Ihre IP-Adresse von Deezer blockiert wird. 🤡\n- Es wird empfohlen, ein VPN zu verwenden. 🕵️‍♂️</string>
+    <string name="proceed_button">Proceed</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="import_progress_title">Status des Imports</string>
+    <string name="selected_folder_message">Ausgewählter Ordner: %1$s</string>
+    <string name="import_progress_description">Statusmitteilungen für importierende Künstler</string>
+    <string name="progress_message">Fortschritt: %1$d%% (%2$d/%3$d)</string>
+    <string name="progress_artist_message">Fortschritt: %1$d%% - %2$s</string>
+    <string name="import_completed_message">Import abgeschlossen!</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>
