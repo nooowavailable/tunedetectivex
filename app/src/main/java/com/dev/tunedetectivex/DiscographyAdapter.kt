@@ -39,7 +39,7 @@ class DiscographyAdapter(
             releaseDate.text = album.release_date
 
             Glide.with(itemView.context)
-                .load(album.cover_xl)
+                .load(album.getBestCoverUrl())
                 .apply(
                     RequestOptions()
                         .transform(RoundedCorners(20))

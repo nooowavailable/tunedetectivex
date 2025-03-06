@@ -212,14 +212,14 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         Log.d("ReleaseDetailsActivity", "Artist Name: ${album.artist.name}")
 
         Glide.with(this)
-            .load(album.cover_xl)
+            .load(album.getBestCoverUrl())
             .apply(
                 RequestOptions.bitmapTransform(RoundedCorners(30))
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.error_image)
             )
             .into(albumCover)
-        Log.d("ReleaseDetailsActivity", "Loaded Album Cover URL: ${album.cover_xl}")
+        Log.d("ReleaseDetailsActivity", "Loaded Album Cover URL: ${album.getBestCoverUrl()}")
     }
 
     private fun loadTracklist(releaseId: Long) {

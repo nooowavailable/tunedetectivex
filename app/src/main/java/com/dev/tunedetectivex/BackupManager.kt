@@ -101,7 +101,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                                             id = release.id,
                                             title = release.title,
                                             artistName = artist.name,
-                                            albumArtUrl = release.cover_xl,
+                                            albumArtUrl = release.getBestCoverUrl(),
                                             releaseDate = release.release_date
                                         )
                                     )

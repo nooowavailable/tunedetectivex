@@ -126,7 +126,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                 putExtra("releaseId", album.id)
                 putExtra("releaseTitle", album.title)
                 putExtra("artistName", artistName)
-                putExtra("albumArtUrl", album.cover_xl)
+                putExtra("albumArtUrl", album.getBestCoverUrl())
             }.also { startActivity(it) }
         }
 

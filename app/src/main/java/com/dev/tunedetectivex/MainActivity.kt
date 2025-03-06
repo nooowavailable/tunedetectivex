@@ -732,7 +732,7 @@ class MainActivity : AppCompatActivity() {
         }
         textViewrelease_date.text = formattedDate
 
-        val coverUrl = album.cover_xl
+        val coverUrl = album.getBestCoverUrl()
         Glide.with(this)
             .load(coverUrl)
             .apply(RequestOptions().transform(RoundedCorners(40)))
