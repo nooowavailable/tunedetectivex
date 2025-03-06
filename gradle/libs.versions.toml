@@ -1,6 +1,6 @@
 [versions]
 activityKtx = "1.10.1"
-agp = "8.8.2"
+agp = "8.9.0"
 compiler = "4.14.2"
 fontawesome = "0.2.0"
 fontawesomeVersion = "0.0.5"
