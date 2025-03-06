@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.PowerManager
 import android.util.Log
@@ -124,8 +125,8 @@ class FetchReleasesWorker(
     private fun createForegroundNotification(): Notification {
         val builder = NotificationCompat.Builder(applicationContext, FETCH_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Fetching Releases")
-            .setContentText("Fetching new releases from your saved artists.")
+            .setContentTitle(applicationContext.getString(R.string.fetching_releases_title))
+            .setContentText(applicationContext.getString(R.string.fetching_releases_text))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
 
@@ -189,10 +190,10 @@ class FetchReleasesWorker(
                     }
 
                     val releaseType = when (latestRelease.record_type) {
-                        "album" -> "Album"
-                        "single" -> "Single"
-                        "ep" -> "EP"
-                        else -> "Release"
+                        "album" -> applicationContext.getString(R.string.release_type_album)
+                        "single" -> applicationContext.getString(R.string.release_type_single)
+                        "ep" -> applicationContext.getString(R.string.release_type_ep)
+                        else -> applicationContext.getString(R.string.release_type_default)
                     }
 
                     val coverUrl = latestRelease.getBestCoverUrl()
@@ -283,10 +284,42 @@ class FetchReleasesWorker(
         releaseType: String,
         channelId: String
     ): Notification {
+        val notificationTitle = when (releaseType) {
+            "Album" -> applicationContext.getString(
+                R.string.notification_new_release_title_album,
+                releaseType,
+                artist.name
+            )
+
+            "Single" -> applicationContext.getString(
+                R.string.notification_new_release_title_single,
+                releaseType,
+                artist.name
+            )
+
+            "EP" -> applicationContext.getString(
+                R.string.notification_new_release_title_ep,
+                releaseType,
+                artist.name
+            )
+
+            else -> applicationContext.getString(
+                R.string.notification_new_release_title_default,
+                releaseType,
+                artist.name
+            )
+        }
+
+        val notificationText = applicationContext.getString(
+            R.string.notification_release_text,
+            artist.name,
+            album.title
+        )
+
         val builder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("New $releaseType from ${artist.name}")
-            .setContentText("${artist.name} released ${album.title}")
+            .setContentTitle(notificationTitle)
+            .setContentText(notificationText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         if (albumArtBitmap != null) {
@@ -295,6 +328,13 @@ class FetchReleasesWorker(
                     .bigPicture(albumArtBitmap)
                     .bigLargeIcon(null as Bitmap?)
             ).setLargeIcon(albumArtBitmap)
+        } else {
+            builder.setLargeIcon(
+                BitmapFactory.decodeResource(
+                    applicationContext.resources,
+                    R.drawable.error_image
+                )
+            )
         }
 
         return builder.build()
@@ -303,21 +343,24 @@ class FetchReleasesWorker(
     private fun createNotificationChannels() {
         val manager =
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
         val fetchChannel = NotificationChannel(
             FETCH_CHANNEL_ID,
-            "Background Fetch Notifications",
+            applicationContext.getString(R.string.notification_channel_fetch),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Silent notifications for background fetching of artist releases"
+            description =
+                applicationContext.getString(R.string.notification_channel_fetch_description)
         }
         manager.createNotificationChannel(fetchChannel)
 
         val releaseChannel = NotificationChannel(
             RELEASE_CHANNEL_ID,
-            "New Release Notifications",
+            applicationContext.getString(R.string.notification_channel_release),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Notifications for new releases from artists"
+            description =
+                applicationContext.getString(R.string.notification_channel_release_description)
         }
         manager.createNotificationChannel(releaseChannel)
     }

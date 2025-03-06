@@ -125,6 +125,21 @@
     <string name="progress_message">Progress: %1$d%% (%2$d/%3$d)</string>
     <string name="progress_artist_message">Progress: %1$d%% - %2$s</string>
     <string name="import_completed_message">Import completed!</string>
+    <string name="fetching_releases_title">Fetching Releases</string>
+    <string name="fetching_releases_text">Fetching new releases from your saved artists.</string>
+    <string name="release_type_album">Album</string>
+    <string name="release_type_single">Single</string>
+    <string name="release_type_ep">EP</string>
+    <string name="release_type_default">Release</string>
+    <string name="notification_new_release_title_album">New Album from %2$s</string>
+    <string name="notification_new_release_title_single">New Single from %2$s</string>
+    <string name="notification_new_release_title_ep">New EP from %2$s</string>
+    <string name="notification_new_release_title_default">New Release from %2$s</string>
+    <string name="notification_release_text">%1$s released %2$s</string>
+    <string name="notification_channel_fetch">Background Fetch Notifications</string>
+    <string name="notification_channel_release">New Release Notifications</string>
+    <string name="notification_channel_fetch_description">Silent notifications for background fetching of artist releases</string>
+    <string name="notification_channel_release_description">Notifications for new releases from artists</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

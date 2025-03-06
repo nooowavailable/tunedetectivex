@@ -2,10 +2,13 @@ buildscript {
     val agp_version by extra("8.8.0")
     val agp_version1 by extra("8.8.0")
 }
+
 plugins {
+    id("org.jetbrains.kotlin.android") version "2.1.20-RC"  // Update to compatible Kotlin version
+    id("com.android.application") version "8.9.0"
     id("kotlin-android")
     id("kotlin-kapt")
-    id("com.android.application") version "8.9.0"
+    id("com.google.devtools.ksp") version "2.1.20-RC-1.0.31"
 }
 
 android {
@@ -83,8 +86,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.androidx.room.runtime)
-    //noinspection KaptUsageInsteadOfKsp
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.core.ktx)
@@ -93,4 +95,5 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.taptargetview)
     implementation(libs.androidx.activity.ktx)
+    implementation(libs.kotlin.stdlib)
 }
