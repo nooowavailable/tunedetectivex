@@ -12,9 +12,6 @@ import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import kotlinx.coroutines.Dispatchers
@@ -67,11 +64,12 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         artistName.text = artistNameText ?: getString(R.string.unknown_artist)
 
         if (!albumArtUrl.isNullOrEmpty()) {
-            Glide.with(this)
-                .load(albumArtUrl)
-                .apply(RequestOptions.placeholderOf(R.drawable.placeholder_image))
-                .error(R.drawable.error_image)
-                .into(albumCover)
+            BitmapUtils.loadBitmapFromUrl(
+                this,
+                albumArtUrl,
+                albumCover,
+                20f
+            )
         } else {
             Log.e("ReleaseDetailsActivity", "Album Cover URL is null or empty")
             albumCover.setImageResource(R.drawable.error_image)
@@ -212,15 +210,20 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
         Log.d("ReleaseDetailsActivity", "Artist Name: ${album.artist.name}")
 
-        Glide.with(this)
-            .load(album.getBestCoverUrl())
-            .apply(
-                RequestOptions.bitmapTransform(RoundedCorners(30))
-                    .placeholder(R.drawable.placeholder_image)
-                    .error(R.drawable.error_image)
+        val coverUrl = album.getBestCoverUrl()
+
+        if (coverUrl.isNotEmpty()) {
+            BitmapUtils.loadBitmapFromUrl(
+                this,
+                coverUrl,
+                albumCover,
+                30f
             )
-            .into(albumCover)
-        Log.d("ReleaseDetailsActivity", "Loaded Album Cover URL: ${album.getBestCoverUrl()}")
+            Log.d("ReleaseDetailsActivity", "Loaded Album Cover URL: $coverUrl")
+        } else {
+            Log.e("ReleaseDetailsActivity", "Album Cover URL is null or empty")
+            albumCover.setImageResource(R.drawable.error_image)
+        }
     }
 
     private fun loadTracklist(releaseId: Long) {
