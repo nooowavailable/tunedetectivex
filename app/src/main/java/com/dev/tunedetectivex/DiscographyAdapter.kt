@@ -1,14 +1,12 @@
 package com.dev.tunedetectivex
 
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
 
 class DiscographyAdapter(
     private val albums: List<DeezerAlbum>,
@@ -38,13 +36,12 @@ class DiscographyAdapter(
             albumTitle.text = album.title
             releaseDate.text = album.release_date
 
-            Glide.with(itemView.context)
-                .load(album.getBestCoverUrl())
-                .apply(
-                    RequestOptions()
-                        .transform(RoundedCorners(20))
-                )
-                .into(albumCover)
+            BitmapUtils.loadBitmapFromUrl(
+                itemView.context as Activity,
+                album.getBestCoverUrl(),
+                albumCover,
+                20f
+            )
         }
     }
 }
