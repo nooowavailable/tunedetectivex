@@ -730,7 +730,13 @@ class MainActivity : AppCompatActivity() {
         textViewrelease_date.text = formattedDate
 
         val coverUrl = album.getBestCoverUrl()
-        BitmapUtils.loadBitmapFromUrl(this, coverUrl, imageViewAlbumArt, isCircular = false)
+        BitmapUtils.loadBitmapFromUrl(
+            this,
+            coverUrl,
+            imageViewAlbumArt,
+            cornerRadius = 30f,
+            isCircular = false
+        )
 
         updateSaveButton()
     }
