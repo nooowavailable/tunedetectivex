@@ -1,6 +1,7 @@
 package com.dev.tunedetectivex
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,8 +10,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 
 data class SavedArtistItem(
     val id: Long,
@@ -62,12 +61,14 @@ class SavedArtistAdapter(
                 ?: artist.picture_small
                 ?: artist.picture
 
-            Glide.with(itemView.context)
-                .load(profileImageUrl)
-                .apply(RequestOptions.circleCropTransform())
-                .placeholder(R.drawable.placeholder_image)
-                .error(R.drawable.placeholder_image)
-                .into(profileImageView)
+            profileImageUrl?.let {
+                BitmapUtils.loadBitmapFromUrl(
+                    itemView.context as Activity,
+                    it,
+                    profileImageView,
+                    isCircular = true
+                )
+            }
 
             profileImageView.setOnClickListener {
                 onArtistClick(artist)

@@ -1,12 +1,12 @@
 package com.dev.tunedetectivex
 
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 
 class MusicFilesAdapter(private var musicFiles: List<MusicFile>) :
     RecyclerView.Adapter<MusicFilesAdapter.ViewHolder>() {
@@ -29,10 +29,14 @@ class MusicFilesAdapter(private var musicFiles: List<MusicFile>) :
         holder.textViewFileName.text = musicFile.fileName
         holder.textViewStatus.text = musicFile.status
 
-        Glide.with(holder.itemView.context)
-            .load(musicFile.coverUrl)
-            .placeholder(R.drawable.error_image)
-            .into(holder.imageViewCover)
+        musicFile.coverUrl?.let {
+            BitmapUtils.loadBitmapFromUrl(
+                holder.itemView.context as Activity,
+                it,
+                holder.imageViewCover,
+                isCircular = false
+            )
+        }
     }
 
     override fun getItemCount() = musicFiles.size
