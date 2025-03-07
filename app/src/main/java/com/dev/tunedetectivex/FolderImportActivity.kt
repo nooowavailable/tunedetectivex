@@ -27,7 +27,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -315,11 +314,12 @@ class FolderImportActivity : AppCompatActivity() {
                                 val coverUrl = fetchCoverUrl(mainArtistName)
                                 if (!coverUrl.isNullOrEmpty()) {
                                     withContext(Dispatchers.Main) {
-                                        Glide.with(this@FolderImportActivity)
-                                            .load(coverUrl)
-                                            .placeholder(R.drawable.placeholder_image)
-                                            .circleCrop()
-                                            .into(imageViewArtistCover)
+                                        BitmapUtils.loadBitmapFromUrl(
+                                            this@FolderImportActivity,
+                                            coverUrl,
+                                            imageViewArtistCover,
+                                            isCircular = true
+                                        )
 
                                         textViewArtistName.text = mainArtistName
                                     }
