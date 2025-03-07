@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.app.Activity
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -7,7 +8,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 
 class SimilarArtistsAdapter(
     private val context: Context,
@@ -27,12 +27,12 @@ class SimilarArtistsAdapter(
 
         val artistPictureUrl = getBestArtistPicture(artist)
         if (artistPictureUrl.isNotEmpty()) {
-            Glide.with(context)
-                .load(artistPictureUrl)
-                .circleCrop()
-                .placeholder(R.drawable.placeholder_image)
-                .error(R.drawable.placeholder_image)
-                .into(holder.artistImageView)
+            BitmapUtils.loadBitmapFromUrl(
+                context as Activity,
+                artistPictureUrl,
+                holder.artistImageView,
+                isCircular = true
+            )
         } else {
             holder.artistImageView.setImageResource(R.drawable.placeholder_image)
         }

@@ -217,11 +217,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 this,
                 coverUrl,
                 albumCover,
-                30f
+                cornerRadius = 30f,
+                isCircular = false
             )
-            Log.d("ReleaseDetailsActivity", "Loaded Album Cover URL: $coverUrl")
         } else {
-            Log.e("ReleaseDetailsActivity", "Album Cover URL is null or empty")
             albumCover.setImageResource(R.drawable.error_image)
         }
     }

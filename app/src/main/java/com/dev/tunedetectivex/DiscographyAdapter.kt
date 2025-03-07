@@ -40,7 +40,8 @@ class DiscographyAdapter(
                 itemView.context as Activity,
                 album.getBestCoverUrl(),
                 albumCover,
-                20f
+                cornerRadius = 30f,
+                isCircular = false
             )
         }
     }

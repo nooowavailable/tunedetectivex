@@ -21,15 +21,20 @@ object BitmapUtils {
         activity: Activity,
         url: String,
         imageView: ImageView,
-        cornerRadius: Float = 40f
+        cornerRadius: Float = 0f,
+        isCircular: Boolean = false
     ) {
         Thread {
             try {
                 val input = URL(url).openStream()
                 val bitmap = BitmapFactory.decodeStream(input)
-                val roundedBitmap = getRoundedBitmap(bitmap, cornerRadius)
+                val processedBitmap = if (isCircular) {
+                    getCircularBitmap(bitmap)
+                } else {
+                    getRoundedBitmap(bitmap, cornerRadius)
+                }
                 activity.runOnUiThread {
-                    imageView.setImageBitmap(roundedBitmap)
+                    imageView.setImageBitmap(processedBitmap)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading image: ${e.message}")
@@ -56,6 +61,21 @@ object BitmapUtils {
 
         paint.shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
+
+        return output
+    }
+
+    private fun getCircularBitmap(bitmap: Bitmap): Bitmap {
+        val size = bitmap.width.coerceAtMost(bitmap.height)
+        val output = createBitmap(size, size)
+        val canvas = Canvas(output)
+        val paint = Paint()
+        val shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+
+        paint.isAntiAlias = true
+        paint.shader = shader
+
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
 
         return output
     }
