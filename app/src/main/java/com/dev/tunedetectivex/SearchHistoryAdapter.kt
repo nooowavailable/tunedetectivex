@@ -1,5 +1,7 @@
 package com.dev.tunedetectivex
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.view.LayoutInflater
@@ -8,8 +10,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 
 class SearchHistoryAdapter(
     private val context: Context,
@@ -44,16 +44,19 @@ class SearchHistoryAdapter(
         val historyItem = historyList[position]
         holder.textViewArtistName.text = historyItem.artistName
 
-        Glide.with(context)
-            .load(historyItem.profileImageUrl)
-            .apply(RequestOptions().circleCrop())
-            .into(holder.imageViewArtistProfile)
+        BitmapUtils.loadBitmapFromUrl(
+            context as Activity,
+            historyItem.profileImageUrl,
+            holder.imageViewArtistProfile,
+            isCircular = true
+        )
     }
 
     override fun getItemCount(): Int {
         return historyList.size
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun refreshHistory(newHistory: List<SearchHistory>) {
         historyList.clear()
 
