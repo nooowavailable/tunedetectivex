@@ -1,0 +1,62 @@
+package com.dev.tunedetectivex
+
+import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Shader
+import android.util.Log
+import android.widget.ImageView
+import androidx.core.graphics.createBitmap
+import java.net.URL
+
+object BitmapUtils {
+
+    private const val TAG = "BitmapUtils"
+
+    fun loadBitmapFromUrl(
+        activity: Activity,
+        url: String,
+        imageView: ImageView,
+        cornerRadius: Float = 40f
+    ) {
+        Thread {
+            try {
+                val input = URL(url).openStream()
+                val bitmap = BitmapFactory.decodeStream(input)
+                val roundedBitmap = getRoundedBitmap(bitmap, cornerRadius)
+                activity.runOnUiThread {
+                    imageView.setImageBitmap(roundedBitmap)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading image: ${e.message}")
+            }
+        }.start()
+    }
+
+    private fun getRoundedBitmap(bitmap: Bitmap, cornerRadius: Float): Bitmap {
+        val output = createBitmap(bitmap.width, bitmap.height)
+        val canvas = Canvas(output)
+        val paint = Paint()
+        val path = Path()
+
+        path.addRoundRect(
+            0f,
+            0f,
+            bitmap.width.toFloat(),
+            bitmap.height.toFloat(),
+            cornerRadius,
+            cornerRadius,
+            Path.Direction.CW
+        )
+        canvas.clipPath(path)
+
+        paint.shader = BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
+
+        return output
+    }
+}

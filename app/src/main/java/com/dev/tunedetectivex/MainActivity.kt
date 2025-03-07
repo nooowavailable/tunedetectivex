@@ -25,12 +25,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
@@ -127,7 +125,7 @@ class MainActivity : AppCompatActivity() {
 
         if (isFirstRun) {
             showTutorial()
-            appPreferences.edit().putBoolean("isFirstRun", false).apply()
+            appPreferences.edit { putBoolean("isFirstRun", false) }
         }
 
         val intervalInMinutes =
@@ -712,7 +710,6 @@ class MainActivity : AppCompatActivity() {
         showLoading(false)
     }
 
-
     private fun displayReleaseInfo(album: DeezerAlbum) {
         artistInfoCard.visibility = View.VISIBLE
 
@@ -733,10 +730,7 @@ class MainActivity : AppCompatActivity() {
         textViewrelease_date.text = formattedDate
 
         val coverUrl = album.getBestCoverUrl()
-        Glide.with(this)
-            .load(coverUrl)
-            .apply(RequestOptions().transform(RoundedCorners(40)))
-            .into(imageViewAlbumArt)
+        BitmapUtils.loadBitmapFromUrl(this, coverUrl, imageViewAlbumArt, 40f)
 
         updateSaveButton()
     }
