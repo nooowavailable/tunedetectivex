@@ -140,6 +140,17 @@
     <string name="notification_channel_release">Benachrichtigungen über neue Veröffentlichungen</string>
     <string name="notification_channel_fetch_description">Stille Benachrichtigungen für den Hintergrundfetch von Veröffentlichungen</string>
     <string name="notification_channel_release_description">Benachrichtigungen über neue Veröffentlichungen von Künstlern</string>
+    <string name="unknown_title">Unbekannter Titel</string>
+    <string name="tutorial_album_cover_title">Album-Cover</string>
+    <string name="tutorial_album_cover_description">Hier kannst du das Album- oder Single-Cover sehen.</string>
+    <string name="tutorial_release_title">Titel</string>
+    <string name="tutorial_release_description">Der Titel der Veröffentlichung wird hier angezeigt.</string>
+    <string name="tutorial_artist_name_title">Künstler</string>
+    <string name="tutorial_artist_name_description">Hier ist der Name des Künstlers zu sehen.</string>
+    <string name="tutorial_tracklist_title">Trackliste</string>
+    <string name="tutorial_tracklist_description">Hier findest du die Tracks der Veröffentlichung. Scrolle weiter, um alle Tracks zu sehen.</string>
+    <string name="tutorial_completed">Tutorial abgeschlossen! Viel Spaß mit der App.</string>
+    <string name="tutorial_aborted">Tutorial abgebrochen.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

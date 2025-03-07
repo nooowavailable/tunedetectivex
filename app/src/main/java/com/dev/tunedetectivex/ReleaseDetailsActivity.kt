@@ -63,8 +63,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         Log.d("ReleaseDetailsActivity", "Release ID: $releaseId")
         Log.d("ReleaseDetailsActivity", "Album Cover URL: $albumArtUrl")
 
-        releaseTitle.text = releaseTitleText ?: "Unknown Title"
-        artistName.text = artistNameText ?: "Unknown Artist"
+        releaseTitle.text = releaseTitleText ?: getString(R.string.unknown_title)
+        artistName.text = artistNameText ?: getString(R.string.unknown_artist)
 
         if (!albumArtUrl.isNullOrEmpty()) {
             Glide.with(this)
@@ -106,7 +106,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             )
             Toast.makeText(
                 this,
-                "Selected network type is not available. Please check your connection.",
+                getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -117,33 +117,33 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             .targets(
                 TapTarget.forView(
                     albumCover,
-                    "Album-Cover",
-                    "Here you can see the album or single cover."
+                    getString(R.string.tutorial_album_cover_title),
+                    getString(R.string.tutorial_album_cover_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     releaseTitle,
-                    "Title",
-                    "The title of the release is displayed here."
+                    getString(R.string.tutorial_release_title),
+                    getString(R.string.tutorial_release_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     artistName,
-                    "Artists",
-                    "Here you can see the artist's name."
+                    getString(R.string.tutorial_artist_name_title),
+                    getString(R.string.tutorial_artist_name_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
                     recyclerView,
-                    "Tracklist",
-                    "Here you can find the tracks of the release. Scroll to view all tracks."
+                    getString(R.string.tutorial_tracklist_title),
+                    getString(R.string.tutorial_tracklist_description)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
                 override fun onSequenceFinish() {
                     Toast.makeText(
                         this@ReleaseDetailsActivity,
-                        "Tutorial completed! Have fun with the app.",
+                        getString(R.string.tutorial_completed),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -154,7 +154,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@ReleaseDetailsActivity,
-                        "Tutorial aborted.",
+                        getString(R.string.tutorial_aborted),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
