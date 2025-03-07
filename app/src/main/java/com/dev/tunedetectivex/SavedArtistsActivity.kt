@@ -7,9 +7,11 @@ import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -45,6 +47,8 @@ class SavedArtistsActivity : AppCompatActivity() {
     private lateinit var artistAdapter: SavedArtistAdapter
     private lateinit var releaseAdapter: ReleaseAdapter
     private var isNetworkRequestsAllowed = true
+    private var isLoading = false
+    private lateinit var loadingIndicator: ProgressBar
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +58,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewSavedArtists)
         spinnerViewType = findViewById(R.id.spinnerViewType)
         searchView = findViewById(R.id.searchViewArtists)
+        loadingIndicator = findViewById(R.id.progressBar)
 
         db = AppDatabase.getDatabase(applicationContext)
 
@@ -68,10 +73,8 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         if (isFirstRunSavedArtists) {
             showSavedArtistsTutorial()
-            sharedPreferences.edit().putBoolean("isFirstRunSavedArtists", false).apply()
+            sharedPreferences.edit { putBoolean("isFirstRunSavedArtists", false) }
         }
-
-
 
         lifecycleScope.launch {
             val selectedPosition = spinnerViewType.selectedItemPosition
@@ -89,7 +92,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             } else {
                 loadSavedReleases()
             }
-
         }
     }
 
@@ -125,6 +127,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                 position: Int,
                 id: Long
             ) {
+                if (isLoading) return
+
                 when (position) {
                     0 -> {
                         loadSavedArtists()
@@ -301,6 +305,10 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private fun loadSavedArtists() {
+        if (isLoading) return // Prevent multiple loads
+        isLoading = true
+        showLoading(true) // Show loading indicator
+
         checkNetworkTypeAndSetFlag()
 
         if (!isNetworkRequestsAllowed) {
@@ -309,6 +317,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                 getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
+            showLoading(false) // Hide loading indicator
+            isLoading = false
             return
         }
 
@@ -354,6 +364,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                 Log.e("SavedArtistsActivity", "Error loading the artists: ${e.message}", e)
             } finally {
                 withContext(Dispatchers.Main) {
+                    showLoading(false)
+                    isLoading = false
                 }
             }
         }
@@ -442,6 +454,10 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private fun loadSavedReleases() {
+        if (isLoading) return // Prevent multiple loads
+        isLoading = true
+        showLoading(true) // Show loading indicator
+
         checkNetworkTypeAndSetFlag()
 
         if (!isNetworkRequestsAllowed) {
@@ -450,6 +466,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                 getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
+            showLoading(false) // Hide loading indicator
+            isLoading = false
             return
         }
 
@@ -494,9 +512,12 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 if (isFirstRunReleases) {
                     showReleasesTutorial()
-                    sharedPreferences.edit().putBoolean("isFirstRunReleases", false).apply()
+                    sharedPreferences.edit { putBoolean("isFirstRunReleases", false) }
                 }
             }
+
+            showLoading(false) // Hide loading indicator
+            isLoading = false
         }
     }
 
@@ -712,5 +733,10 @@ class SavedArtistsActivity : AppCompatActivity() {
                 }
             })
             .start()
+    }
+
+    private fun showLoading(isLoading: Boolean) {
+        loadingIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+        recyclerView.visibility = if (isLoading) View.GONE else View.VISIBLE
     }
 }

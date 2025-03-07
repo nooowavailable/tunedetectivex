@@ -8,6 +8,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -87,7 +88,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         val isFirstRunReleaseDetails = sharedPreferences.getBoolean("isFirstRunReleaseDetails", true)
         if (isFirstRunReleaseDetails) {
             showReleaseDetailsTutorial()
-            sharedPreferences.edit().putBoolean("isFirstRunReleaseDetails", false).apply()
+            sharedPreferences.edit { putBoolean("isFirstRunReleaseDetails", false) }
         }
     }
 
