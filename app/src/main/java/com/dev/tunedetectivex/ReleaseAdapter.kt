@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.app.Activity
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,9 +12,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -80,14 +78,13 @@ class ReleaseAdapter(
                 "Binding release: ID=${item.id}, Title=${item.title}, Artist=${item.artistName}, Date=${item.releaseDate}"
             )
 
-            Glide.with(itemView.context)
-                .load(item.albumArtUrl)
-                .apply(
-                    RequestOptions.bitmapTransform(RoundedCorners(30))
-                        .placeholder(R.drawable.placeholder_image)
-                        .error(R.drawable.error_image)
-                )
-                .into(albumArt)
+            BitmapUtils.loadBitmapFromUrl(
+                itemView.context as Activity,
+                item.albumArtUrl,
+                albumArt,
+                cornerRadius = 30f,
+                isCircular = false
+            )
         }
 
         private fun formatReleaseDate(date: String): String {

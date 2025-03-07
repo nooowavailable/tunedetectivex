@@ -16,7 +16,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -242,11 +241,7 @@ class FetchReleasesWorker(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val albumArtBitmap = Glide.with(applicationContext)
-                    .asBitmap()
-                    .load(album.getBestCoverUrl())
-                    .submit()
-                    .get()
+                val albumArtBitmap = BitmapUtils.loadBitmapFromUrlSync(album.getBestCoverUrl())
 
                 val notification = createNotification(
                     artist = artist,

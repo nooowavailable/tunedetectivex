@@ -79,4 +79,14 @@ object BitmapUtils {
 
         return output
     }
+
+    fun loadBitmapFromUrlSync(url: String): Bitmap? {
+        return try {
+            val input = URL(url).openStream()
+            BitmapFactory.decodeStream(input)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading bitmap from URL: ${e.message}", e)
+            null
+        }
+    }
 }
