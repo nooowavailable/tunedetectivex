@@ -11,8 +11,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -133,10 +131,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
 
-        Glide.with(this)
-            .load(artistImageUrl)
-            .apply(RequestOptions().centerCrop())
-            .into(imageView)
+        BitmapUtils.loadBitmapFromUrl(this, artistImageUrl, imageView, 40f)
 
         recyclerView.visibility = View.VISIBLE
     }
