@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private val fetchedArtists = mutableSetOf<Long>()
     private var isNetworkRequestsAllowed = true
     private lateinit var buttonOpenDiscography: MaterialButton
+    private lateinit var fabAbout: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +105,8 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBarLoading)
         buttonOpenDiscography = findViewById(R.id.button_open_discography)
         notificationManager = NotificationManagerCompat.from(this)
+        fabAbout = findViewById(R.id.fabAbout)
+        fabAbout.visibility = View.GONE
 
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
@@ -137,6 +140,7 @@ class MainActivity : AppCompatActivity() {
         clearPreviousSearch()
         setupApiService()
 
+
         val searchLayout: TextInputLayout = findViewById(R.id.searchLayout)
         searchLayout.setEndIconOnClickListener {
             showSearchHistory()
@@ -154,6 +158,11 @@ class MainActivity : AppCompatActivity() {
 
                     R.id.menu_settings -> {
                         startActivity(Intent(this, SettingsActivity::class.java))
+                        true
+                    }
+
+                    R.id.menu_about -> {
+                        startActivity(Intent(this, AboutActivity::class.java))
                         true
                     }
 
@@ -180,6 +189,11 @@ class MainActivity : AppCompatActivity() {
 
         fabSelectFolder.setOnClickListener {
             startActivity(Intent(this, FolderImportActivity::class.java))
+        }
+
+        fabAbout.setOnClickListener {
+            startActivity(Intent(this, AboutActivity::class.java))
+            toggleFabMenu()
         }
 
         db = AppDatabase.getDatabase(applicationContext)
@@ -385,24 +399,29 @@ class MainActivity : AppCompatActivity() {
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
+        val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
 
         if (isFabMenuOpen) {
             fabSavedArtists.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSettings.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSelectFolder.animate().translationY(0f).alpha(0f).setDuration(200).start()
+            fabAbout.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabMenu.setImageResource(R.drawable.ic_menu)
             Handler(Looper.getMainLooper()).postDelayed({
                 fabSavedArtists.visibility = View.GONE
                 fabSettings.visibility = View.GONE
                 fabSelectFolder.visibility = View.GONE
+                fabAbout.visibility = View.GONE
             }, 200)
         } else {
             fabSavedArtists.visibility = View.VISIBLE
             fabSettings.visibility = View.VISIBLE
             fabSelectFolder.visibility = View.VISIBLE
+            fabAbout.visibility = View.VISIBLE
             fabSavedArtists.animate().translationY(-80f).alpha(1f).setDuration(200).start()
             fabSettings.animate().translationY(-160f).alpha(1f).setDuration(200).start()
             fabSelectFolder.animate().translationY(-240f).alpha(1f).setDuration(200).start()
+            fabAbout.animate().translationY(-320f).alpha(1f).setDuration(200).start()
             fabMenu.setImageResource(R.drawable.ic_close)
         }
         isFabMenuOpen = !isFabMenuOpen
@@ -413,6 +432,7 @@ class MainActivity : AppCompatActivity() {
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
+        val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
 
         fabSavedArtists.visibility = View.VISIBLE
         fabSavedArtists.translationY = 0f
@@ -425,6 +445,10 @@ class MainActivity : AppCompatActivity() {
         fabSelectFolder.visibility = View.VISIBLE
         fabSelectFolder.translationY = 0f
         fabSelectFolder.alpha = 1f
+
+        fabAbout.visibility = View.VISIBLE
+        fabAbout.translationY = 0f
+        fabAbout.alpha = 1f
 
         fabMenu.visibility = View.VISIBLE
         fabMenu.alpha = 1f
@@ -453,6 +477,12 @@ class MainActivity : AppCompatActivity() {
                     fabSelectFolder,
                     getString(R.string.tutorial_select_folder_title),
                     getString(R.string.tutorial_select_folder_message)
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
+                    fabAbout,
+                    getString(R.string.tutorial_about_title),
+                    getString(R.string.tutorial_about_message)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
@@ -466,9 +496,11 @@ class MainActivity : AppCompatActivity() {
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
                     fabSelectFolder.visibility = View.GONE
+                    fabAbout.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
                     fabSelectFolder.translationY = 0f
+                    fabAbout.translationY = 0f
                 }
 
                 override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {
@@ -485,9 +517,11 @@ class MainActivity : AppCompatActivity() {
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
                     fabSelectFolder.visibility = View.GONE
+                    fabAbout.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
                     fabSelectFolder.translationY = 0f
+                    fabAbout.translationY = 0f
                 }
             })
             .start()

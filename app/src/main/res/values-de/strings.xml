@@ -151,6 +151,11 @@
     <string name="tutorial_tracklist_description">Hier findest du die Tracks der Veröffentlichung. Scrolle weiter, um alle Tracks zu sehen.</string>
     <string name="tutorial_completed">Tutorial abgeschlossen! Viel Spaß mit der App.</string>
     <string name="tutorial_aborted">Tutorial abgebrochen.</string>
+    <string name="tutorial_about_title">Über TDX</string>
+    <string name="tutorial_about_message">Mehr über diese App und weitere Links erfahren.</string>
+    <string name="open_matrix_chat">Matrix öffnen</string>
+    <string name="open_github_repository">GitHub öffnen</string>
+    <string name="chat_room_and_github_repo">Chat Raum und Github Repo:</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

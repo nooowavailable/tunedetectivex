@@ -151,6 +151,11 @@
     <string name="tutorial_tracklist_description">Here you can find the tracks of the release. Scroll to view all tracks.</string>
     <string name="tutorial_completed">Tutorial completed! Have fun with the app.</string>
     <string name="tutorial_aborted">Tutorial aborted.</string>
+    <string name="tutorial_about_title">About</string>
+    <string name="tutorial_about_message">Learn more about this app (Links)</string>
+    <string name="open_matrix_chat">Open Matrix</string>
+    <string name="open_github_repository">Open GitHub</string>
+    <string name="chat_room_and_github_repo">Chat Room and Github Repo:</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

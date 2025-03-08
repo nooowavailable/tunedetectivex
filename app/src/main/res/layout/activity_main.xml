@@ -153,8 +153,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="16dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="4dp"
             android:contentDescription="@string/buttonSaveArtist"
             app:srcCompat="@drawable/ic_save_artist" />
 
@@ -165,7 +165,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_margin="16dp"
+            android:layout_margin="4dp"
             android:alpha="0.9"
             android:translationZ="10dp"
             android:contentDescription="@string/fabMenu"
@@ -177,11 +177,11 @@
             android:id="@+id/fabSavedArtists"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
+            android:layout_margin="4dp"
             android:layout_above="@id/fabMenu"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
-            app:elevation="8dp"
+            app:elevation="4dp"
             android:layout_alignParentEnd="true"
             app:srcCompat="@drawable/ic_saved_artists" />
 
@@ -190,11 +190,11 @@
             android:id="@+id/fabSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
+            android:layout_margin="4dp"
             android:layout_above="@id/fabSavedArtists"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
-            app:elevation="8dp"
+            app:elevation="4dp"
             android:layout_alignParentEnd="true"
             app:srcCompat="@drawable/ic_settings" />
 
@@ -203,14 +203,28 @@
             android:id="@+id/fabSelectFolder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
+            android:layout_margin="4dp"
             android:layout_above="@id/fabSettings"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
             android:layout_alignParentEnd="true"
-            app:elevation="8dp"
+            app:elevation="4dp"
             app:srcCompat="@drawable/ic_folder" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAbout"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/fabSelectFolder"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="4dp"
+            android:importantForAccessibility="no"
+            android:translationZ="10dp"
+            app:elevation="4dp"
+            app:srcCompat="@drawable/ic_about" />
     </RelativeLayout>
+
 
     <ProgressBar
         android:id="@+id/progressBarLoading"

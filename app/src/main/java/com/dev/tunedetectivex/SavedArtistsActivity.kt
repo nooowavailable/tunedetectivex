@@ -305,9 +305,9 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private fun loadSavedArtists() {
-        if (isLoading) return // Prevent multiple loads
+        if (isLoading) return
         isLoading = true
-        showLoading(true) // Show loading indicator
+        showLoading(true)
 
         checkNetworkTypeAndSetFlag()
 
@@ -317,7 +317,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
-            showLoading(false) // Hide loading indicator
+            showLoading(false)
             isLoading = false
             return
         }
@@ -454,9 +454,9 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private fun loadSavedReleases() {
-        if (isLoading) return // Prevent multiple loads
+        if (isLoading) return
         isLoading = true
-        showLoading(true) // Show loading indicator
+        showLoading(true)
 
         checkNetworkTypeAndSetFlag()
 
@@ -466,7 +466,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 getString(R.string.network_type_not_available),
                 Toast.LENGTH_SHORT
             ).show()
-            showLoading(false) // Hide loading indicator
+            showLoading(false)
             isLoading = false
             return
         }
@@ -516,7 +516,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 }
             }
 
-            showLoading(false) // Hide loading indicator
+            showLoading(false)
             isLoading = false
         }
     }

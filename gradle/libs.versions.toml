@@ -4,7 +4,6 @@ agp = "8.9.0"
 compiler = "4.14.2"
 fontawesome = "0.2.0"
 fontawesomeVersion = "0.0.5"
-glide = "4.12.0"
 kotlin = "1.9.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -40,7 +39,6 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "compiler" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 fontawesome = { module = "com.shirishkoirala:FontAwesome", version.ref = "fontawesome" }
-glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

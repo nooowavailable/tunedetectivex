@@ -46,6 +46,10 @@
             android:theme="@style/AppTheme"
             android:configChanges="orientation|screenSize|keyboardHidden" />
 
+        <activity
+            android:name=".AboutActivity"
+            android:theme="@style/AppTheme" />
+
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:exported="true"
