@@ -71,34 +71,37 @@
                     tools:ignore="VisualLintTextFieldSize" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/artistInfoCard"
+            <LinearLayout
+                android:id="@+id/artistInfoContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:visibility="gone"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:orientation="vertical"
+                android:visibility="invisible">
+
+                <ImageView
+                    android:id="@+id/imageViewAlbumArt"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:adjustViewBounds="true"
+                    android:background="@android:color/transparent"
+                    android:importantForAccessibility="no"
+                    android:padding="20dp"
+                    android:scaleType="centerCrop" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/imageViewAlbumArt"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:importantForAccessibility="no"
-                        android:scaleType="centerCrop"
-                        android:adjustViewBounds="true" />
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/textViewname"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textStyle="bold"
                         android:layout_marginTop="8dp"
                         android:gravity="center"
                         android:text="@string/textViewname"
@@ -108,6 +111,7 @@
                         android:id="@+id/textViewAlbumTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textStyle="bold"
                         android:layout_marginTop="4dp"
                         android:gravity="center"
                         android:text="@string/textViewAlbumTitle"
@@ -134,7 +138,7 @@
                         app:iconGravity="textStart"
                         app:iconPadding="8dp" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewArtists"
@@ -153,8 +157,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
             android:contentDescription="@string/buttonSaveArtist"
             app:srcCompat="@drawable/ic_save_artist" />
 
@@ -165,7 +169,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_margin="4dp"
+            android:layout_margin="16dp"
             android:alpha="0.9"
             android:translationZ="10dp"
             android:contentDescription="@string/fabMenu"
@@ -177,7 +181,7 @@
             android:id="@+id/fabSavedArtists"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="4dp"
+            android:layout_margin="16dp"
             android:layout_above="@id/fabMenu"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
@@ -190,7 +194,7 @@
             android:id="@+id/fabSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="4dp"
+            android:layout_margin="16dp"
             android:layout_above="@id/fabSavedArtists"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
@@ -203,7 +207,7 @@
             android:id="@+id/fabSelectFolder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="4dp"
+            android:layout_margin="16dp"
             android:layout_above="@id/fabSettings"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
@@ -218,7 +222,7 @@
             android:layout_height="wrap_content"
             android:layout_above="@id/fabSelectFolder"
             android:layout_alignParentEnd="true"
-            android:layout_margin="4dp"
+            android:layout_margin="16dp"
             android:importantForAccessibility="no"
             android:translationZ="10dp"
             app:elevation="4dp"

@@ -16,6 +16,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -32,7 +33,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
@@ -65,7 +65,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var apiService: DeezerApiService
     private lateinit var db: AppDatabase
     private var selectedArtist: DeezerArtist? = null
-    private lateinit var artistInfoCard: MaterialCardView
     private lateinit var progressBar: ProgressBar
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
@@ -73,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private var isNetworkRequestsAllowed = true
     private lateinit var buttonOpenDiscography: MaterialButton
     private lateinit var fabAbout: FloatingActionButton
+    private lateinit var artistInfoContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         recyclerViewArtists.layoutManager = LinearLayoutManager(this)
         editTextArtist = findViewById(R.id.editTextArtist)
         buttonSaveArtist = findViewById(R.id.buttonSaveArtist)
-        artistInfoCard = findViewById(R.id.artistInfoCard)
+        artistInfoContainer = findViewById(R.id.artistInfoContainer)
         textViewname = findViewById(R.id.textViewname)
         textViewAlbumTitle = findViewById(R.id.textViewAlbumTitle)
         textViewrelease_date = findViewById(R.id.textViewrelease_date)
@@ -576,7 +576,7 @@ class MainActivity : AppCompatActivity() {
         setMenuButtonEnabled(false)
 
         buttonSaveArtist.visibility = View.GONE
-        artistInfoCard.visibility = View.GONE
+        artistInfoContainer.visibility = View.GONE
 
         Log.d(TAG, "Fetching similar artists for: $artist")
 
@@ -745,7 +745,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayReleaseInfo(album: DeezerAlbum) {
-        artistInfoCard.visibility = View.VISIBLE
+        artistInfoContainer.visibility = View.VISIBLE
 
         Log.d(TAG, "Displaying release info for artist: ${selectedArtist?.name}")
 
@@ -843,7 +843,7 @@ class MainActivity : AppCompatActivity() {
     private fun clearPreviousSearch() {
         editTextArtist.text.clear()
         buttonSaveArtist.visibility = View.GONE
-        artistInfoCard.visibility = View.GONE
+        artistInfoContainer.visibility = View.GONE
         recyclerViewArtists.adapter = null
         recyclerViewArtists.visibility = View.GONE
 
