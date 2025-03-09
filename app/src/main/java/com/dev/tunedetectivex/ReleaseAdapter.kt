@@ -78,6 +78,8 @@ class ReleaseAdapter(
                 "Binding release: ID=${item.id}, Title=${item.title}, Artist=${item.artistName}, Date=${item.releaseDate}"
             )
 
+            albumArt.setImageResource(R.drawable.ic_discography)
+
             BitmapUtils.loadBitmapFromUrl(
                 itemView.context as Activity,
                 item.albumArtUrl,

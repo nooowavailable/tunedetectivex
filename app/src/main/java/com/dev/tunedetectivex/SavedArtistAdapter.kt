@@ -55,6 +55,8 @@ class SavedArtistAdapter(
         fun bind(artist: SavedArtistItem, onArtistClick: (SavedArtistItem) -> Unit) {
             artistNameTextView.text = artist.name
 
+            profileImageView.setImageResource(R.drawable.placeholder_image)
+
             val profileImageUrl = artist.picture_xl
                 ?: artist.picture_big
                 ?: artist.picture_medium

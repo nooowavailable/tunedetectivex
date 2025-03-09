@@ -505,6 +505,9 @@ class SavedArtistsActivity : AppCompatActivity() {
                     }
                     startActivity(intent)
                 }
+
+                adapter.submitList(emptyList())
+
                 recyclerView.adapter = adapter
                 adapter.submitList(sortedReleaseItems)
                 recyclerView.visibility = if (sortedReleaseItems.isNotEmpty()) View.VISIBLE else View.GONE
