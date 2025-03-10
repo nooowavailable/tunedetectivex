@@ -68,7 +68,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 this,
                 albumArtUrl,
                 albumCover,
-                20f
+                cornerRadius = 20f,
+                placeholderResId = R.drawable.ic_discography
             )
         } else {
             Log.e("ReleaseDetailsActivity", "Album Cover URL is null or empty")
@@ -218,7 +219,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 coverUrl,
                 albumCover,
                 cornerRadius = 30f,
-                isCircular = false
+                isCircular = false,
+                placeholderResId = R.drawable.ic_discography
             )
         } else {
             albumCover.setImageResource(R.drawable.error_image)

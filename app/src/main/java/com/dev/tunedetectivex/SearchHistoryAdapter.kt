@@ -44,11 +44,14 @@ class SearchHistoryAdapter(
         val historyItem = historyList[position]
         holder.textViewArtistName.text = historyItem.artistName
 
+        val placeholderResId = R.drawable.placeholder_image
+
         BitmapUtils.loadBitmapFromUrl(
             context as Activity,
             historyItem.profileImageUrl,
             holder.imageViewArtistProfile,
-            isCircular = true
+            isCircular = true,
+            placeholderResId = placeholderResId
         )
     }
 

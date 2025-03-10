@@ -36,12 +36,15 @@ class DiscographyAdapter(
             albumTitle.text = album.title
             releaseDate.text = album.release_date
 
+            val placeholderResId = R.drawable.ic_discography
+
             BitmapUtils.loadBitmapFromUrl(
                 itemView.context as Activity,
                 album.getBestCoverUrl(),
                 albumCover,
                 cornerRadius = 30f,
-                isCircular = false
+                isCircular = false,
+                placeholderResId = placeholderResId
             )
         }
     }

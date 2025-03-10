@@ -174,12 +174,15 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
 
+        val placeholderResId = R.drawable.placeholder_image
+
         BitmapUtils.loadBitmapFromUrl(
             this,
             artistImageUrl,
             imageView,
             cornerRadius = 30f,
-            isCircular = false
+            isCircular = false,
+            placeholderResId = placeholderResId
         )
 
         recyclerView.visibility = View.VISIBLE

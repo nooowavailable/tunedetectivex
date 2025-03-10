@@ -318,7 +318,8 @@ class FolderImportActivity : AppCompatActivity() {
                                             this@FolderImportActivity,
                                             coverUrl,
                                             imageViewArtistCover,
-                                            isCircular = true
+                                            isCircular = true,
+                                            placeholderResId = R.drawable.placeholder_image
                                         )
 
                                         textViewArtistName.text = mainArtistName

@@ -85,7 +85,8 @@ class ReleaseAdapter(
                 item.albumArtUrl,
                 albumArt,
                 cornerRadius = 30f,
-                isCircular = false
+                isCircular = false,
+                placeholderResId = R.drawable.ic_discography
             )
         }
 

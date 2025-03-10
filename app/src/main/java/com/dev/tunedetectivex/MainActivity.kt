@@ -770,7 +770,8 @@ class MainActivity : AppCompatActivity() {
             coverUrl,
             imageViewAlbumArt,
             cornerRadius = 30f,
-            isCircular = false
+            isCircular = false,
+            placeholderResId = R.drawable.ic_discography
         )
 
         updateSaveButton()

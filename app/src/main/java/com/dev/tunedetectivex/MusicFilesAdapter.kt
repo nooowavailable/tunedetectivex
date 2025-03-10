@@ -29,13 +29,18 @@ class MusicFilesAdapter(private var musicFiles: List<MusicFile>) :
         holder.textViewFileName.text = musicFile.fileName
         holder.textViewStatus.text = musicFile.status
 
+        val placeholderResId = R.drawable.placeholder_image
+
         musicFile.coverUrl?.let {
             BitmapUtils.loadBitmapFromUrl(
                 holder.itemView.context as Activity,
                 it,
                 holder.imageViewCover,
-                isCircular = false
+                isCircular = false,
+                placeholderResId = placeholderResId
             )
+        } ?: run {
+            holder.imageViewCover.setImageResource(R.drawable.error_image)
         }
     }
 

@@ -22,8 +22,11 @@ object BitmapUtils {
         url: String,
         imageView: ImageView,
         cornerRadius: Float = 0f,
-        isCircular: Boolean = false
+        isCircular: Boolean = false,
+        placeholderResId: Int
     ) {
+        imageView.setImageResource(placeholderResId)
+
         Thread {
             try {
                 val input = URL(url).openStream()

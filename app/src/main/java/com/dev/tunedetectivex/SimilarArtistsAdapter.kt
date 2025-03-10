@@ -26,15 +26,18 @@ class SimilarArtistsAdapter(
         holder.nameTextView.text = artist.name
 
         val artistPictureUrl = getBestArtistPicture(artist)
+        val placeholderResId = R.drawable.placeholder_image
+
         if (artistPictureUrl.isNotEmpty()) {
             BitmapUtils.loadBitmapFromUrl(
                 context as Activity,
                 artistPictureUrl,
                 holder.artistImageView,
-                isCircular = true
+                isCircular = true,
+                placeholderResId = placeholderResId
             )
         } else {
-            holder.artistImageView.setImageResource(R.drawable.placeholder_image)
+            holder.artistImageView.setImageResource(placeholderResId)
         }
 
         holder.itemView.setOnClickListener { itemClick(artist) }

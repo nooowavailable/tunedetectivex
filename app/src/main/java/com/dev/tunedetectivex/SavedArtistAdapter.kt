@@ -68,8 +68,11 @@ class SavedArtistAdapter(
                     itemView.context as Activity,
                     it,
                     profileImageView,
-                    isCircular = true
+                    isCircular = true,
+                    placeholderResId = R.drawable.placeholder_image
                 )
+            } ?: run {
+                profileImageView.setImageResource(R.drawable.error_image)
             }
 
             profileImageView.setOnClickListener {
