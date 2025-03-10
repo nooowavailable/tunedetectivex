@@ -43,14 +43,57 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
         artistId = intent.getLongExtra("artistId", 0)
         artistName = intent.getStringExtra("artistName") ?: "Unknown Artist"
-        artistImageUrl = intent.getStringExtra("artistImageUrl") ?: ""
         progressBar = findViewById(R.id.progressBarLoading)
         supportActionBar?.title = artistName
 
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
 
-        loadArtistDiscography()
+        fetchArtistDetails(artistId)
+    }
+
+    private fun fetchArtistDetails(artistId: Long) {
+        showLoading(true)
+
+        apiService.getArtistDetails(artistId).enqueue(object : Callback<DeezerArtist> {
+            override fun onResponse(call: Call<DeezerArtist>, response: Response<DeezerArtist>) {
+                showLoading(false)
+
+                if (response.isSuccessful) {
+                    val artist = response.body()
+                    artist?.let {
+                        artistImageUrl = it.getBestPictureUrl()
+                        loadArtistDiscography()
+                    } ?: run {
+                        Toast.makeText(
+                            this@ArtistDiscographyActivity,
+                            "Artist not found.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else {
+                    Log.e(
+                        "ArtistDiscographyActivity",
+                        "Error fetching artist details: ${response.code()} ${response.message()}"
+                    )
+                    Toast.makeText(
+                        this@ArtistDiscographyActivity,
+                        "Error fetching artist details.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onFailure(call: Call<DeezerArtist>, t: Throwable) {
+                showLoading(false)
+                Log.e("ArtistDiscographyActivity", "Error fetching artist details", t)
+                Toast.makeText(
+                    this@ArtistDiscographyActivity,
+                    "Error fetching artist details.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
     }
 
     private fun showLoading(isLoading: Boolean) {

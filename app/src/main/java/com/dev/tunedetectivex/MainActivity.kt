@@ -666,6 +666,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         latestRelease?.let {
                             fetchAndCheckDiscography(artistId, it.title)
+                            fetchArtistProfilePicture(artistId)
                             onSuccess(it)
                         } ?: onFailure()
                     } else {
@@ -773,6 +774,24 @@ class MainActivity : AppCompatActivity() {
         )
 
         updateSaveButton()
+    }
+
+    private fun fetchArtistProfilePicture(artistId: Long) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val artistResponse = apiService.getArtistDetails(artistId).execute()
+            if (artistResponse.isSuccessful) {
+                val artist = artistResponse.body()
+                artist?.let {
+                    val profileImageUrl = it.getBestPictureUrl()
+                    Log.d(TAG, "Fetched profile image URL: $profileImageUrl")
+                }
+            } else {
+                Log.e(
+                    TAG,
+                    "Error fetching artist profile picture: ${artistResponse.code()} ${artistResponse.message()}"
+                )
+            }
+        }
     }
 
     private fun updateSaveButton() {
