@@ -1,7 +1,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="?attr/colorOnPrimary" />
+    <solid android:color="?attr/colorAccent" />
     <stroke
         android:width="2dp"
-        android:color="?attr/colorOnPrimary" />
+        android:color="?attr/colorAccent" />
 </shape>
