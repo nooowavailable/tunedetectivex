@@ -156,6 +156,8 @@
     <string name="open_matrix_chat">Open Matrix</string>
     <string name="open_github_repository">Open GitHub</string>
     <string name="chat_room_and_github_repo">Chat Room and Github Repo:</string>
+    <string name="clear_history">Clear History</string>
+    <string name="search_history_cleared">History cleared!</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

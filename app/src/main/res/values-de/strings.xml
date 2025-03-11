@@ -156,6 +156,8 @@
     <string name="open_matrix_chat">Matrix öffnen</string>
     <string name="open_github_repository">GitHub öffnen</string>
     <string name="chat_room_and_github_repo">Chat Raum und Github Repo:</string>
+    <string name="clear_history">Verlauf löschen</string>
+    <string name="search_history_cleared">Verlauf gelöscht!</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

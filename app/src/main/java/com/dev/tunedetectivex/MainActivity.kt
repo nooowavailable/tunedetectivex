@@ -1,6 +1,7 @@
 package com.dev.tunedetectivex
 
 import android.Manifest
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -340,6 +341,15 @@ class MainActivity : AppCompatActivity() {
 
                     recyclerView.adapter = adapter
 
+                    // Add Clear button
+                    dialog.setButton(
+                        DialogInterface.BUTTON_POSITIVE,
+                        getString(R.string.clear_history)
+                    ) { _, _ ->
+                        clearSearchHistory()
+                        adapter.refreshHistory(emptyList()) // Clear the adapter's data
+                    }
+
                     dialog.setView(recyclerView)
                     dialog.show()
 
@@ -351,6 +361,19 @@ class MainActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+            }
+        }
+    }
+
+    private fun clearSearchHistory() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            db.searchHistoryDao().clearHistory()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.search_history_cleared),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
