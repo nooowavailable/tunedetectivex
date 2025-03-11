@@ -96,11 +96,11 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
         isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
 
         if (!isNetworkRequestsAllowed) {
             Toast.makeText(

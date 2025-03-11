@@ -42,8 +42,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         trackAdapter = TrackAdapter()
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = trackAdapter
-
         apiService = DeezerApiService.create()
+
+        checkNetworkTypeAndSetFlag()
+
 
         val releaseId = intent.getLongExtra("releaseId", -1)
         val releaseTitleText = intent.getStringExtra("releaseTitle")
@@ -91,24 +93,22 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-
-        isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
-
-        if (!isNetworkRequestsAllowed) {
-            Log.w(
-                "ReleaseDetailsActivity",
-                "Selected network type is not available. Skipping network requests."
-            )
-            Toast.makeText(
-                this,
-                getString(R.string.network_type_not_available),
-                Toast.LENGTH_SHORT
-            ).show()
+    private fun checkNetworkAndProceed(action: () -> Unit) {
+        checkNetworkTypeAndSetFlag()
+        if (isNetworkRequestsAllowed) {
+            action()
+        } else {
+            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT)
+                .show()
         }
+    }
+
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
     }
 
     private fun showReleaseDetailsTutorial() {
@@ -162,43 +162,43 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun fetchReleaseDetails(albumId: Long) {
-        checkNetworkTypeAndSetFlag()
-
-        if (!isNetworkRequestsAllowed) {
-            return
-        }
-
-        showLoading(true)
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getAlbumDetails(albumId).execute()
-                if (response.isSuccessful) {
-                    val albumDetails = response.body()
-                    withContext(Dispatchers.Main) {
-                        showLoading(false)
-                        if (albumDetails != null) {
-                            Log.d(
+        checkNetworkAndProceed {
+            showLoading(true)
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val response = apiService.getAlbumDetails(albumId).execute()
+                    if (response.isSuccessful) {
+                        val albumDetails = response.body()
+                        withContext(Dispatchers.Main) {
+                            showLoading(false)
+                            if (albumDetails != null) {
+                                Log.d(
+                                    "ReleaseDetailsActivity",
+                                    "Album Details: ID=${albumDetails.id}, Title=${albumDetails.title}, Artist=${albumDetails.artist.name}"
+                                )
+                                updateUI(albumDetails)
+                            } else {
+                                Log.e("ReleaseDetailsActivity", "Album details are null")
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            showLoading(false)
+                            Log.e(
                                 "ReleaseDetailsActivity",
-                                "Album Details: ID=${albumDetails.id}, Title=${albumDetails.title}, Artist=${albumDetails.artist.name}"
+                                "Failed to fetch album details: ${response.message()}"
                             )
-                            updateUI(albumDetails)
-                        } else {
-                            Log.e("ReleaseDetailsActivity", "Album details are null")
                         }
                     }
-                } else {
+                } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         showLoading(false)
                         Log.e(
                             "ReleaseDetailsActivity",
-                            "Failed to fetch album details: ${response.message()}"
+                            "Error fetching album details: ${e.message}",
+                            e
                         )
                     }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    Log.e("ReleaseDetailsActivity", "Error fetching album details: ${e.message}", e)
                 }
             }
         }
@@ -228,32 +228,28 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadTracklist(releaseId: Long) {
-        checkNetworkTypeAndSetFlag()
-
-        if (!isNetworkRequestsAllowed) {
-            return
-        }
-
-        showLoading(true)
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getTracklist(releaseId).execute()
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    if (response.isSuccessful) {
-                        val tracks = response.body()?.data ?: emptyList()
-                        trackAdapter.submitList(tracks)
-                    } else {
-                        Log.e(
-                            "ReleaseDetailsActivity",
-                            "Failed to load tracklist: ${response.message()}"
-                        )
+        checkNetworkAndProceed {
+            showLoading(true)
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val response = apiService.getTracklist(releaseId).execute()
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        if (response.isSuccessful) {
+                            val tracks = response.body()?.data ?: emptyList()
+                            trackAdapter.submitList(tracks)
+                        } else {
+                            Log.e(
+                                "ReleaseDetailsActivity",
+                                "Failed to load tracklist: ${response.message()}"
+                            )
+                        }
                     }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    Log.e("ReleaseDetailsActivity", "Error loading tracklist: ${e.message}", e)
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        Log.e("ReleaseDetailsActivity", "Error loading tracklist: ${e.message}", e)
+                    }
                 }
             }
         }

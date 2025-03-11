@@ -1,11 +1,8 @@
 package com.dev.tunedetectivex
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -136,6 +133,7 @@ class MainActivity : AppCompatActivity() {
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
+        checkNetworkTypeAndSetFlag()
         updateSaveButton()
         clearPreviousSearch()
         setupApiService()
@@ -243,8 +241,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-        isNetworkRequestsAllowed = isSelectedNetworkTypeAvailable(networkType!!)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
     }
 
     private fun saveSearchHistory(artist: DeezerArtist) {
@@ -612,27 +610,6 @@ class MainActivity : AppCompatActivity() {
                 ).show()
             }
         })
-    }
-
-    private fun isSelectedNetworkTypeAvailable(selectedType: String): Boolean {
-        val connectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkCapabilities =
-            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-
-        return when (selectedType) {
-            "Wi-Fi Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
-            "Mobile Data Only" -> networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
-            "Any" -> networkCapabilities != null && (
-                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-                    )
-
-            else -> {
-                Log.w(TAG, "Unknown network type: $selectedType. Defaulting to 'Any'.")
-                true
-            }
-        }
     }
 
     private fun fetchLatestReleaseForArtist(

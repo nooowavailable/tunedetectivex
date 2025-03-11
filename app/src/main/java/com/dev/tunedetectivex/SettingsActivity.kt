@@ -19,6 +19,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
@@ -209,7 +211,7 @@ class SettingsActivity : AppCompatActivity() {
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
             val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                .setData(Uri.parse("package:$packageName"))
+                .setData("package:$packageName".toUri())
             startActivity(intent)
         } else {
             Toast.makeText(
@@ -228,20 +230,25 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showNetworkTypeDialog() {
         val networkTypes = arrayOf(
-            getString(R.string.network_type_wifi),
-            getString(R.string.network_type_mobile),
-            getString(R.string.network_type_any)
+            "Wi-Fi Only",
+            "Mobile Data Only",
+            "Any"
         )
-        val currentNetworkType = sharedPreferences.getString("networkType", "Any")
+
+        val currentNetworkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
 
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.select_network_type_title))
             .setSingleChoiceItems(
-                networkTypes,
+                arrayOf(
+                    getString(R.string.network_type_wifi),
+                    getString(R.string.network_type_mobile),
+                    getString(R.string.network_type_any)
+                ),
                 networkTypes.indexOf(currentNetworkType)
             ) { dialog, which ->
                 val selectedType = networkTypes[which]
-                editor.putString("networkType", selectedType).apply()
+                sharedPreferences.edit { putString("networkType", selectedType) }
                 setupFetchReleasesWorker(loadFetchInterval())
                 checkNetworkTypeAndSetFlag()
                 dialog.dismiss()
@@ -267,24 +274,24 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun saveFetchInterval(minutes: Int) {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        sharedPreferences.edit().putInt("fetchInterval", minutes).apply()
+        sharedPreferences.edit { putInt("fetchInterval", minutes) }
         Log.d("SettingsActivity", "Fetch interval saved: $minutes minutes")
         setupFetchReleasesWorker(minutes)
     }
 
     private fun saveFetchDelay(seconds: Int) {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        sharedPreferences.edit().putInt("fetchDelay", seconds).apply()
+        sharedPreferences.edit { putInt("fetchDelay", seconds) }
     }
 
     private fun saveRetryAfterFailure(minutes: Int) {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        sharedPreferences.edit().putInt("retryAfterFailure", minutes).apply()
+        sharedPreferences.edit { putInt("retryAfterFailure", minutes) }
     }
 
     private fun saveReleaseAgePreference(weeks: Int) {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        sharedPreferences.edit().putInt("releaseAgeWeeks", weeks).apply()
+        sharedPreferences.edit { putInt("releaseAgeWeeks", weeks) }
     }
 
     private fun loadFetchInterval(): Int {

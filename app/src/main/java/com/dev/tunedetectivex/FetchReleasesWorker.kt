@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -52,6 +53,15 @@ class FetchReleasesWorker(
         apiService = retrofit.create(DeezerApiService::class.java)
 
         createNotificationChannels()
+        checkNetworkTypeAndSetFlag()
+    }
+
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
     }
 
     override suspend fun doWork(): Result {
@@ -70,10 +80,10 @@ class FetchReleasesWorker(
 
         return try {
             val sharedPreferences =
-                applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-            val networkType = sharedPreferences.getString("networkType", "Any")
+                applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+            val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
             isNetworkRequestsAllowed =
-                WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
+                WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
 
             if (!isNetworkRequestsAllowed) {
                 Log.w(TAG, "Selected network type is not available. Skipping network requests.")
@@ -149,7 +159,7 @@ class FetchReleasesWorker(
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
         val sharedPreferences =
-            applicationContext.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+            applicationContext.getSharedPreferences("AppSettings", MODE_PRIVATE)
         val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
         val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()

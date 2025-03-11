@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 
 class SearchHistoryAdapter(
@@ -27,10 +28,26 @@ class SearchHistoryAdapter(
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val historyItem = historyList[position]
+                    checkNetworkTypeAndSetFlag()
                     onItemClick(historyItem)
                     dialog.dismiss()
                 }
             }
+        }
+    }
+
+    fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        val isNetworkRequestsAllowed =
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkType)
+
+        if (!isNetworkRequestsAllowed) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.network_type_not_available),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 

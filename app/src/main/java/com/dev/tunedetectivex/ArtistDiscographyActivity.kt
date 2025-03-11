@@ -28,6 +28,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     private lateinit var artistName: String
     private lateinit var artistImageUrl: String
     private lateinit var progressBar: ProgressBar
+    private var isNetworkRequestsAllowed = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +47,17 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBarLoading)
         supportActionBar?.title = artistName
 
+        checkNetworkTypeAndSetFlag()
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
 
         fetchArtistDetails(artistId)
+    }
+
+    private fun checkNetworkTypeAndSetFlag() {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
     }
 
     private fun fetchArtistDetails(artistId: Long) {

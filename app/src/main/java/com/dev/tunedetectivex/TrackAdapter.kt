@@ -1,10 +1,12 @@
 package com.dev.tunedetectivex
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 
 class TrackAdapter : RecyclerView.Adapter<TrackAdapter.TrackViewHolder>() {
@@ -41,6 +43,10 @@ class TrackAdapter : RecyclerView.Adapter<TrackAdapter.TrackViewHolder>() {
             trackNumber.text = (position + 1).toString()
             trackTitle.text = track.title
             trackDuration.text = formatDuration(track.duration)
+
+            itemView.setOnClickListener {
+                checkNetworkTypeAndSetFlag()
+            }
         }
 
         @SuppressLint("DefaultLocale")
@@ -49,6 +55,21 @@ class TrackAdapter : RecyclerView.Adapter<TrackAdapter.TrackViewHolder>() {
             val seconds = duration % 60
             return String.format("%d:%02d", minutes, seconds)
         }
+
+        private fun checkNetworkTypeAndSetFlag() {
+            val sharedPreferences =
+                itemView.context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+            val isNetworkRequestsAllowed =
+                WorkManagerUtil.isSelectedNetworkTypeAvailable(itemView.context, networkType)
+
+            if (!isNetworkRequestsAllowed) {
+                Toast.makeText(
+                    itemView.context,
+                    itemView.context.getString(R.string.network_type_not_available),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 }
-

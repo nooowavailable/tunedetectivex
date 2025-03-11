@@ -132,11 +132,11 @@ class FolderImportActivity : AppCompatActivity() {
             .show()
     }
     private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-
+        val sharedPreferences =
+            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
         isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
     }
 
     private val folderPickerLauncher =
