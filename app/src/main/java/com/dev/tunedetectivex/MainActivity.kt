@@ -341,13 +341,12 @@ class MainActivity : AppCompatActivity() {
 
                     recyclerView.adapter = adapter
 
-                    // Add Clear button
                     dialog.setButton(
                         DialogInterface.BUTTON_POSITIVE,
                         getString(R.string.clear_history)
                     ) { _, _ ->
                         clearSearchHistory()
-                        adapter.refreshHistory(emptyList()) // Clear the adapter's data
+                        adapter.refreshHistory(emptyList())
                     }
 
                     dialog.setView(recyclerView)

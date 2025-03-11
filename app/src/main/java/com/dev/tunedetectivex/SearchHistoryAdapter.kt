@@ -28,27 +28,26 @@ class SearchHistoryAdapter(
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val historyItem = historyList[position]
-                    checkNetworkTypeAndSetFlag()
-                    onItemClick(historyItem)
-                    dialog.dismiss()
+
+                    if (isNetworkTypeAllowed()) {
+                        onItemClick(historyItem)
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.network_type_not_available),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
     }
 
-    fun checkNetworkTypeAndSetFlag() {
+    private fun isNetworkTypeAllowed(): Boolean {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        val isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkType)
-
-        if (!isNetworkRequestsAllowed) {
-            Toast.makeText(
-                context,
-                context.getString(R.string.network_type_not_available),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        return WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkType)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -61,15 +60,17 @@ class SearchHistoryAdapter(
         val historyItem = historyList[position]
         holder.textViewArtistName.text = historyItem.artistName
 
-        val placeholderResId = R.drawable.placeholder_image
-
-        BitmapUtils.loadBitmapFromUrl(
-            context as Activity,
-            historyItem.profileImageUrl,
-            holder.imageViewArtistProfile,
-            isCircular = true,
-            placeholderResId = placeholderResId
-        )
+        if (isNetworkTypeAllowed()) {
+            BitmapUtils.loadBitmapFromUrl(
+                context as Activity,
+                historyItem.profileImageUrl,
+                holder.imageViewArtistProfile,
+                isCircular = true,
+                placeholderResId = R.drawable.placeholder_image
+            )
+        } else {
+            holder.imageViewArtistProfile.setImageResource(R.drawable.placeholder_image)
+        }
     }
 
     override fun getItemCount(): Int {
