@@ -158,6 +158,10 @@
     <string name="chat_room_and_github_repo">Chat Raum und Github Repo:</string>
     <string name="clear_history">Verlauf löschen</string>
     <string name="search_history_cleared">Verlauf gelöscht!</string>
+    <string name="exit_confirmation_title">App Verlassen?</string>
+    <string name="exit_confirmation_message">Sicher, dass du die App verlassen möchten?</string>
+    <string name="exit_confirmation_positive">Ja</string>
+    <string name="exit_confirmation_negative">Nein</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

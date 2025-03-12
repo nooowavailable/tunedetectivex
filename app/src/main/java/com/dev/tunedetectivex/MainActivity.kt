@@ -19,6 +19,7 @@ import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -138,6 +139,7 @@ class MainActivity : AppCompatActivity() {
         updateSaveButton()
         clearPreviousSearch()
         setupApiService()
+        setupBackGesture()
 
 
         val searchLayout: TextInputLayout = findViewById(R.id.searchLayout)
@@ -239,6 +241,29 @@ class MainActivity : AppCompatActivity() {
             } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
         }
     }
+
+    private fun setupBackGesture() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                showExitConfirmationDialog()
+            }
+        })
+    }
+
+    private fun showExitConfirmationDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.exit_confirmation_title))
+            .setMessage(getString(R.string.exit_confirmation_message))
+            .setPositiveButton(getString(R.string.exit_confirmation_positive)) { _: DialogInterface, _: Int ->
+                finish()
+            }
+            .setNegativeButton(getString(R.string.exit_confirmation_negative)) { dialog: DialogInterface, _: Int ->
+                dialog.dismiss()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
 
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)

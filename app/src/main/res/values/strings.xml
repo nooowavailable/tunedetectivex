@@ -158,6 +158,10 @@
     <string name="chat_room_and_github_repo">Chat Room and Github Repo:</string>
     <string name="clear_history">Clear History</string>
     <string name="search_history_cleared">History cleared!</string>
+    <string name="exit_confirmation_title">Exit Confirmation</string>
+    <string name="exit_confirmation_message">Are you sure you want to exit the app?</string>
+    <string name="exit_confirmation_positive">Yes</string>
+    <string name="exit_confirmation_negative">No</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>
