@@ -77,13 +77,16 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:orientation="vertical"
-                android:visibility="invisible">
+                android:gravity="start"
+                android:paddingStart="16dp"
+                android:visibility="invisible"
+                tools:ignore="RtlSymmetry">
 
                 <ImageView
                     android:id="@+id/imageViewAlbumArt"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="center"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
                     android:adjustViewBounds="true"
                     android:background="@android:color/transparent"
                     android:importantForAccessibility="no"
@@ -93,8 +96,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginEnd="16dp"
+                    android:gravity="start"
                     android:orientation="vertical">
 
                     <TextView
@@ -103,7 +105,9 @@
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
                         android:layout_marginTop="8dp"
-                        android:gravity="center"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="start"
                         android:text="@string/textViewname"
                         android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
 
@@ -113,7 +117,9 @@
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
                         android:layout_marginTop="4dp"
-                        android:gravity="center"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="start"
                         android:text="@string/textViewAlbumTitle"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
@@ -122,7 +128,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:gravity="center"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="start"
                         android:text="@string/textViewrelease_date"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
@@ -132,10 +140,13 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:layout_gravity="start"
+                        android:layout_marginStart="8dp"
                         android:padding="8dp"
                         android:text="@string/button_open_discography"
                         app:icon="@drawable/ic_discography"
                         app:iconGravity="textStart"
+                        android:layout_marginEnd="8dp"
                         app:iconPadding="8dp" />
                 </LinearLayout>
             </LinearLayout>
