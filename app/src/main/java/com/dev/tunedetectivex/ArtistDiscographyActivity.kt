@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -184,14 +186,12 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
         val placeholderResId = R.drawable.placeholder_image
 
-        BitmapUtils.loadBitmapFromUrl(
-            this,
-            artistImageUrl,
-            imageView,
-            cornerRadius = 30f,
-            isCircular = false,
-            placeholderResId = placeholderResId
-        )
+        Glide.with(this)
+            .load(artistImageUrl)
+            .placeholder(placeholderResId)
+            .error(placeholderResId)
+            .transform(RoundedCorners(30))
+            .into(imageView)
 
         recyclerView.visibility = View.VISIBLE
     }

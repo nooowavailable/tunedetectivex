@@ -12,6 +12,8 @@ import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import kotlinx.coroutines.Dispatchers
@@ -66,13 +68,12 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         artistName.text = artistNameText ?: getString(R.string.unknown_artist)
 
         if (!albumArtUrl.isNullOrEmpty()) {
-            BitmapUtils.loadBitmapFromUrl(
-                this,
-                albumArtUrl,
-                albumCover,
-                cornerRadius = 20f,
-                placeholderResId = R.drawable.ic_discography
-            )
+            Glide.with(this)
+                .load(albumArtUrl)
+                .placeholder(R.drawable.ic_discography)
+                .error(R.drawable.ic_discography)
+                .transform(RoundedCorners(20))
+                .into(albumCover) // Target ImageView
         } else {
             Log.e("ReleaseDetailsActivity", "Album Cover URL is null or empty")
             albumCover.setImageResource(R.drawable.error_image)
@@ -214,14 +215,12 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         val coverUrl = album.getBestCoverUrl()
 
         if (coverUrl.isNotEmpty()) {
-            BitmapUtils.loadBitmapFromUrl(
-                this,
-                coverUrl,
-                albumCover,
-                cornerRadius = 30f,
-                isCircular = false,
-                placeholderResId = R.drawable.ic_discography
-            )
+            Glide.with(this)
+                .load(coverUrl)
+                .placeholder(R.drawable.ic_discography)
+                .error(R.drawable.ic_discography)
+                .transform(RoundedCorners(30))
+                .into(albumCover)
         } else {
             albumCover.setImageResource(R.drawable.error_image)
         }

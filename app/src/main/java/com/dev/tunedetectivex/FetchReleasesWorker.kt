@@ -9,6 +9,7 @@ import android.content.Context.MODE_PRIVATE
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.PowerManager
 import android.util.Log
@@ -17,6 +18,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -251,36 +255,70 @@ class FetchReleasesWorker(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val albumArtBitmap = BitmapUtils.loadBitmapFromUrlSync(album.getBestCoverUrl())
+                Glide.with(applicationContext)
+                    .asBitmap()
+                    .load(album.getBestCoverUrl())
+                    .into(object : CustomTarget<Bitmap>() {
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            transition: Transition<in Bitmap>?
+                        ) {
+                            val notification = createNotification(
+                                artist = artist,
+                                album = album,
+                                albumArtBitmap = resource,
+                                releaseType = releaseType,
+                                channelId = RELEASE_CHANNEL_ID
+                            )
 
-                val notification = createNotification(
-                    artist = artist,
-                    album = album,
-                    albumArtBitmap = albumArtBitmap,
-                    releaseType = releaseType,
-                    channelId = RELEASE_CHANNEL_ID
-                )
+                            Log.d(TAG, "Sending notification with channel ID: $RELEASE_CHANNEL_ID")
+                            NotificationManagerCompat.from(applicationContext)
+                                .notify(releaseHash, notification)
 
-                Log.d(TAG, "Sending notification with channel ID: $RELEASE_CHANNEL_ID")
-                NotificationManagerCompat.from(applicationContext).notify(releaseHash, notification)
+                            launch(Dispatchers.Main) {
+                                try {
+                                    db.savedArtistDao()
+                                        .markNotificationAsSent(
+                                            SentNotification(
+                                                releaseHash,
+                                                releaseDate
+                                            )
+                                        )
+                                } catch (e: Exception) {
+                                    Log.e(
+                                        TAG,
+                                        "Failed to update notification status in the database",
+                                        e
+                                    )
+                                }
+                            }
+                        }
 
-                db.savedArtistDao()
-                    .markNotificationAsSent(SentNotification(releaseHash, releaseDate))
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                            // Handle cleanup if needed
+                        }
+
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            Log.e(TAG, "Error loading album artwork for notification")
+                            val fallbackNotification = createNotification(
+                                artist = artist,
+                                album = album,
+                                albumArtBitmap = null,
+                                releaseType = releaseType,
+                                channelId = RELEASE_CHANNEL_ID
+                            )
+                            NotificationManagerCompat.from(applicationContext)
+                                .notify(releaseHash, fallbackNotification)
+                        }
+                    })
+            } catch (e: SecurityException) {
+                Log.e(TAG, "Permission denied: ${e.message}", e)
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading album artwork for notification: ${e.message}", e)
-
-                val fallbackNotification = createNotification(
-                    artist = artist,
-                    album = album,
-                    albumArtBitmap = null,
-                    releaseType = releaseType,
-                    channelId = RELEASE_CHANNEL_ID
-                )
-                NotificationManagerCompat.from(applicationContext)
-                    .notify(releaseHash, fallbackNotification)
+                Log.e(TAG, "Unexpected error: ${e.message}", e)
             }
         }
     }
+
 
     private fun createNotification(
         artist: SavedArtist,

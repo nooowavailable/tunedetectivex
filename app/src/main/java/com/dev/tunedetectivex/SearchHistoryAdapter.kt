@@ -1,7 +1,6 @@
 package com.dev.tunedetectivex
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.view.LayoutInflater
@@ -11,6 +10,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class SearchHistoryAdapter(
     private val context: Context,
@@ -61,13 +61,12 @@ class SearchHistoryAdapter(
         holder.textViewArtistName.text = historyItem.artistName
 
         if (isNetworkTypeAllowed()) {
-            BitmapUtils.loadBitmapFromUrl(
-                context as Activity,
-                historyItem.profileImageUrl,
-                holder.imageViewArtistProfile,
-                isCircular = true,
-                placeholderResId = R.drawable.placeholder_image
-            )
+            Glide.with(context)
+                .load(historyItem.profileImageUrl)
+                .placeholder(R.drawable.placeholder_image)
+                .error(R.drawable.placeholder_image)
+                .circleCrop()
+                .into(holder.imageViewArtistProfile)
         } else {
             holder.imageViewArtistProfile.setImageResource(R.drawable.placeholder_image)
         }

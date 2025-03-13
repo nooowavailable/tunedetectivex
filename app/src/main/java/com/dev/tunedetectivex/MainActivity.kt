@@ -29,6 +29,8 @@ import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
@@ -789,14 +791,13 @@ class MainActivity : AppCompatActivity() {
         textViewrelease_date.text = formattedDate
 
         val coverUrl = album.getBestCoverUrl()
-        BitmapUtils.loadBitmapFromUrl(
-            this,
-            coverUrl,
-            imageViewAlbumArt,
-            cornerRadius = 30f,
-            isCircular = false,
-            placeholderResId = R.drawable.ic_discography
-        )
+
+        Glide.with(this)
+            .load(coverUrl)
+            .placeholder(R.drawable.ic_discography)
+            .error(R.drawable.ic_discography)
+            .transform(RoundedCorners(30))
+            .into(imageViewAlbumArt)
 
         updateSaveButton()
     }

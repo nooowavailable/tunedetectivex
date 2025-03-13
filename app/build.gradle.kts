@@ -95,4 +95,7 @@ dependencies {
     implementation(libs.taptargetview)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.kotlin.stdlib)
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
+
 }
