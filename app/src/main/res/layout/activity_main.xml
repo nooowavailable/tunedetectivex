@@ -85,13 +85,14 @@
                 <ImageView
                     android:id="@+id/imageViewAlbumArt"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
                     android:adjustViewBounds="true"
+                    android:layout_margin="16dp"
+                    android:scaleType="fitCenter"
                     android:background="@android:color/transparent"
                     android:importantForAccessibility="no"
-                    android:padding="20dp"
-                    android:scaleType="centerCrop" />
+                    tools:ignore="ObsoleteLayoutParam" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
