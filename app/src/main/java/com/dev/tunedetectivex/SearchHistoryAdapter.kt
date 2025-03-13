@@ -3,14 +3,18 @@ package com.dev.tunedetectivex
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 
 class SearchHistoryAdapter(
     private val context: Context,
@@ -60,17 +64,34 @@ class SearchHistoryAdapter(
         val historyItem = historyList[position]
         holder.textViewArtistName.text = historyItem.artistName
 
+        val progressBar: ProgressBar = holder.itemView.findViewById(R.id.progressBarLoading)
+        progressBar.visibility = View.VISIBLE
+
         if (isNetworkTypeAllowed()) {
             Glide.with(context)
                 .load(historyItem.profileImageUrl)
                 .placeholder(R.drawable.placeholder_image)
                 .error(R.drawable.placeholder_image)
                 .circleCrop()
-                .into(holder.imageViewArtistProfile)
+                .into(object : CustomTarget<Drawable>() {
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        transition: Transition<in Drawable>?
+                    ) {
+                        holder.imageViewArtistProfile.setImageDrawable(resource)
+                        progressBar.visibility = View.GONE
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        progressBar.visibility = View.GONE
+                    }
+                })
         } else {
             holder.imageViewArtistProfile.setImageResource(R.drawable.placeholder_image)
+            progressBar.visibility = View.GONE
         }
     }
+
 
     override fun getItemCount(): Int {
         return historyList.size

@@ -1,10 +1,12 @@
 package com.dev.tunedetectivex
 
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -13,6 +15,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -79,15 +83,30 @@ class ReleaseAdapter(
                 "Binding release: ID=${item.id}, Title=${item.title}, Artist=${item.artistName}, Date=${item.releaseDate}"
             )
 
-            albumArt.setImageResource(R.drawable.ic_discography)
+            val progressBar: ProgressBar = itemView.findViewById(R.id.progressBarLoading)
+
+            progressBar.visibility = View.VISIBLE
 
             Glide.with(itemView.context)
                 .load(item.albumArtUrl)
                 .placeholder(R.drawable.ic_discography)
                 .error(R.drawable.ic_discography)
                 .transform(RoundedCorners(30))
-                .into(albumArt)
+                .into(object : CustomTarget<Drawable>() {
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        transition: Transition<in Drawable>?
+                    ) {
+                        albumArt.setImageDrawable(resource)
+                        progressBar.visibility = View.GONE
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                    }
+                })
         }
+
+
 
         private fun formatReleaseDate(date: String): String {
             return try {

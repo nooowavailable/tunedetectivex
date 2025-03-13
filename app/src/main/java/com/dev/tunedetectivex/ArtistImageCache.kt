@@ -30,10 +30,6 @@ object ArtistImageCache {
         cache[artistName] = CacheEntry(imageUrl, System.currentTimeMillis())
     }
 
-    fun clear() {
-        cache.clear()
-    }
-
     private fun isExpired(timestamp: Long): Boolean {
         return System.currentTimeMillis() - timestamp > EXPIRATION_TIME_MS
     }

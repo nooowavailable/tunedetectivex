@@ -1,14 +1,18 @@
 package com.dev.tunedetectivex
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 
 class SimilarArtistsAdapter(
     private val context: Context,
@@ -28,6 +32,9 @@ class SimilarArtistsAdapter(
 
         val artistPictureUrl = getBestArtistPicture(artist)
         val placeholderResId = R.drawable.placeholder_image
+        val progressBar: ProgressBar = holder.itemView.findViewById(R.id.progressBarLoading)
+
+        progressBar.visibility = View.VISIBLE
 
         if (artistPictureUrl.isNotEmpty()) {
             Glide.with(context)
@@ -35,9 +42,22 @@ class SimilarArtistsAdapter(
                 .placeholder(placeholderResId)
                 .error(placeholderResId)
                 .circleCrop()
-                .into(holder.artistImageView)
+                .into(object : CustomTarget<Drawable>() {
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        transition: Transition<in Drawable>?
+                    ) {
+                        holder.artistImageView.setImageDrawable(resource)
+                        progressBar.visibility = View.GONE
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        progressBar.visibility = View.GONE
+                    }
+                })
         } else {
             holder.artistImageView.setImageResource(placeholderResId)
+            progressBar.visibility = View.GONE
         }
 
         holder.itemView.setOnClickListener {
@@ -45,6 +65,7 @@ class SimilarArtistsAdapter(
             itemClick(artist)
         }
     }
+
 
     override fun getItemCount(): Int = artists.size
 

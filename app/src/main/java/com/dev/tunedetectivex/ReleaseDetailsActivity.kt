@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -14,6 +15,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import kotlinx.coroutines.Dispatchers
@@ -68,15 +71,30 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         artistName.text = artistNameText ?: getString(R.string.unknown_artist)
 
         if (!albumArtUrl.isNullOrEmpty()) {
+            progressBar.visibility = View.VISIBLE
+
             Glide.with(this)
                 .load(albumArtUrl)
                 .placeholder(R.drawable.ic_discography)
                 .error(R.drawable.ic_discography)
                 .transform(RoundedCorners(20))
-                .into(albumCover) // Target ImageView
+                .into(object : CustomTarget<Drawable>() {
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        transition: Transition<in Drawable>?
+                    ) {
+                        albumCover.setImageDrawable(resource)
+
+                        progressBar.visibility = View.GONE
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                    }
+                })
         } else {
             Log.e("ReleaseDetailsActivity", "Album Cover URL is null or empty")
             albumCover.setImageResource(R.drawable.error_image)
+            progressBar.visibility = View.GONE
         }
 
         if (releaseId != -1L) {

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -31,6 +32,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
@@ -792,15 +795,31 @@ class MainActivity : AppCompatActivity() {
 
         val coverUrl = album.getBestCoverUrl()
 
+        progressBar.visibility = View.VISIBLE
+
         Glide.with(this)
             .load(coverUrl)
             .placeholder(R.drawable.ic_discography)
-            .error(R.drawable.ic_discography)
+            .error(R.drawable.error_image)
             .transform(RoundedCorners(30))
-            .into(imageViewAlbumArt)
+            .into(object : CustomTarget<Drawable>() {
+                override fun onResourceReady(
+                    resource: Drawable,
+                    transition: Transition<in Drawable>?
+                ) {
+                    imageViewAlbumArt.setImageDrawable(resource)
+
+                    progressBar.visibility = View.GONE
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    progressBar.visibility = View.GONE
+                }
+            })
 
         updateSaveButton()
     }
+
 
     private fun fetchArtistProfilePicture(artistId: Long) {
         lifecycleScope.launch(Dispatchers.IO) {

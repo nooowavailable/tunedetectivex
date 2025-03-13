@@ -9,14 +9,28 @@
     android:paddingEnd="8dp"
     android:fitsSystemWindows="true">
 
-    <ImageView
-        android:id="@+id/artistImage"
+    <FrameLayout
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:layout_marginEnd="16dp"
-        android:clipToOutline="true"
-        android:scaleType="centerCrop"
-        tools:ignore="ContentDescription,UnusedAttribute" />
+        android:clipToOutline="true">
+
+        <ImageView
+            android:id="@+id/artistImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToOutline="true"
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription,UnusedAttribute" />
+
+        <ProgressBar
+            android:id="@+id/progressBarLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/name"

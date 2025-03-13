@@ -6,6 +6,7 @@
     android:paddingTop="15dp"
     android:paddingStart="15dp"
     android:paddingEnd="15dp"
+    android:orientation="horizontal"
     tools:ignore="RtlSymmetry">
 
     <ImageView
@@ -51,4 +52,13 @@
             android:maxLines="1"
             android:textSize="14sp" />
     </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBarLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:indeterminate="true"
+        android:visibility="gone" />
 </LinearLayout>

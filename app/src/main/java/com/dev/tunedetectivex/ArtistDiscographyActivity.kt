@@ -1,6 +1,7 @@
 package com.dev.tunedetectivex
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
@@ -13,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -182,19 +185,42 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         }
 
         recyclerView.adapter = adapter
+
+        val progressBar: ProgressBar = findViewById(R.id.progressBarLoading)
         val imageView: ImageView = findViewById(R.id.imageViewArtist)
 
-        val placeholderResId = R.drawable.placeholder_image
+
+        progressBar.visibility = View.VISIBLE
 
         Glide.with(this)
             .load(artistImageUrl)
-            .placeholder(placeholderResId)
-            .error(placeholderResId)
+            .placeholder(R.drawable.placeholder_image)
+            .error(R.drawable.error_image)
             .transform(RoundedCorners(30))
-            .into(imageView)
+            .into(object : CustomTarget<Drawable>() {
+                override fun onResourceReady(
+                    resource: Drawable,
+                    transition: Transition<in Drawable>?
+                ) {
+                    imageView.setImageDrawable(resource)
+                    progressBar.visibility = View.GONE
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    progressBar.visibility = View.GONE
+                }
+
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+                    Log.e("Glide", "Image load failed: $artistImageUrl")
+                    progressBar.visibility = View.GONE
+                    super.onLoadFailed(errorDrawable)
+                }
+            })
+
 
         recyclerView.visibility = View.VISIBLE
     }
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
