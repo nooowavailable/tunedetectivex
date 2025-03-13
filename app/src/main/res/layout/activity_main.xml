@@ -79,6 +79,8 @@
                 android:orientation="vertical"
                 android:gravity="start"
                 android:paddingStart="16dp"
+                android:clickable="true"
+                android:minHeight="250dp"
                 android:visibility="invisible"
                 tools:ignore="RtlSymmetry">
 

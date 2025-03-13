@@ -554,7 +554,6 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {
-                    // Optional: Handle each step if needed
                 }
 
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
@@ -808,7 +807,6 @@ class MainActivity : AppCompatActivity() {
                     transition: Transition<in Drawable>?
                 ) {
                     imageViewAlbumArt.setImageDrawable(resource)
-
                     progressBar.visibility = View.GONE
                 }
 
@@ -818,7 +816,24 @@ class MainActivity : AppCompatActivity() {
             })
 
         updateSaveButton()
+
+        artistInfoContainer.isClickable = true
+        artistInfoContainer.isFocusable = true
+
+        artistInfoContainer.setOnClickListener {
+
+            val intent = Intent(this, ReleaseDetailsActivity::class.java)
+
+            intent.putExtra("releaseId", album.id)
+            intent.putExtra("releaseTitle", album.title)
+            intent.putExtra("artistName", selectedArtist?.name ?: "Unknown Artist")
+            intent.putExtra("albumArtUrl", album.getBestCoverUrl())
+
+            startActivity(intent)
+        }
     }
+
+
 
 
     private fun fetchArtistProfilePicture(artistId: Long) {

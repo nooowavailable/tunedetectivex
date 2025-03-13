@@ -53,9 +53,9 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
 
         val releaseId = intent.getLongExtra("releaseId", -1)
-        val releaseTitleText = intent.getStringExtra("releaseTitle")
-        val artistNameText = intent.getStringExtra("artistName")
-        val albumArtUrl = intent.getStringExtra("albumArtUrl")
+        val releaseTitleText = intent.getStringExtra("releaseTitle") ?: "Unknown Title"
+        val artistNameText = intent.getStringExtra("artistName") ?: "Unknown Artist"
+        val albumArtUrl = intent.getStringExtra("albumArtUrl") ?: ""
 
         val albumId = intent.getLongExtra("releaseId", -1)
         if (albumId != -1L) {
@@ -67,10 +67,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         Log.d("ReleaseDetailsActivity", "Release ID: $releaseId")
         Log.d("ReleaseDetailsActivity", "Album Cover URL: $albumArtUrl")
 
-        releaseTitle.text = releaseTitleText ?: getString(R.string.unknown_title)
-        artistName.text = artistNameText ?: getString(R.string.unknown_artist)
+        releaseTitle.text = releaseTitleText
+        artistName.text = artistNameText
 
-        if (!albumArtUrl.isNullOrEmpty()) {
+        if (albumArtUrl.isNotEmpty()) {
             progressBar.visibility = View.VISIBLE
 
             Glide.with(this)
