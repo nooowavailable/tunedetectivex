@@ -162,6 +162,15 @@
     <string name="exit_confirmation_message">Are you sure you want to exit the app?</string>
     <string name="exit_confirmation_positive">Yes</string>
     <string name="exit_confirmation_negative">No</string>
+    <string name="toggle_folder_import">Toggle (experimental) folder import function</string>
+    <string name="experimental_settings">Experimental Settings</string>
+    <string name="folder_import_feature_title">Folder Import Feature</string>
+    <string name="folder_import_feature_enabled_message">The folder import feature is currently enabled. Do you want to disable it?</string>
+    <string name="folder_import_feature_disabled_message">The folder import feature is currently disabled. Do you want to enable it?</string>
+    <string name="enable">Enable</string>
+    <string name="disable">Disable</string>
+    <string name="folder_import_feature_enabled_toast">Folder import feature enabled.</string>
+    <string name="folder_import_feature_disabled_toast">Folder import feature disabled.</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

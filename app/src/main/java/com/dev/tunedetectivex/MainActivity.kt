@@ -146,7 +146,6 @@ class MainActivity : AppCompatActivity() {
         setupApiService()
         setupBackGesture()
 
-
         val searchLayout: TextInputLayout = findViewById(R.id.searchLayout)
         searchLayout.setEndIconOnClickListener {
             showSearchHistory()
@@ -451,6 +450,11 @@ class MainActivity : AppCompatActivity() {
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
 
+        val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val isFolderImportEnabled = appPreferences.getBoolean("isFolderImportEnabled", false)
+
+        fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
+
         if (isFabMenuOpen) {
             fabSavedArtists.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSettings.animate().translationY(0f).alpha(0f).setDuration(200).start()
@@ -466,7 +470,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             fabSavedArtists.visibility = View.VISIBLE
             fabSettings.visibility = View.VISIBLE
-            fabSelectFolder.visibility = View.VISIBLE
+            fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
             fabAbout.visibility = View.VISIBLE
             fabSavedArtists.animate().translationY(-80f).alpha(1f).setDuration(200).start()
             fabSettings.animate().translationY(-160f).alpha(1f).setDuration(200).start()
@@ -477,11 +481,11 @@ class MainActivity : AppCompatActivity() {
         isFabMenuOpen = !isFabMenuOpen
     }
 
+
     private fun showTutorial() {
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
-        val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
 
         fabSavedArtists.visibility = View.VISIBLE
@@ -491,10 +495,6 @@ class MainActivity : AppCompatActivity() {
         fabSettings.visibility = View.VISIBLE
         fabSettings.translationY = 0f
         fabSettings.alpha = 1f
-
-        fabSelectFolder.visibility = View.VISIBLE
-        fabSelectFolder.translationY = 0f
-        fabSelectFolder.alpha = 1f
 
         fabAbout.visibility = View.VISIBLE
         fabAbout.translationY = 0f
@@ -524,12 +524,6 @@ class MainActivity : AppCompatActivity() {
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
-                    fabSelectFolder,
-                    getString(R.string.tutorial_select_folder_title),
-                    getString(R.string.tutorial_select_folder_message)
-                ).transparentTarget(true).cancelable(false),
-
-                TapTarget.forView(
                     fabAbout,
                     getString(R.string.tutorial_about_title),
                     getString(R.string.tutorial_about_message)
@@ -545,11 +539,9 @@ class MainActivity : AppCompatActivity() {
 
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
-                    fabSelectFolder.visibility = View.GONE
                     fabAbout.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
-                    fabSelectFolder.translationY = 0f
                     fabAbout.translationY = 0f
                 }
 
@@ -565,11 +557,9 @@ class MainActivity : AppCompatActivity() {
 
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
-                    fabSelectFolder.visibility = View.GONE
                     fabAbout.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
-                    fabSelectFolder.translationY = 0f
                     fabAbout.translationY = 0f
                 }
             })

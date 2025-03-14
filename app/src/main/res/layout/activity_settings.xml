@@ -177,5 +177,29 @@
                 app:iconPadding="8dp"
                 tools:ignore="TextContrastCheck" />
         </LinearLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="12dp"
+            android:alpha="0.5"
+            android:text="@string/experimental_settings"
+            android:textColor="@color/md_theme_onBackground"
+            android:textSize="16sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_toggle_folder_import"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0.5"
+            android:padding="8dp"
+            android:text="@string/toggle_folder_import"
+            app:icon="@drawable/ic_toggle_folder"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            tools:ignore="TextContrastCheck" />
+
     </LinearLayout>
 </ScrollView>

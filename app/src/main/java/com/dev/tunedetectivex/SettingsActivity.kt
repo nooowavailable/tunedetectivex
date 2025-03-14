@@ -101,6 +101,10 @@ class SettingsActivity : AppCompatActivity() {
             requestIgnoreBatteryOptimizations()
         }
 
+        findViewById<MaterialButton>(R.id.button_toggle_folder_import).setOnClickListener {
+            showFolderImportToggleDialog()
+        }
+
         checkNetworkTypeAndSetFlag()
 
 
@@ -329,6 +333,39 @@ class SettingsActivity : AppCompatActivity() {
         retryInput.setText(loadRetryAfterFailure().toString())
         releaseAgeSlider.value = loadReleaseAgePreference().toFloat()
         updateReleaseAgeLabel(loadReleaseAgePreference())
+    }
+
+    private fun showFolderImportToggleDialog() {
+        val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val isFolderImportEnabled = appPreferences.getBoolean("isFolderImportEnabled", false)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.folder_import_feature_title)
+            .setMessage(
+                if (isFolderImportEnabled) {
+                    getString(R.string.folder_import_feature_enabled_message)
+                } else {
+                    getString(R.string.folder_import_feature_disabled_message)
+                }
+            )
+            .setPositiveButton(
+                if (isFolderImportEnabled) {
+                    R.string.disable
+                } else {
+                    R.string.enable
+                }
+            ) { _, _ ->
+                appPreferences.edit { putBoolean("isFolderImportEnabled", !isFolderImportEnabled) }
+                Toast.makeText(
+                    this, if (isFolderImportEnabled) {
+                        R.string.folder_import_feature_disabled_toast
+                    } else {
+                        R.string.folder_import_feature_enabled_toast
+                    }, Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun showSettingsTutorial() {

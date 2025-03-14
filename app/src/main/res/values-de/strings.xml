@@ -162,6 +162,15 @@
     <string name="exit_confirmation_message">Sicher, dass du die App verlassen möchten?</string>
     <string name="exit_confirmation_positive">Ja</string>
     <string name="exit_confirmation_negative">Nein</string>
+    <string name="toggle_folder_import">Aktiviere die (experimentelle) Ordner-Importier Funktion</string>
+    <string name="experimental_settings">Experimentelle Einstellungen</string>
+    <string name="folder_import_feature_title">Ordnerimport-Funktion</string>
+    <string name="folder_import_feature_enabled_message">Die Funktion zum Importieren von Ordnern ist derzeit aktiviert. Möchten du diese Funktion deaktiviert werden?</string>
+    <string name="folder_import_feature_disabled_message">Die Funktion zum Importieren von Ordnern ist derzeit deaktiviert. Möchten du diese aktivieren?</string>
+    <string name="enable">Aktivieren</string>
+    <string name="disable">Deaktivieren</string>
+    <string name="folder_import_feature_enabled_toast">Ordnerimport-Funktion aktiviert.</string>
+    <string name="folder_import_feature_disabled_toast">FOrdnerimport-Funktion deaktiviert.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>
