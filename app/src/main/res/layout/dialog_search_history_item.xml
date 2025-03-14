@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
+    android:gravity="center_vertical"
     android:padding="8dp">
 
     <FrameLayout
@@ -15,6 +16,7 @@
             android:id="@+id/imageViewArtistProfile"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:importantForAccessibility="no"
             android:scaleType="centerCrop" />
 
         <ProgressBar
@@ -28,7 +30,10 @@
 
     <TextView
         android:id="@+id/textViewArtistName"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="6dp"
+        android:layout_weight="1"
         android:textSize="16sp" />
 </LinearLayout>
