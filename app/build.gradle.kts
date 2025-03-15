@@ -46,13 +46,13 @@ android {
         create("github") {
             dimension = "default"
             applicationId = "com.dev.tunedetectivex"
-            versionName = "1.2-github"
+            versionName = "1.3-github"
         }
 
         create("accrescent") {
             dimension = "default"
             applicationId = "com.tunedetectivex.accrescent"
-            versionName = "1.2-accrescent"
+            versionName = "1.3-accrescent"
         }
     }
 
