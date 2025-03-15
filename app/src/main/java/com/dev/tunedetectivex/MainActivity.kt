@@ -455,12 +455,16 @@ class MainActivity : AppCompatActivity() {
 
         fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
 
+        val translationDistance = -0f
+
         if (isFabMenuOpen) {
             fabSavedArtists.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSettings.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSelectFolder.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabAbout.animate().translationY(0f).alpha(0f).setDuration(200).start()
+
             fabMenu.setImageResource(R.drawable.ic_menu)
+
             Handler(Looper.getMainLooper()).postDelayed({
                 fabSavedArtists.visibility = View.GONE
                 fabSettings.visibility = View.GONE
@@ -472,15 +476,20 @@ class MainActivity : AppCompatActivity() {
             fabSettings.visibility = View.VISIBLE
             fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
             fabAbout.visibility = View.VISIBLE
-            fabSavedArtists.animate().translationY(-80f).alpha(1f).setDuration(200).start()
-            fabSettings.animate().translationY(-160f).alpha(1f).setDuration(200).start()
-            fabSelectFolder.animate().translationY(-240f).alpha(1f).setDuration(200).start()
-            fabAbout.animate().translationY(-320f).alpha(1f).setDuration(200).start()
+
+            fabSavedArtists.animate().translationY(translationDistance).alpha(1f).setDuration(200)
+                .start()
+            fabSettings.animate().translationY(translationDistance * 2).alpha(1f).setDuration(200)
+                .start()
+            fabSelectFolder.animate().translationY(translationDistance * 3).alpha(1f)
+                .setDuration(200).start()
+            fabAbout.animate().translationY(translationDistance * 4).alpha(1f).setDuration(200)
+                .start()
+
             fabMenu.setImageResource(R.drawable.ic_close)
         }
         isFabMenuOpen = !isFabMenuOpen
     }
-
 
     private fun showTutorial() {
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
