@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -8,6 +9,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface DeezerApiService {
+
+    @GET("/")
+    fun ping(): Call<ResponseBody>
 
     @GET("search/artist")
     fun searchArtist(@Query("q") query: String): Call<DeezerSimilarArtistsResponse>

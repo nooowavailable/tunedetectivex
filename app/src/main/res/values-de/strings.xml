@@ -171,6 +171,12 @@
     <string name="disable">Deaktivieren</string>
     <string name="folder_import_feature_enabled_toast">Ordnerimport-Funktion aktiviert.</string>
     <string name="folder_import_feature_disabled_toast">FOrdnerimport-Funktion deaktiviert.</string>
+    <string name="internet_not_available">Internet nicht verfügbar</string>
+    <string name="deezer_api_online">Deezer API ist online</string>
+    <string name="deezer_api_error">Deezer API antwortet, aber mit Fehler: %1$d</string>
+    <string name="deezer_api_not_reachable">Deezer API nicht erreichbar: %1$s</string>
+    <string name="tutorial_check_status_title">Status prüfen</string>
+    <string name="tutorial_check_status_message">Hier kannst du den Deezer-Status überprüfen.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

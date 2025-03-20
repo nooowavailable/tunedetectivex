@@ -44,6 +44,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -116,16 +117,23 @@ class MainActivity : AppCompatActivity() {
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
+        val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
+        val fabCheckStatus: FloatingActionButton = findViewById(R.id.fabCheckStatus)
 
         fabSavedArtists.visibility = View.GONE
-        fabSelectFolder.visibility = View.GONE
         fabSettings.visibility = View.GONE
         fabSelectFolder.visibility = View.GONE
+        fabAbout.visibility = View.GONE
+        fabCheckStatus.visibility = View.GONE
+
         fabSavedArtists.translationY = 0f
         fabSettings.translationY = 0f
         fabSelectFolder.translationY = 0f
+        fabAbout.translationY = 0f
+        fabCheckStatus.translationY = 0f
 
         isFabMenuOpen = false
+
 
         val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isFirstRun = appPreferences.getBoolean("isFirstRun", true)
@@ -201,6 +209,10 @@ class MainActivity : AppCompatActivity() {
             toggleFabMenu()
         }
 
+        fabCheckStatus.setOnClickListener {
+            checkDeezerStatus()
+        }
+
         db = AppDatabase.getDatabase(applicationContext)
         editTextArtist.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         editTextArtist.setSingleLine()
@@ -244,7 +256,44 @@ class MainActivity : AppCompatActivity() {
                 openArtistDiscography(artist)
             } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
         }
+
+
     }
+
+    private fun checkDeezerStatus() {
+        if (!NetworkUtils.isInternetAvailable(this)) {
+            Toast.makeText(this, getString(R.string.internet_not_available), Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
+        apiService.ping().enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                if (response.isSuccessful) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.deezer_api_online),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.deezer_api_error, response.code()),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.deezer_api_not_reachable, t.message),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
+    }
+
+
 
     private fun setupBackGesture() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -449,6 +498,7 @@ class MainActivity : AppCompatActivity() {
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
+        val fabCheckStatus: FloatingActionButton = findViewById(R.id.fabCheckStatus)
 
         val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isFolderImportEnabled = appPreferences.getBoolean("isFolderImportEnabled", false)
@@ -460,6 +510,7 @@ class MainActivity : AppCompatActivity() {
         if (isFabMenuOpen) {
             fabSavedArtists.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSettings.animate().translationY(0f).alpha(0f).setDuration(200).start()
+            fabCheckStatus.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSelectFolder.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabAbout.animate().translationY(0f).alpha(0f).setDuration(200).start()
 
@@ -468,22 +519,26 @@ class MainActivity : AppCompatActivity() {
             Handler(Looper.getMainLooper()).postDelayed({
                 fabSavedArtists.visibility = View.GONE
                 fabSettings.visibility = View.GONE
+                fabCheckStatus.visibility = View.GONE
                 fabSelectFolder.visibility = View.GONE
                 fabAbout.visibility = View.GONE
             }, 200)
         } else {
             fabSavedArtists.visibility = View.VISIBLE
             fabSettings.visibility = View.VISIBLE
+            fabCheckStatus.visibility = View.VISIBLE
             fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
             fabAbout.visibility = View.VISIBLE
 
-            fabSavedArtists.animate().translationY(translationDistance).alpha(1f).setDuration(200)
-                .start()
+            fabSavedArtists.animate().translationY(translationDistance * 1).alpha(1f)
+                .setDuration(200).start()
             fabSettings.animate().translationY(translationDistance * 2).alpha(1f).setDuration(200)
                 .start()
-            fabSelectFolder.animate().translationY(translationDistance * 3).alpha(1f)
+            fabCheckStatus.animate().translationY(translationDistance * 3).alpha(1f)
                 .setDuration(200).start()
-            fabAbout.animate().translationY(translationDistance * 4).alpha(1f).setDuration(200)
+            fabSelectFolder.animate().translationY(translationDistance * 4).alpha(1f)
+                .setDuration(200).start()
+            fabAbout.animate().translationY(translationDistance * 5).alpha(1f).setDuration(200)
                 .start()
 
             fabMenu.setImageResource(R.drawable.ic_close)
@@ -491,11 +546,13 @@ class MainActivity : AppCompatActivity() {
         isFabMenuOpen = !isFabMenuOpen
     }
 
+
     private fun showTutorial() {
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
         val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
+        val fabCheckStatus: FloatingActionButton = findViewById(R.id.fabCheckStatus)
 
         fabSavedArtists.visibility = View.VISIBLE
         fabSavedArtists.translationY = 0f
@@ -504,6 +561,10 @@ class MainActivity : AppCompatActivity() {
         fabSettings.visibility = View.VISIBLE
         fabSettings.translationY = 0f
         fabSettings.alpha = 1f
+
+        fabCheckStatus.visibility = View.VISIBLE
+        fabCheckStatus.translationY = 0f
+        fabCheckStatus.alpha = 1f
 
         fabAbout.visibility = View.VISIBLE
         fabAbout.translationY = 0f
@@ -519,23 +580,25 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.tutorial_main_menu_title),
                     getString(R.string.tutorial_main_menu_message)
                 ).transparentTarget(true).cancelable(false),
-
                 TapTarget.forView(
                     fabSavedArtists,
                     getString(R.string.tutorial_saved_artists_title),
                     getString(R.string.tutorial_saved_artists_message)
                 ).transparentTarget(true).cancelable(false),
-
                 TapTarget.forView(
                     fabSettings,
                     getString(R.string.tutorial_settings_title),
                     getString(R.string.tutorial_settings_message)
                 ).transparentTarget(true).cancelable(false),
-
                 TapTarget.forView(
                     fabAbout,
                     getString(R.string.tutorial_about_title),
                     getString(R.string.tutorial_about_message)
+                ).transparentTarget(true).cancelable(false),
+                TapTarget.forView(
+                    fabCheckStatus,
+                    getString(R.string.tutorial_check_status_title),
+                    getString(R.string.tutorial_check_status_message)
                 ).transparentTarget(true).cancelable(false)
             )
             .listener(object : TapTargetSequence.Listener {
@@ -548,9 +611,11 @@ class MainActivity : AppCompatActivity() {
 
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
+                    fabCheckStatus.visibility = View.GONE
                     fabAbout.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
+                    fabCheckStatus.translationY = 0f
                     fabAbout.translationY = 0f
                 }
 
@@ -566,14 +631,17 @@ class MainActivity : AppCompatActivity() {
 
                     fabSavedArtists.visibility = View.GONE
                     fabSettings.visibility = View.GONE
+                    fabCheckStatus.visibility = View.GONE
                     fabAbout.visibility = View.GONE
                     fabSavedArtists.translationY = 0f
                     fabSettings.translationY = 0f
+                    fabCheckStatus.translationY = 0f
                     fabAbout.translationY = 0f
                 }
             })
             .start()
     }
+
 
     private fun showLoading(isLoading: Boolean) {
         Log.d(TAG, "Loading state: $isLoading")

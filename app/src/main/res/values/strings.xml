@@ -171,6 +171,12 @@
     <string name="disable">Disable</string>
     <string name="folder_import_feature_enabled_toast">Folder import feature enabled.</string>
     <string name="folder_import_feature_disabled_toast">Folder import feature disabled.</string>
+    <string name="internet_not_available">Internet unavailable</string>
+    <string name="deezer_api_online">Deezer API is online</string>
+    <string name="deezer_api_error">Deezer API responds, but with an error: %1$d</string>
+    <string name="deezer_api_not_reachable">Deezer API not reachable: %1$s</string>
+    <string name="tutorial_check_status_title">Check status</string>
+    <string name="tutorial_check_status_message">Here you can check the Deezer status.</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

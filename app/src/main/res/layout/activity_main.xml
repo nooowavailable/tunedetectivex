@@ -191,6 +191,19 @@
             app:srcCompat="@drawable/ic_settings" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabCheckStatus"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/fabAbout"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:importantForAccessibility="no"
+            app:srcCompat="@drawable/ic_network" />
+
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:id="@+id/fabSelectFolder"
             android:layout_width="wrap_content"
