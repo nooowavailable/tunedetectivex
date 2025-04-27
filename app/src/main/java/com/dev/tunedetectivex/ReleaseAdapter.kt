@@ -27,7 +27,10 @@ data class ReleaseItem(
     val artistName: String,
     val albumArtUrl: String,
     val releaseDate: String,
-    val isHeader: Boolean = false
+    val apiSource: String,
+    val isHeader: Boolean = false,
+    val deezerId: Long? = null,
+    val itunesId: Long? = null
 )
 
 class ReleaseAdapter(

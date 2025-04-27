@@ -18,9 +18,7 @@
     <string name="general_settings">Allgemeine Einstellungen</string>
     <string name="intervalInput">Abrufintervall (in Minuten)</string>
     <string name="releaseAgeLabel">Benachrichtigungen für Veröffentlichungen innerhalb der letzten 4 Wochen</string>
-    <string name="delayretry">Einstellungen für Zeitverzögerung und Neuversuch</string>
-    <string name="FetchDelay">Abruf-Verzögerung (in Sekunden)</string>
-    <string name="Retry">Wiederholung nach (in Minuten)</string>
+    <string name="fetchSettings">Intervall für automatische Updates</string>
     <string name="BatteryNetwork">Batterie und Netzwerk</string>
     <string name="BatteryRestrictions">Batterienutzung Einschränkungen</string>
     <string name="SelectNetworkType">Netztyp wählen</string>
@@ -64,9 +62,9 @@
     <string name="settings_tutorial_completed">Einstellungs-Tutorial abgeschlossen!</string>
     <string name="settings_tutorial_aborted">Einstellungs-Tutorial abgebrochen.</string>
     <string name="fetch_interval_set">Abrufintervall auf %1$d Minuten eingestellt</string>
-    <string name="invalid_interval_value">Ungültiger Intervallwert.</string>
+    <string name="invalid_interval_value">Der Intervall muss mindestens 15 Minuten betragen.</string>
     <string name="fetch_delay_set">Abrufverzögerung auf %1$d Sekunden gesetzt</string>
-    <string name="invalid_delay_value">Ungültiger Verzögerungswert.</string>
+    <string name="invalid_delay_value">Die Verzögerung muss zwischen 1 und 60 Sekunden liegen.</string>
     <string name="retry_after_failure_set">Wiederholungsversuch nach einem Fehlschlag auf %1$d Minuten eingestellt</string>
     <string name="invalid_retry_value">Ungültiger Wiederholungswert.</string>
     <string name="battery_optimization_ignored">Die Batterie-Optimierung wird bereits ignoriert.</string>
@@ -162,11 +160,11 @@
     <string name="exit_confirmation_message">Sicher, dass du die App verlassen möchten?</string>
     <string name="exit_confirmation_positive">Ja</string>
     <string name="exit_confirmation_negative">Nein</string>
-    <string name="toggle_folder_import">Aktiviere die (experimentelle) Ordner-Importier Funktion</string>
-    <string name="experimental_settings">Experimentelle Einstellungen</string>
-    <string name="folder_import_feature_title">Ordnerimport-Funktion</string>
-    <string name="folder_import_feature_enabled_message">Die Funktion zum Importieren von Ordnern ist derzeit aktiviert. Möchten du diese Funktion deaktiviert werden?</string>
-    <string name="folder_import_feature_disabled_message">Die Funktion zum Importieren von Ordnern ist derzeit deaktiviert. Möchten du diese aktivieren?</string>
+    <string name="toggle_folder_import">Aktiviere die (experimentelle) Ordner-Importier / Meta-Data Funktion</string>
+    <string name="folder_import_feature_title">Ordner-Import</string>
+    <string name="folder_import_feature_enabled_message">Der Ordner-Import ist derzeit aktiviert. Möchtest du ihn deaktivieren?</string>
+    <string name="folder_import_feature_disabled_message">Der Ordner-Import ist derzeit deaktiviert. Möchtest du ihn aktivieren?</string>
+    <string name="experimental_settings">Experimentelle Einstellungen (auf eigene Gefahr!)</string>
     <string name="enable">Aktivieren</string>
     <string name="disable">Deaktivieren</string>
     <string name="folder_import_feature_enabled_toast">Ordnerimport-Funktion aktiviert.</string>
@@ -177,6 +175,70 @@
     <string name="deezer_api_not_reachable">Deezer API nicht erreichbar: %1$s</string>
     <string name="tutorial_check_status_title">Status prüfen</string>
     <string name="tutorial_check_status_message">Hier kannst du den Deezer-Status überprüfen.</string>
+    <string name="FetchDelay">Verzögerung (in Sekunden)</string>
+    <string name="itunes_support_title">iTunes-Support (Experimentell)</string>
+    <string name="itunes_support_message">
+⚠️ Der iTunes-Support ist derzeit experimentell.\n\n
+Er kann jedoch für einige Künstler bessere oder vollständigere Daten liefern –
+insbesondere wenn auf Deezer Veröffentlichungen fehlen.\n\n
+Wenn aktiviert, vergleicht die App automatisch die Discographien von Deezer und iTunes.
+Bei mindestens 3 gemeinsamen Releases wird der Künstler kombiniert dargestellt –
+inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
+ℹ️ Das Aktivieren oder Deaktivieren dieser Option löscht deinen gesamten Suchverlauf.
+</string>
+    <string name="dialog_button_understood">Verstanden</string>
+    <string name="dialog_button_cancel">Abbrechen</string>
+    <string name="itunes_support_enabled_toast">iTunes-Support aktiviert – Suchverlauf gelöscht</string>
+    <string name="itunes_support_disabled_toast">iTunes-Support deaktiviert – Suchverlauf gelöscht</string>
+    <string name="itunes_summary_title">iTunes-Abgleich Zusammenfassung</string>
+    <string name="itunes_summary_deezer_ids">🟢 Deezer-IDs ergänzt: %1$d</string>
+    <string name="itunes_summary_itunes_ids">🔵 iTunes-IDs ergänzt: %1$d</string>
+    <string name="itunes_summary_no_matches">✅ Alle Künstler haben eine iTunes-ID!</string>
+    <string name="itunes_summary_missing_header">❌ Keine iTunes-ID für:</string>
+    <string name="itunes_summary_manage_missing">Fehlende Künstler verwalten</string>
+    <string name="dialog_artist_not_found">Für diesen Künstler wurde keine iTunes-ID gefunden.\nWas möchtest du tun?</string>
+    <string name="action_rescan">🔁 Erneut versuchen</string>
+    <string name="action_delete">🗑️ Löschen</string>
+    <string name="action_manual_search">🔍 Manuell suchen</string>
+    <string name="manual_search_title">🔍 Manuelle iTunes-Suche</string>
+    <string name="manual_search_hint">Künstlername eingeben</string>
+    <string name="manual_search_button">Suchen</string>
+    <string name="itunes_results_dialog_title">iTunes Künstlerauswahl</string>
+    <string name="itunes_result_confirm_title">🎯 %1$s</string>
+    <string name="itunes_result_confirm_message">Diesen Künstler übernehmen?\n\n📀 %1$s · %2$s</string>
+    <string name="save">Speichern</string>
+    <string name="close">Schließen</string>
+    <string name="itunes_missing_artists_title">❌ Fehlende iTunes-Künstler</string>
+    <string name="back">Zurück</string>
+    <string name="itunes_artist_not_found_message">Für diesen Künstler wurde keine iTunes-ID gefunden.\nWas möchtest du tun?</string>
+    <string name="retry_search">🔁 Erneut versuchen</string>
+    <string name="delete_artist">🗑️ Löschen</string>
+    <string name="manual_search">🔍 Manuell suchen</string>
+    <string name="itunes_disabled_toast">🔕 iTunes ist deaktiviert</string>
+    <string name="manual_itunes_search_title">🔍 Manuelle iTunes-Suche</string>
+    <string name="manual_itunes_search_hint">Künstlername eingeben</string>
+    <string name="search_button">Suchen</string>
+    <string name="confirm_artist_title">🎯 %1$s</string>
+    <string name="confirm_artist_message">Diesen Künstler übernehmen?\n\n📀 %1$s · %2$s</string>
+    <string name="no_date">Kein Datum</string>
+    <string name="no_release">Kein Release</string>
+    <string name="save_button">Speichern</string>
+    <string name="itunes_artist_selection_title">iTunes Künstlerauswahl</string>
+    <string name="close_button">Schließen</string>
+    <string name="latest_release_info">📀 %1$s · %2$s</string>
+    <string name="no_release_found">Kein Release gefunden</string>
+    <string name="unknown_title_fallback">Unbekannter Titel</string>
+    <string name="unknown_artist_fallback">Unbekannter Künstler</string>
+    <string name="release_details_not_found">Keine Details zu diesem Release gefunden.</string>
+    <string name="no_tracklist_id_available">Keine ID für Tracklist verfügbar</string>
+    <string name="itunes_attempt_1">🔍 Versuche iTunes-IDs zu finden… (3 Versuche)</string>
+    <string name="itunes_attempt_2">🕵️ Noch 2 Versuche für iTunes-IDs…</string>
+    <string name="itunes_attempt_3">📉 Letzter automatischer Versuch!</string>
+    <string name="itunes_attempt_final">⏭️ Automatische iTunes-Suche deaktiviert. Jetzt manuell.</string>
+    <string name="artist_updated">%1$s aktualisiert.</string>
+    <string name="manual_fetch_started">Manueller Abruf gestartet…</string>
+    <string name="manual_fetch_now">Jetzt Releases abrufen</string>
+    <string name="enable_itunes_support">iTunes-Support aktivieren?</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

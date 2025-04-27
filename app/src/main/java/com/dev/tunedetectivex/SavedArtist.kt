@@ -16,7 +16,11 @@ data class SavedArtist(
     val name: String,
     var lastReleaseDate: String? = null,
     var lastReleaseTitle: String? = null,
-    val profileImageUrl: String? = null
+    val profileImageUrl: String? = null,
+    val isFromDeezer: Boolean = false,
+    val isFromITunes: Boolean = false,
+    val deezerId: Long? = null,
+    val itunesId: Long? = null
 )
 
 @Entity(tableName = "sent_notification")
@@ -27,8 +31,9 @@ data class SentNotification(
 
 @Entity(tableName = "search_history")
 data class SearchHistory(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    var artistName: String,
-    var profileImageUrl: String,
-    val artistId: Long
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    val artistName: String,
+    val profileImageUrl: String,
+    val deezerId: Long? = null,
+    val itunesId: Long? = null
 )

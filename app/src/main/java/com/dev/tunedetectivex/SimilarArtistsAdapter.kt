@@ -66,7 +66,6 @@ class SimilarArtistsAdapter(
         }
     }
 
-
     override fun getItemCount(): Int = artists.size
 
     private fun getBestArtistPicture(artist: DeezerArtist): String {
@@ -75,6 +74,7 @@ class SimilarArtistsAdapter(
             !artist.picture_big.isNullOrEmpty() -> artist.picture_big
             !artist.picture_medium.isNullOrEmpty() -> artist.picture_medium
             !artist.picture_small.isNullOrEmpty() -> artist.picture_small
+            !artist.picture.isNullOrEmpty() -> artist.picture
             else -> ""
         }
     }

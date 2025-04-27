@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 
 @Dao
 interface SavedArtistDao {
@@ -37,31 +36,16 @@ interface SavedArtistDao {
     @Query("SELECT EXISTS(SELECT 1 FROM sent_notification WHERE notificationHash = :hash)")
     suspend fun isNotificationSent(hash: Int): Boolean
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun markNotificationAsSent(notification: SentNotification)
 
     @Query("SELECT * FROM saved_artist WHERE name = :artistName LIMIT 1")
     suspend fun getArtistByName(artistName: String): SavedArtist?
 
+    @Query("UPDATE saved_artist SET itunesId = :itunesId WHERE id = :artistId")
+    fun updateItunesId(artistId: Long, itunesId: Long)
 
-    @Dao
-    interface SearchHistoryDao {
-        @Insert(onConflict = OnConflictStrategy.REPLACE)
-        suspend fun insert(searchHistory: SearchHistory)
+    @Query("UPDATE saved_artist SET deezerId = :deezerId WHERE id = :artistId")
+    fun updateDeezerId(artistId: Long, deezerId: Long)
 
-        @Update
-        suspend fun update(searchHistory: SearchHistory)
-
-        @Query("SELECT * FROM search_history")
-        suspend fun getAllHistory(): List<SearchHistory>
-
-        @Query("SELECT * FROM search_history WHERE artistId = :artistId LIMIT 1")
-        suspend fun getHistoryByArtistId(artistId: Long): SearchHistory?
-
-        @Delete
-        suspend fun delete(history: SearchHistory)
-
-        @Query("DELETE FROM search_history")
-        suspend fun clearHistory()
-    }
 }

@@ -24,7 +24,11 @@ data class SavedArtistItem(
     val picture_small: String? = null,
     val picture_medium: String? = null,
     val picture_big: String? = null,
-    val picture_xl: String? = null
+    val picture_xl: String? = null,
+    val spotifyId: String? = null,
+    val deezerId: Long? = null,
+    val itunesId: Long? = null
+
 )
 
 class SavedArtistAdapter(

@@ -58,10 +58,11 @@
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/delayretry"
+            android:text="@string/fetchSettings"
             android:textSize="14sp"
             android:textColor="@color/md_theme_onBackground"
             android:layout_marginBottom="12dp" />
+
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
@@ -77,19 +78,6 @@
                 tools:ignore="TouchTargetSizeCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/Retry">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/retryInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                tools:ignore="TouchTargetSizeCheck" />
-        </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
@@ -188,18 +176,37 @@
             android:textColor="@color/md_theme_onBackground"
             android:textSize="16sp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_toggle_folder_import"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_folder_import"
+            style="@style/Widget.Material3.CompoundButton.Switch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:alpha="0.5"
-            android:padding="8dp"
+            android:checked="false"
+            android:paddingVertical="12dp"
             android:text="@string/toggle_folder_import"
-            app:icon="@drawable/ic_toggle_folder"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp"
             tools:ignore="TextContrastCheck" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_itunes_support"
+            style="@style/Widget.Material3.CompoundButton.Switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0.5"
+            android:checked="false"
+            android:paddingVertical="12dp"
+            android:text="@string/enable_itunes_support"
+            tools:ignore="TextContrastCheck" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_fetch_now"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.5"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            android:text="@string/manual_fetch_now"
+            tools:ignore="TextContrastCheck" />
     </LinearLayout>
 </ScrollView>

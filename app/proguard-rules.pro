@@ -22,7 +22,7 @@
 
 
 # DeezerApiService und Model-Klassen nicht obfuskieren
--keep class com.dev.tunedetectivex.DeezerApiService { *; }
+-keep class com.dev.tunedetectivex.api.DeezerApiService { *; }
 -keep class com.dev.tunedetectivex.FetchReleasesWorker { *; }
 -keepclassmembers class * extends androidx.work.Worker { *; }
 

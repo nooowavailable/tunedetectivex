@@ -21,11 +21,18 @@ import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.core.text.HtmlCompat
+import androidx.lifecycle.lifecycleScope
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
+import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -33,15 +40,17 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var releaseAgeSlider: Slider
     private lateinit var releaseAgeLabel: TextView
     private lateinit var delayInput: EditText
-    private lateinit var retryInput: EditText
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
+    private val updateHandler = Handler(Looper.getMainLooper())
+    private var updateRunnable: Runnable? = null
     private var isNetworkRequestsAllowed = true
-
+    private var ignoreNextToggleChange = false
 
     private val backupManager by lazy {
         val apiService = DeezerApiService.create()
-        BackupManager(this, AppDatabase.getDatabase(this).savedArtistDao(), apiService)
+        val savedArtistDao = AppDatabase.getDatabase(this).savedArtistDao()
+        BackupManager(this, savedArtistDao, apiService)
     }
 
 
@@ -53,7 +62,25 @@ class SettingsActivity : AppCompatActivity() {
     private val importBackupLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             if (isNetworkRequestsAllowed) {
-                uri?.let { backupManager.restoreBackup(it) }
+                uri?.let {
+                    lifecycleScope.launch {
+                        backupManager.restoreBackup(it)
+
+                        val db = AppDatabase.getDatabase(applicationContext)
+                        val dao = db.savedArtistDao()
+                        val allArtists = dao.getAll()
+
+                        for (artist in allArtists) {
+                            if (artist.deezerId == null || artist.deezerId == 0L) {
+                                dao.updateDeezerId(artist.id, artist.id)
+                                Log.d(
+                                    "ImportDeezerFix",
+                                    "✅ artist.id (${artist.id}) -> deezerId taken for '${artist.name}'"
+                                )
+                            }
+                        }
+                    }
+                }
             } else {
                 Toast.makeText(
                     this,
@@ -63,9 +90,6 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-
-    private val updateHandler = Handler(Looper.getMainLooper())
-    private var updateRunnable: Runnable? = null
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +104,59 @@ class SettingsActivity : AppCompatActivity() {
         releaseAgeSlider = findViewById(R.id.releaseAgeSlider)
         releaseAgeLabel = findViewById(R.id.releaseAgeLabel)
         delayInput = findViewById(R.id.delayInput)
-        retryInput = findViewById(R.id.retryInput)
+
+        val folderImportSwitch = findViewById<SwitchMaterial>(R.id.switch_folder_import)
+        val isFolderImportEnabled = sharedPreferences.getBoolean("isFolderImportEnabled", false)
+        folderImportSwitch.isChecked = isFolderImportEnabled
+
+        folderImportSwitch.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit { putBoolean("isFolderImportEnabled", isChecked) }
+
+            Toast.makeText(
+                this,
+                if (isChecked) getString(R.string.folder_import_feature_enabled_toast)
+                else getString(R.string.folder_import_feature_disabled_toast),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        val itunesSwitch = findViewById<SwitchMaterial>(R.id.switch_itunes_support)
+        itunesSwitch.isChecked = isItunesSupportEnabled()
+
+        itunesSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (ignoreNextToggleChange) {
+                ignoreNextToggleChange = false
+                return@setOnCheckedChangeListener
+            }
+
+            if (isChecked) {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(getString(R.string.itunes_support_title))
+                    .setMessage(
+                        HtmlCompat.fromHtml(
+                            getString(R.string.itunes_support_message),
+                            HtmlCompat.FROM_HTML_MODE_LEGACY
+                        )
+                    )
+                    .setPositiveButton(getString(R.string.dialog_button_understood)) { _, _ ->
+                        enableItunesSupport(true)
+                        itunesSwitch.isChecked = true
+                    }
+                    .setNegativeButton(getString(R.string.dialog_button_cancel)) { _, _ ->
+                        ignoreNextToggleChange = true
+                        itunesSwitch.isChecked = false
+                    }
+                    .show()
+            } else {
+                enableItunesSupport(false)
+                Toast.makeText(
+                    this,
+                    getString(R.string.itunes_support_disabled_toast),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
 
         sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         editor = sharedPreferences.edit()
@@ -101,49 +177,50 @@ class SettingsActivity : AppCompatActivity() {
             requestIgnoreBatteryOptimizations()
         }
 
-        findViewById<MaterialButton>(R.id.button_toggle_folder_import).setOnClickListener {
-            showFolderImportToggleDialog()
+        findViewById<MaterialButton>(R.id.button_fetch_now).setOnClickListener {
+            runManualFetchNow()
         }
 
         checkNetworkTypeAndSetFlag()
 
-
         val currentInterval = loadFetchInterval()
         val currentReleaseAge = loadReleaseAgePreference()
         val currentDelay = loadFetchDelay()
-        val currentRetry = loadRetryAfterFailure()
 
         intervalInput.setText(currentInterval.toString())
         delayInput.setText(currentDelay.toString())
-        retryInput.setText(currentRetry.toString())
         releaseAgeSlider.value = currentReleaseAge.toFloat()
         updateReleaseAgeLabel(currentReleaseAge)
 
 
         releaseAgeSlider.addOnChangeListener { _, value, _ ->
+            val releaseAgeInWeeks = value.toInt()
+            Log.d("SettingsActivity", "Slider changed: $releaseAgeInWeeks")
+
             delayedUpdate {
-                val releaseAgeInWeeks = value.toInt()
+                Log.d("SettingsActivity", "Saving slider value: $releaseAgeInWeeks")
                 updateReleaseAgeLabel(releaseAgeInWeeks)
                 saveReleaseAgePreference(releaseAgeInWeeks)
             }
         }
 
         intervalInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
-                val interval = s?.toString()?.toIntOrNull()
+                Log.d(
+                    "SettingsActivity",
+                    "afterTextChanged (intervalInput) called with: ${s.toString()}"
+                )
                 delayedUpdate {
-                    if (interval != null && interval > 0) {
+                    val text = intervalInput.text.toString()
+                    val interval = text.toIntOrNull()
+                    Log.d("SettingsActivity", "delayedUpdate -> raw='$text', parsed=$interval")
+
+                    if (interval != null && interval >= 15) {
+                        Log.d("SettingsActivity", "Interval is valid, saving...")
                         saveFetchInterval(interval)
                         showToast(getString(R.string.fetch_interval_set, interval))
-                        Log.d(
-                            "SettingsActivity",
-                            "Fetch interval updated and saved: $interval minutes"
-                        )
                     } else {
+                        Log.d("SettingsActivity", "Invalid interval value (null or < 15)")
                         Toast.makeText(
                             this@SettingsActivity,
                             getString(R.string.invalid_interval_value),
@@ -152,20 +229,18 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         delayInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
-                val delay = s?.toString()?.toIntOrNull()
                 delayedUpdate {
-                    if (delay != null && delay > 0) {
+                    val delay = delayInput.text.toString().toIntOrNull()
+                    if (delay != null && delay in 1..60) {
                         saveFetchDelay(delay)
                         showToast(getString(R.string.fetch_delay_set, delay))
-                        Log.d("SettingsActivity", "Fetch delay updated and saved: $delay seconds")
                     } else {
                         Toast.makeText(
                             this@SettingsActivity,
@@ -175,32 +250,9 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-        })
 
-        retryInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
-            override fun afterTextChanged(s: Editable?) {
-                val retry = s?.toString()?.toIntOrNull()
-                delayedUpdate {
-                    if (retry != null && retry > 0) {
-                        saveRetryAfterFailure(retry)
-                        showToast(getString(R.string.retry_after_failure_set, retry))
-                        Log.d(
-                            "SettingsActivity",
-                            "Retry after failure updated and saved: $retry minutes"
-                        )
-                    } else {
-                        Toast.makeText(
-                            this@SettingsActivity,
-                            getString(R.string.invalid_retry_value),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
         })
 
         val isFirstRun = sharedPreferences.getBoolean("isFirstRunSettings", true)
@@ -209,6 +261,29 @@ class SettingsActivity : AppCompatActivity() {
             editor.putBoolean("isFirstRunSettings", false).apply()
         }
     }
+
+    private fun enableItunesSupport(enabled: Boolean) {
+        setItunesSupportEnabled(enabled)
+        wipeEntireSearchHistory()
+        Toast.makeText(
+            this,
+            if (enabled) getString(R.string.itunes_support_enabled_toast)
+            else getString(R.string.itunes_support_disabled_toast),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+
+    private fun wipeEntireSearchHistory() {
+        val dao = AppDatabase.getDatabase(this).searchHistoryDao()
+
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                dao.clearHistory()
+            }
+        }
+    }
+
 
     @SuppressLint("BatteryLife")
     private fun requestIgnoreBatteryOptimizations() {
@@ -266,10 +341,20 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun delayedUpdate(action: () -> Unit) {
-        updateRunnable?.let { updateHandler.removeCallbacks(it) }
-        updateRunnable = Runnable { action() }
+        updateRunnable?.let {
+            Log.d("SettingsActivity", "Cancelling previous runnable")
+            updateHandler.removeCallbacks(it)
+        }
+
+        updateRunnable = Runnable {
+            Log.d("SettingsActivity", "Executing delayed update")
+            action()
+        }
+
+        Log.d("SettingsActivity", "Posting delayed update")
         updateHandler.postDelayed(updateRunnable!!, 1000)
     }
+
 
     @SuppressLint("SetTextI18n")
     private fun updateReleaseAgeLabel(weeks: Int) {
@@ -277,20 +362,22 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun saveFetchInterval(minutes: Int) {
+        Log.d("SettingsActivity", "saveFetchInterval called with: $minutes")
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         sharedPreferences.edit { putInt("fetchInterval", minutes) }
-        Log.d("SettingsActivity", "Fetch interval saved: $minutes minutes")
+        Log.d("SettingsActivity", "Fetch interval saved in SharedPreferences.")
         setupFetchReleasesWorker(minutes)
     }
+
 
     private fun saveFetchDelay(seconds: Int) {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         sharedPreferences.edit { putInt("fetchDelay", seconds) }
     }
 
-    private fun saveRetryAfterFailure(minutes: Int) {
+    private fun loadFetchDelay(): Int {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        sharedPreferences.edit { putInt("retryAfterFailure", minutes) }
+        return sharedPreferences.getInt("fetchDelay", 1)
     }
 
     private fun saveReleaseAgePreference(weeks: Int) {
@@ -301,16 +388,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadFetchInterval(): Int {
         val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         return sharedPreferences.getInt("fetchInterval", 90)
-    }
-
-    private fun loadFetchDelay(): Int {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return sharedPreferences.getInt("fetchDelay", 0)
-    }
-
-    private fun loadRetryAfterFailure(): Int {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return sharedPreferences.getInt("retryAfterFailure", 5)
     }
 
     private fun loadReleaseAgePreference(): Int {
@@ -330,42 +407,8 @@ class SettingsActivity : AppCompatActivity() {
     fun refreshSettingsUI() {
         intervalInput.setText(loadFetchInterval().toString())
         delayInput.setText(loadFetchDelay().toString())
-        retryInput.setText(loadRetryAfterFailure().toString())
         releaseAgeSlider.value = loadReleaseAgePreference().toFloat()
         updateReleaseAgeLabel(loadReleaseAgePreference())
-    }
-
-    private fun showFolderImportToggleDialog() {
-        val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFolderImportEnabled = appPreferences.getBoolean("isFolderImportEnabled", false)
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.folder_import_feature_title)
-            .setMessage(
-                if (isFolderImportEnabled) {
-                    getString(R.string.folder_import_feature_enabled_message)
-                } else {
-                    getString(R.string.folder_import_feature_disabled_message)
-                }
-            )
-            .setPositiveButton(
-                if (isFolderImportEnabled) {
-                    R.string.disable
-                } else {
-                    R.string.enable
-                }
-            ) { _, _ ->
-                appPreferences.edit { putBoolean("isFolderImportEnabled", !isFolderImportEnabled) }
-                Toast.makeText(
-                    this, if (isFolderImportEnabled) {
-                        R.string.folder_import_feature_disabled_toast
-                    } else {
-                        R.string.folder_import_feature_enabled_toast
-                    }, Toast.LENGTH_SHORT
-                ).show()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
     }
 
     private fun showSettingsTutorial() {
@@ -382,18 +425,6 @@ class SettingsActivity : AppCompatActivity() {
                     releaseAgeSlider,
                     getString(R.string.release_age_title),
                     getString(R.string.release_age_description)
-                ).transparentTarget(true).cancelable(false),
-
-                TapTarget.forView(
-                    delayInput,
-                    getString(R.string.delayed_fetching_title),
-                    getString(R.string.delayed_fetching_description)
-                ).transparentTarget(true).cancelable(false),
-
-                TapTarget.forView(
-                    retryInput,
-                    getString(R.string.retry_attempt_title),
-                    getString(R.string.retry_attempt_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
@@ -441,6 +472,26 @@ class SettingsActivity : AppCompatActivity() {
                 }
             })
             .start()
+    }
+
+    private fun isItunesSupportEnabled(): Boolean {
+        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        return prefs.getBoolean("itunesSupportEnabled", false)
+    }
+
+    private fun setItunesSupportEnabled(enabled: Boolean) {
+        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        prefs.edit { putBoolean("itunesSupportEnabled", enabled) }
+    }
+
+    private fun runManualFetchNow() {
+        val workRequest = androidx.work.OneTimeWorkRequestBuilder<FetchReleasesWorker>()
+            .setInputData(androidx.work.workDataOf("manual" to true))
+            .build()
+
+        androidx.work.WorkManager.getInstance(this).enqueue(workRequest)
+
+        Toast.makeText(this, getString(R.string.manual_fetch_started), Toast.LENGTH_SHORT).show()
     }
 
 }

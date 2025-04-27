@@ -12,16 +12,14 @@
     <FrameLayout
         android:layout_width="100dp"
         android:layout_height="100dp"
-        android:layout_marginEnd="16dp"
-        android:clipToOutline="true">
+        android:layout_marginEnd="16dp">
 
         <ImageView
             android:id="@+id/artistImage"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clipToOutline="true"
             android:scaleType="centerCrop"
-            tools:ignore="ContentDescription,UnusedAttribute" />
+            tools:ignore="ContentDescription" />
 
         <ProgressBar
             android:id="@+id/progressBarLoading"

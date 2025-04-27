@@ -6,5 +6,7 @@ data class DeezerTracksResponse(
 
 data class Track(
     val title: String,
-    val duration: Int
+    val duration: Int,
+    val artistName: String? = null,
+    val previewUrl: String? = null
 )

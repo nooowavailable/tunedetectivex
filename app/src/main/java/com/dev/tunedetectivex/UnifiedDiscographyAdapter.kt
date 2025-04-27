@@ -1,6 +1,7 @@
 package com.dev.tunedetectivex
 
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,11 +13,26 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.dev.tunedetectivex.models.UnifiedAlbum
+import java.text.SimpleDateFormat
+import java.util.Locale
 
-class DiscographyAdapter(
-    private val albums: List<DeezerAlbum>,
-    private val onAlbumClick: (DeezerAlbum) -> Unit
-) : RecyclerView.Adapter<DiscographyAdapter.AlbumViewHolder>() {
+class UnifiedDiscographyAdapter(
+    private val albums: List<UnifiedAlbum>,
+    private val onAlbumClick: (UnifiedAlbum) -> Unit
+) : RecyclerView.Adapter<UnifiedDiscographyAdapter.AlbumViewHolder>() {
+
+    init {
+        val deezerCount = albums.count { it.deezerId != null }
+        val itunesCount = albums.count { it.itunesId != null }
+        val bothCount = albums.count { it.deezerId != null && it.itunesId != null }
+        val total = albums.size
+
+        Log.d("UnifiedDiscography", "▶ Total: $total Releases")
+        Log.d("UnifiedDiscography", "• Deezer: $deezerCount")
+        Log.d("UnifiedDiscography", "• iTunes: $itunesCount")
+        Log.d("UnifiedDiscography", "• Both IDs present: $bothCount")
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -36,17 +52,34 @@ class DiscographyAdapter(
         private val albumTitle: TextView = view.findViewById(R.id.textViewAlbumTitle)
         private val albumCover: ImageView = view.findViewById(R.id.imageViewAlbumCover)
         private val releaseDate: TextView = view.findViewById(R.id.textViewReleaseDate)
+        private val progressBar: ProgressBar = view.findViewById(R.id.progressBarLoading)
 
-        fun bind(album: DeezerAlbum) {
-            albumTitle.text = album.title
-            releaseDate.text = album.release_date
+        fun bind(album: UnifiedAlbum) {
+            Log.d("UnifiedDiscography", "Album: ${album.title}")
+            Log.d("UnifiedDiscography", "  Deezer ID: ${album.deezerId ?: "❌"}")
+            Log.d("UnifiedDiscography", "  iTunes ID: ${album.itunesId ?: "❌"}")
 
-            val progressBar: ProgressBar = itemView.findViewById(R.id.progressBarLoading)
+            albumTitle.text = buildString {
+                append(album.title)
+                album.releaseType?.let {
+                    append(" ($it)")
+                }
+            }
+
+            val formattedDate = try {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                val date = inputFormat.parse(album.releaseDate)
+                outputFormat.format(date!!)
+            } catch (e: Exception) {
+                "Unknown Date"
+            }
+            releaseDate.text = formattedDate
 
             progressBar.visibility = View.VISIBLE
 
             Glide.with(itemView.context)
-                .load(album.getBestCoverUrl())
+                .load(album.coverUrl)
                 .placeholder(R.drawable.ic_discography)
                 .error(R.drawable.ic_discography)
                 .transform(RoundedCorners(30))
@@ -56,7 +89,6 @@ class DiscographyAdapter(
                         transition: Transition<in Drawable>?
                     ) {
                         albumCover.setImageDrawable(resource)
-
                         progressBar.visibility = View.GONE
                     }
 

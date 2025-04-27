@@ -21,14 +21,12 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                     context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
                 val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
                 val releaseAgeWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
-                val fetchDelay = sharedPreferences.getInt("fetchDelay", 0)
-                val retryAfter = sharedPreferences.getInt("retryAfter", 10)
+                val fetchDelay = sharedPreferences.getInt("fetchDelay", 1)
                 val backupData = BackupData(
                     artists = artists,
                     fetchInterval = fetchInterval,
                     releaseAgeWeeks = releaseAgeWeeks,
-                    fetchDelay = fetchDelay,
-                    retryAfter = retryAfter
+                    fetchDelay = fetchDelay
                 )
                 val json = gson.toJson(backupData)
                 withContext(Dispatchers.Main) {
@@ -63,7 +61,13 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     val json = inputStream.bufferedReader().use { it.readText() }
                     val backupData = gson.fromJson(json, BackupData::class.java)
-                    savedArtistDao.insertAll(backupData.artists)
+
+                    val fixedArtists = backupData.artists.map {
+                        val fixedDeezerId = it.deezerId ?: it.id
+                        it.copy(deezerId = fixedDeezerId)
+                    }
+
+                    savedArtistDao.insertAll(fixedArtists)
 
                     val sharedPreferences =
                         context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
@@ -71,7 +75,6 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                         putInt("fetchInterval", backupData.fetchInterval)
                         putInt("releaseAgeWeeks", backupData.releaseAgeWeeks)
                         putInt("fetchDelay", backupData.fetchDelay)
-                        putInt("retryAfter", backupData.retryAfter)
                         apply()
                     }
 
@@ -81,19 +84,24 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                         }
                     }
 
-                    val fetchJobs = backupData.artists.map { artist ->
+                    val fetchJobs = fixedArtists.map { artist ->
                         launch {
                             try {
-                                val artistDetails = apiService.getArtistDetails(artist.id).execute().body()
-                                val profileImageUrl = artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
+                                val artistDetails =
+                                    apiService.getArtistDetails(artist.deezerId ?: return@launch)
+                                        .execute().body()
+                                val profileImageUrl =
+                                    artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
 
                                 savedArtistDao.updateArtistDetails(
                                     artist.id,
                                     profileImageUrl
                                 )
 
-                                val releases = apiService.getArtistReleases(artist.id, 0).execute()
-                                    .body()?.data ?: emptyList()
+                                val releases = apiService.getArtistReleases(
+                                    artist.deezerId ?: return@launch,
+                                    0
+                                ).execute().body()?.data ?: emptyList()
 
                                 releases.forEach { release ->
                                     savedArtistDao.insertRelease(
@@ -102,7 +110,8 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                                             title = release.title,
                                             artistName = artist.name,
                                             albumArtUrl = release.getBestCoverUrl(),
-                                            releaseDate = release.release_date
+                                            releaseDate = release.release_date,
+                                            apiSource = "Deezer"
                                         )
                                     )
                                 }
@@ -134,11 +143,11 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
         }
     }
 
+
     data class BackupData(
         val artists: List<SavedArtist>,
         val fetchInterval: Int,
         val releaseAgeWeeks: Int,
-        val fetchDelay: Int,
-        val retryAfter: Int
+        val fetchDelay: Int
     )
 }

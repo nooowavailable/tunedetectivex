@@ -21,6 +21,9 @@ import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.dev.tunedetectivex.api.ITunesApiService
+import com.dev.tunedetectivex.model.enums.ReleaseType
+import com.dev.tunedetectivex.models.UnifiedAlbum
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -47,6 +50,7 @@ class FetchReleasesWorker(
 
     private val db = AppDatabase.getDatabase(context)
     private val apiService: DeezerApiService
+    private val iTunesApiService: ITunesApiService
     private var isNetworkRequestsAllowed = true
 
     init {
@@ -55,6 +59,12 @@ class FetchReleasesWorker(
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         apiService = retrofit.create(DeezerApiService::class.java)
+
+        iTunesApiService = Retrofit.Builder()
+            .baseUrl("https://itunes.apple.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ITunesApiService::class.java)
 
         createNotificationChannels()
         checkNetworkTypeAndSetFlag()
@@ -71,15 +81,9 @@ class FetchReleasesWorker(
     override suspend fun doWork(): Result {
         wakeDevice()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    applicationContext,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.w(TAG, "Notification permission not granted. Skipping work.")
-                return Result.failure()
-            }
+        if (!hasNotificationPermission()) {
+            Log.w(TAG, "Notification permission not granted. Skipping work.")
+            return Result.failure()
         }
 
         return try {
@@ -94,10 +98,12 @@ class FetchReleasesWorker(
                 return Result.failure()
             }
 
-            val fetchDelay = sharedPreferences.getInt("fetchDelay", 0) * 1000L
-            if (fetchDelay > 0) {
+            val isManual = inputData.getBoolean("manual", false)
+            val fetchDelay = sharedPreferences.getInt("fetchDelay", 1) * 1000L
+            if (!isManual && fetchDelay > 0) {
                 delay(fetchDelay)
             }
+
 
             fetchSavedArtists()
             Result.success()
@@ -110,29 +116,29 @@ class FetchReleasesWorker(
     }
 
     private fun wakeDevice() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    applicationContext,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.w(TAG, "Notification permission not granted. Skipping wake device.")
-                return
-            }
+        if (!hasNotificationPermission()) {
+            Log.w(TAG, "Notification permission not granted. Skipping wake device.")
+            return
         }
 
-        val powerManager =
-            applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
-        val wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            "TuneDetectiveX:ImportWakeLock"
-        )
-        wakeLock.acquire(5 * 60 * 1000L /*5 minutes*/)
+        try {
+            val powerManager =
+                applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "TuneDetectiveX:ImportWakeLock"
+            )
+            wakeLock.acquire(5 * 60 * 1000L /*5 minutes*/)
 
-        val notification = createForegroundNotification()
-        NotificationManagerCompat.from(applicationContext).notify(1, notification)
+            val notification = createForegroundNotification()
+            NotificationManagerCompat.from(applicationContext).notify(1, notification)
 
-        wakeLock.release()
+            wakeLock.release()
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException in wakeDevice(): ${e.message}", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error in wakeDevice(): ${e.message}", e)
+        }
     }
 
     private fun createForegroundNotification(): Notification {
@@ -162,107 +168,127 @@ class FetchReleasesWorker(
     }
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("AppSettings", MODE_PRIVATE)
         val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
         val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()
 
+        val isItunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
+
         try {
-            if (ContextCompat.checkSelfPermission(
-                    applicationContext,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
+            if (!hasNotificationPermission()) {
                 Log.w(TAG, "Notification permission not granted.")
                 return
             }
 
-            val response = apiService.getArtistReleases(artist.id, 0).execute()
-            if (response.isSuccessful) {
-                val albums = response.body()?.data ?: emptyList()
-                Log.d(TAG, "API Response for artist ${artist.name}: $albums")
+            val releases = mutableListOf<UnifiedAlbum>()
 
-                val latestRelease = albums.maxByOrNull { release ->
-                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time ?: 0L
-                }
-
-                if (latestRelease != null) {
-                    val releaseDateMillis = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        .parse(latestRelease.release_date)?.time ?: 0L
-
-                    if (currentTime - releaseDateMillis > maxReleaseAgeInMillis) {
-                        Log.d(TAG, "Release ${latestRelease.title} is older than the set threshold.")
-                        return
-                    }
-
-                    val releaseHash = (artist.id.toString() + latestRelease.title + latestRelease.release_date).hashCode()
-                    if (db.savedArtistDao().isNotificationSent(releaseHash)) {
-                        Log.d(TAG, "Notification already sent for release: ${latestRelease.title}")
-                        return
-                    }
-
-                    val releaseType = when (latestRelease.record_type) {
-                        "album" -> applicationContext.getString(R.string.release_type_album)
-                        "single" -> applicationContext.getString(R.string.release_type_single)
-                        "ep" -> applicationContext.getString(R.string.release_type_ep)
-                        else -> applicationContext.getString(R.string.release_type_default)
-                    }
-
-                    val coverUrl = latestRelease.getBestCoverUrl()
-                    Log.d(TAG, "Cover URL for latest release ${latestRelease.title}: $coverUrl")
-
-                    sendReleaseNotification(
-                        artist,
-                        latestRelease,
-                        releaseHash,
-                        releaseDateMillis,
-                        releaseType
+            val deezerResponse =
+                apiService.getArtistReleases(artist.deezerId ?: return, 0).execute()
+            if (deezerResponse.isSuccessful) {
+                val deezerAlbums = deezerResponse.body()?.data ?: emptyList()
+                releases += deezerAlbums.map {
+                    UnifiedAlbum(
+                        id = "${artist.deezerId}_${it.id}",
+                        title = it.title,
+                        artistName = it.artist?.name ?: artist.name,
+                        releaseDate = it.release_date,
+                        coverUrl = it.getBestCoverUrl(),
+                        releaseType = it.record_type,
+                        deezerId = artist.deezerId
                     )
-                } else {
-                    Log.d(TAG, "No latest release found for artist ${artist.name}")
                 }
-            } else {
-                Log.e(
-                    TAG,
-                    "Failed to fetch releases for artist ${artist.name}: ${
-                        response.errorBody()?.string()
-                    }"
-                )
             }
+
+            if (isItunesSupportEnabled && artist.itunesId != null) {
+                val itunesResponse =
+                    iTunesApiService.lookupArtistWithAlbums(artist.itunesId).execute()
+                if (itunesResponse.isSuccessful) {
+                    val items = itunesResponse.body()?.results ?: emptyList()
+                    val albums =
+                        items.filter { it.wrapperType == "collection" && it.collectionName != null }
+                    releases += albums.mapNotNull {
+                        UnifiedAlbum(
+                            id = "${artist.itunesId}_${it.collectionId}",
+                            title = it.collectionName ?: return@mapNotNull null,
+                            artistName = it.artistName ?: artist.name,
+                            releaseDate = it.releaseDate?.substring(0, 10)
+                                ?: return@mapNotNull null,
+                            coverUrl = it.getHighResArtwork() ?: "",
+                            releaseType = it.collectionType,
+                            itunesId = artist.itunesId
+                        )
+                    }
+                }
+            }
+
+            val latest = releases.maxByOrNull {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
+                    ?: 0L
+            } ?: return
+
+            val releaseDateMillis = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .parse(latest.releaseDate)?.time ?: return
+
+            if (currentTime - releaseDateMillis > maxReleaseAgeInMillis) {
+                Log.d(TAG, "Release ${latest.title} is too old.")
+                return
+            }
+
+            val releaseHash = "${latest.artistName.trim().lowercase()}_${
+                latest.title.trim().lowercase()
+            }_${latest.releaseDate}".hashCode()
+            if (db.savedArtistDao().isNotificationSent(releaseHash)) {
+                Log.d(TAG, "Notification already sent for ${latest.title}")
+                return
+            }
+
+            val releaseTypeEnum = ReleaseType.from(latest.releaseType)
+            val releaseTypeStr = when (releaseTypeEnum) {
+                ReleaseType.ALBUM -> applicationContext.getString(R.string.release_type_album)
+                ReleaseType.SINGLE -> applicationContext.getString(R.string.release_type_single)
+                ReleaseType.EP -> applicationContext.getString(R.string.release_type_ep)
+                ReleaseType.DEFAULT -> applicationContext.getString(R.string.release_type_default)
+            }
+
+            sendUnifiedReleaseNotification(
+                artist,
+                latest,
+                releaseHash,
+                releaseDateMillis,
+                releaseTypeStr
+            )
+
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for new release: ${e.message}", e)
         }
     }
 
-    private fun sendReleaseNotification(
+    private fun sendUnifiedReleaseNotification(
         artist: SavedArtist,
-        album: DeezerAlbum,
+        album: UnifiedAlbum,
         releaseHash: Int,
         releaseDate: Long,
         releaseType: String
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permissionStatus = ContextCompat.checkSelfPermission(
-                applicationContext,
-                Manifest.permission.POST_NOTIFICATIONS
-            )
-            if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "Notification permission not granted. Skipping notification.")
-                return
-            }
-        }
-
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Glide.with(applicationContext)
                     .asBitmap()
-                    .load(album.getBestCoverUrl())
+                    .load(album.coverUrl)
                     .into(object : CustomTarget<Bitmap>() {
                         override fun onResourceReady(
                             resource: Bitmap,
                             transition: Transition<in Bitmap>?
                         ) {
+                            if (!hasNotificationPermission()) {
+                                Log.w(
+                                    TAG,
+                                    "Notification permission not granted. Skipping notification."
+                                )
+                                return
+                            }
+
                             val notification = createNotification(
                                 artist = artist,
                                 album = album,
@@ -271,84 +297,89 @@ class FetchReleasesWorker(
                                 channelId = RELEASE_CHANNEL_ID
                             )
 
-                            Log.d(TAG, "Sending notification with channel ID: $RELEASE_CHANNEL_ID")
-                            NotificationManagerCompat.from(applicationContext)
-                                .notify(releaseHash, notification)
+                            try {
+                                NotificationManagerCompat.from(applicationContext)
+                                    .notify(releaseHash, notification)
+                            } catch (e: SecurityException) {
+                                Log.e(TAG, "SecurityException while sending notification", e)
+                                return
+                            }
 
-                            launch(Dispatchers.Main) {
-                                try {
-                                    db.savedArtistDao()
-                                        .markNotificationAsSent(
-                                            SentNotification(
-                                                releaseHash,
-                                                releaseDate
-                                            )
-                                        )
-                                } catch (e: Exception) {
-                                    Log.e(
-                                        TAG,
-                                        "Failed to update notification status in the database",
-                                        e
-                                    )
-                                }
+                            CoroutineScope(Dispatchers.IO).launch {
+                                db.savedArtistDao().markNotificationAsSent(
+                                    SentNotification(releaseHash, releaseDate)
+                                )
                             }
                         }
 
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                            // Handle cleanup if needed
-                        }
+                        override fun onLoadCleared(placeholder: Drawable?) {}
 
                         override fun onLoadFailed(errorDrawable: Drawable?) {
-                            Log.e(TAG, "Error loading album artwork for notification")
-                            val fallbackNotification = createNotification(
+                            if (!hasNotificationPermission()) {
+                                Log.w(
+                                    TAG,
+                                    "Notification permission not granted. Skipping fallback notification."
+                                )
+                                return
+                            }
+
+                            val fallback = createNotification(
                                 artist = artist,
                                 album = album,
                                 albumArtBitmap = null,
                                 releaseType = releaseType,
                                 channelId = RELEASE_CHANNEL_ID
                             )
-                            NotificationManagerCompat.from(applicationContext)
-                                .notify(releaseHash, fallbackNotification)
+
+                            try {
+                                NotificationManagerCompat.from(applicationContext)
+                                    .notify(releaseHash, fallback)
+                            } catch (e: SecurityException) {
+                                Log.e(
+                                    TAG,
+                                    "SecurityException while sending fallback notification",
+                                    e
+                                )
+                            }
                         }
                     })
-            } catch (e: SecurityException) {
-                Log.e(TAG, "Permission denied: ${e.message}", e)
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error: ${e.message}", e)
+                Log.e(TAG, "Error loading artwork or sending notification", e)
             }
         }
     }
 
-
     private fun createNotification(
         artist: SavedArtist,
-        album: DeezerAlbum,
+        album: UnifiedAlbum,
         albumArtBitmap: Bitmap?,
         releaseType: String,
         channelId: String
     ): Notification {
-        val notificationTitle = when (releaseType) {
-            "Album" -> applicationContext.getString(
+        val releaseTypeEnum = ReleaseType.from(releaseType)
+
+        val notificationTitle = when (releaseTypeEnum) {
+            ReleaseType.ALBUM -> applicationContext.getString(
                 R.string.notification_new_release_title_album,
-                releaseType,
+                "Album",
                 artist.name
             )
 
-            "Single" -> applicationContext.getString(
+            ReleaseType.SINGLE -> applicationContext.getString(
                 R.string.notification_new_release_title_single,
-                releaseType,
+                "Single",
                 artist.name
             )
 
-            "EP" -> applicationContext.getString(
+            ReleaseType.EP -> applicationContext.getString(
                 R.string.notification_new_release_title_ep,
-                releaseType,
+                "EP",
                 artist.name
             )
 
-            else -> applicationContext.getString(
+            ReleaseType.DEFAULT -> applicationContext.getString(
                 R.string.notification_new_release_title_default,
-                releaseType,
+                "Release",
                 artist.name
             )
         }
@@ -406,5 +437,14 @@ class FetchReleasesWorker(
                 applicationContext.getString(R.string.notification_channel_release_description)
         }
         manager.createNotificationChannel(releaseChannel)
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                applicationContext,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
     }
 }

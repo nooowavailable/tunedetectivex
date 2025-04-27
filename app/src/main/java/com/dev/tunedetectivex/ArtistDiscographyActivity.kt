@@ -1,21 +1,19 @@
 package com.dev.tunedetectivex
 
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageView
 import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
+import com.dev.tunedetectivex.api.ITunesApiService
+import com.dev.tunedetectivex.models.ITunesAlbumSearchResponse
+import com.dev.tunedetectivex.models.UnifiedAlbum
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -29,7 +27,8 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var apiService: DeezerApiService
     private lateinit var db: AppDatabase
-    private var artistId: Long = 0
+    private var selectedArtist: DeezerArtist? = null
+
     private lateinit var artistName: String
     private lateinit var artistImageUrl: String
     private lateinit var progressBar: ProgressBar
@@ -39,24 +38,42 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_artist_discography)
 
+
         val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
-
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         recyclerView = findViewById(R.id.recyclerViewDiscography)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        artistId = intent.getLongExtra("artistId", 0)
+        val deezerId = intent.getLongExtra("deezerId", -1L)
+        val itunesId = intent.getLongExtra("itunesId", -1L)
         artistName = intent.getStringExtra("artistName") ?: "Unknown Artist"
+        artistImageUrl = intent.getStringExtra("artistImageUrl") ?: ""
+
+        Log.d("DiscographyInit", "Deezer Artist ID: $deezerId")
+        Log.d("DiscographyInit", "iTunes Artist ID: $itunesId")
+
+
+        selectedArtist = DeezerArtist(
+            id = deezerId.takeIf { it > 0 } ?: -1L,
+            name = artistName,
+            picture = artistImageUrl,
+            picture_small = artistImageUrl,
+            picture_medium = artistImageUrl,
+            picture_big = artistImageUrl,
+            picture_xl = artistImageUrl,
+            itunesId = itunesId.takeIf { it > 0 }
+        )
+
         progressBar = findViewById(R.id.progressBarLoading)
         supportActionBar?.title = artistName
 
         checkNetworkTypeAndSetFlag()
+
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
-
-        fetchArtistDetails(artistId)
+        loadCombinedDiscography(selectedArtist?.id ?: -1L, selectedArtist?.itunesId ?: -1L)
     }
 
     private fun checkNetworkTypeAndSetFlag() {
@@ -65,48 +82,154 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
     }
 
-    private fun fetchArtistDetails(artistId: Long) {
+    private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
         showLoading(true)
 
-        apiService.getArtistDetails(artistId).enqueue(object : Callback<DeezerArtist> {
-            override fun onResponse(call: Call<DeezerArtist>, response: Response<DeezerArtist>) {
+        val unifiedAlbums = mutableListOf<UnifiedAlbum>()
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://itunes.apple.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+        var deezerLoaded = false
+        var itunesLoaded = false
+
+        fun maybeDisplayCombined() {
+            if (deezerLoaded && itunesLoaded) {
                 showLoading(false)
 
-                if (response.isSuccessful) {
-                    val artist = response.body()
-                    artist?.let {
-                        artistImageUrl = it.getBestPictureUrl()
-                        loadArtistDiscography()
-                    } ?: run {
-                        Toast.makeText(
-                            this@ArtistDiscographyActivity,
-                            "Artist not found.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Log.e(
-                        "ArtistDiscographyActivity",
-                        "Error fetching artist details: ${response.code()} ${response.message()}"
-                    )
-                    Toast.makeText(
-                        this@ArtistDiscographyActivity,
-                        "Error fetching artist details.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                unifiedAlbums.sortByDescending {
+                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
+                        ?: 0L
                 }
+
+                recyclerView.adapter = UnifiedDiscographyAdapter(unifiedAlbums) { album ->
+                    album.deezerId?.let { selectedArtist?.id = it }
+                    album.itunesId?.let { selectedArtist?.itunesId = it }
+
+                    val isFromDeezer = album.deezerId != null
+                    val releaseId =
+                        if (isFromDeezer) album.deezerId!!.toLong() else album.itunesId!!.toLong()
+
+                    val validCoverUrl =
+                        album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
+
+                    Intent(this, ReleaseDetailsActivity::class.java).apply {
+                        putExtra("releaseId", releaseId)
+                        putExtra("releaseTitle", album.title)
+                        putExtra("artistName", album.artistName)
+                        putExtra("albumArtUrl", validCoverUrl)
+                        putExtra("deezerId", album.deezerId ?: -1L)
+                        putExtra("itunesId", album.itunesId ?: -1L)
+                    }.also { startActivity(it) }
+                }
+
+                Glide.with(this)
+                    .load(artistImageUrl)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.error_image)
+                    .transform(RoundedCorners(30))
+                    .into(findViewById(R.id.imageViewArtist))
+
+                recyclerView.visibility = View.VISIBLE
+            }
+        }
+
+        apiService.getArtistReleases(deezerId).enqueue(object : Callback<DeezerAlbumsResponse> {
+            override fun onResponse(
+                call: Call<DeezerAlbumsResponse>,
+                response: Response<DeezerAlbumsResponse>
+            ) {
+                response.body()?.data.orEmpty().forEach { album ->
+                    unifiedAlbums.add(
+                        UnifiedAlbum(
+                            id = album.id.toString(),
+                            title = album.title,
+                            releaseDate = album.release_date,
+                            coverUrl = album.getBestCoverUrl(),
+                            artistName = artistName,
+                            releaseType = album.record_type.replaceFirstChar { it.uppercaseChar() },
+                            deezerId = album.id,
+                            itunesId = null
+                        )
+                    )
+                }
+                deezerLoaded = true
+                maybeDisplayCombined()
             }
 
-            override fun onFailure(call: Call<DeezerArtist>, t: Throwable) {
-                showLoading(false)
-                Log.e("ArtistDiscographyActivity", "Error fetching artist details", t)
-                Toast.makeText(
-                    this@ArtistDiscographyActivity,
-                    "Error fetching artist details.",
-                    Toast.LENGTH_SHORT
-                ).show()
+            override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
+                Log.e("Discography", "iTunes-Error", t)
+                deezerLoaded = true
+                maybeDisplayCombined()
             }
         })
+
+        if (itunesId > 0) {
+            iTunesService.lookupArtistWithAlbums(itunesId)
+                .enqueue(object : Callback<ITunesAlbumSearchResponse> {
+                    override fun onResponse(
+                        call: Call<ITunesAlbumSearchResponse>,
+                        response: Response<ITunesAlbumSearchResponse>
+                    ) {
+                        response.body()?.results.orEmpty()
+                            .filter {
+                                it.collectionType in listOf(
+                                    "Album",
+                                    "EP",
+                                    "Single"
+                                ) && it.collectionName != null
+                            }
+                            .forEach { album ->
+                                val cleanedTitle = album.collectionName!!
+                                    .replace(
+                                        Regex(" - (Single|EP|Album)", RegexOption.IGNORE_CASE),
+                                        ""
+                                    )
+                                    .trim()
+
+                                unifiedAlbums.add(
+                                    UnifiedAlbum(
+                                        id = album.collectionId.toString(),
+                                        title = cleanedTitle,
+                                        releaseDate = album.releaseDate ?: "Unknown Date",
+                                        coverUrl = album.artworkUrl100?.replace(
+                                            "100x100bb",
+                                            "1200x1200bb"
+                                        ) ?: "",
+                                        artistName = album.artistName ?: artistName,
+                                        releaseType = extractReleaseType(
+                                            album.collectionName ?: ""
+                                        ),
+                                        deezerId = null,
+                                        itunesId = album.collectionId
+                                    )
+                                )
+                            }
+                        itunesLoaded = true
+                        maybeDisplayCombined()
+                    }
+
+                    override fun onFailure(call: Call<ITunesAlbumSearchResponse>, t: Throwable) {
+                        Log.e("Discography", "iTunes-Error", t)
+                        itunesLoaded = true
+                        maybeDisplayCombined()
+                    }
+                })
+        } else {
+            itunesLoaded = true
+            maybeDisplayCombined()
+        }
+    }
+
+    private fun extractReleaseType(title: String): String? {
+        return when {
+            title.contains(" - Single", ignoreCase = true) -> "Single"
+            title.contains(" - EP", ignoreCase = true) -> "EP"
+            title.contains(" - Album", ignoreCase = true) -> "Album"
+            else -> null
+        }
     }
 
     private fun showLoading(isLoading: Boolean) {
@@ -121,114 +244,12 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         apiService = retrofit.create(DeezerApiService::class.java)
     }
 
-    private fun loadArtistDiscography() {
-        showLoading(true)
-
-        apiService.getArtistReleases(artistId).enqueue(object : Callback<DeezerAlbumsResponse> {
-            override fun onResponse(
-                call: Call<DeezerAlbumsResponse>,
-                response: Response<DeezerAlbumsResponse>
-            ) {
-                showLoading(false)
-
-                if (response.isSuccessful) {
-                    val releases = response.body()?.data ?: emptyList()
-                    Log.d("ArtistDiscographyActivity", "Releases: $releases")
-                    if (releases.isNotEmpty()) {
-                        displayDiscography(releases)
-                    } else {
-                        Toast.makeText(
-                            this@ArtistDiscographyActivity,
-                            "No releases found for $artistName.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Log.e(
-                        "ArtistDiscographyActivity",
-                        "Error fetching discography: ${response.code()} ${response.message()}"
-                    )
-                    Toast.makeText(
-                        this@ArtistDiscographyActivity,
-                        "Error fetching discography.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
-                showLoading(false)
-
-                Log.e("ArtistDiscographyActivity", "Error fetching discography", t)
-                Toast.makeText(
-                    this@ArtistDiscographyActivity,
-                    "Error fetching discography.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
-    }
-
-    private fun displayDiscography(releases: List<DeezerAlbum>) {
-        val sortedReleases = releases.sortedByDescending { release ->
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(release.release_date)?.time
-                ?: 0L
-        }
-
-        val adapter = DiscographyAdapter(sortedReleases) { album ->
-            Intent(this, ReleaseDetailsActivity::class.java).apply {
-                putExtra("releaseId", album.id)
-                putExtra("releaseTitle", album.title)
-                putExtra("artistName", artistName)
-                putExtra("albumArtUrl", album.getBestCoverUrl())
-            }.also { startActivity(it) }
-        }
-
-        recyclerView.adapter = adapter
-
-        val progressBar: ProgressBar = findViewById(R.id.progressBarLoading)
-        val imageView: ImageView = findViewById(R.id.imageViewArtist)
-
-
-        progressBar.visibility = View.VISIBLE
-
-        Glide.with(this)
-            .load(artistImageUrl)
-            .placeholder(R.drawable.placeholder_image)
-            .error(R.drawable.error_image)
-            .transform(RoundedCorners(30))
-            .into(object : CustomTarget<Drawable>() {
-                override fun onResourceReady(
-                    resource: Drawable,
-                    transition: Transition<in Drawable>?
-                ) {
-                    imageView.setImageDrawable(resource)
-                    progressBar.visibility = View.GONE
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    progressBar.visibility = View.GONE
-                }
-
-                override fun onLoadFailed(errorDrawable: Drawable?) {
-                    Log.e("Glide", "Image load failed: $artistImageUrl")
-                    progressBar.visibility = View.GONE
-                    super.onLoadFailed(errorDrawable)
-                }
-            })
-
-
-        recyclerView.visibility = View.VISIBLE
-    }
-
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
                 finish()
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }

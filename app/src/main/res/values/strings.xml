@@ -18,9 +18,7 @@
     <string name="general_settings">General Settings</string>
     <string name="intervalInput">Fetch Interval (in minutes)</string>
     <string name="releaseAgeLabel">Notifications for releases within the last 4 weeks</string>
-    <string name="delayretry">Delay and Retry Settings</string>
-    <string name="FetchDelay">Fetch Delay (in seconds)</string>
-    <string name="Retry">Retry After (in minutes)</string>
+    <string name="fetchSettings">Update interval settings</string>
     <string name="BatteryNetwork">Battery and Network</string>
     <string name="BatteryRestrictions">Battery Restrictions</string>
     <string name="SelectNetworkType">Select Network Type</string>
@@ -50,7 +48,7 @@
     <string name="artist_saved">%1$s saved!</string>
     <string name="artist_removed">%1$s removed from saved artists!</string>
     <string name="fetch_interval_title">Fetch interval</string>
-    <string name="fetch_interval_description">Here you can set how often new publications should be fetched (in minutes).</string>
+    <string name="fetch_interval_description">Here you can set how often new releases should be fetched (in minutes).</string>
     <string name="release_age_title">Release-Age</string>
     <string name="release_age_description">With this slider you can define how old releases can be to receive notifications (in weeks).</string>
     <string name="delayed_fetching_title">Delayed fetching</string>
@@ -64,9 +62,9 @@
     <string name="settings_tutorial_completed">Settings tutorial completed!</string>
     <string name="settings_tutorial_aborted">Settings tutorial aborted.</string>
     <string name="fetch_interval_set">Fetch interval set to %1$d minutes</string>
-    <string name="invalid_interval_value">Invalid interval value.</string>
+    <string name="invalid_interval_value">The interval must be at least 15 minutes.</string>
     <string name="fetch_delay_set">Fetch delay set to %1$d seconds</string>
-    <string name="invalid_delay_value">Invalid delay value.</string>
+    <string name="invalid_delay_value">The delay must be between 1 and 60 seconds.</string>
     <string name="retry_after_failure_set">Retry after failure set to %1$d minutes</string>
     <string name="invalid_retry_value">Invalid retry value.</string>
     <string name="battery_optimization_ignored">Battery optimization is already ignored for this app.</string>
@@ -162,11 +160,11 @@
     <string name="exit_confirmation_message">Are you sure you want to exit the app?</string>
     <string name="exit_confirmation_positive">Yes</string>
     <string name="exit_confirmation_negative">No</string>
-    <string name="toggle_folder_import">Toggle (experimental) folder import function</string>
-    <string name="experimental_settings">Experimental Settings</string>
-    <string name="folder_import_feature_title">Folder Import Feature</string>
-    <string name="folder_import_feature_enabled_message">The folder import feature is currently enabled. Do you want to disable it?</string>
-    <string name="folder_import_feature_disabled_message">The folder import feature is currently disabled. Do you want to enable it?</string>
+    <string name="toggle_folder_import">Toggle folder / meta-data import function</string>
+    <string name="experimental_settings">Advanced / Experimental Options</string>
+    <string name="folder_import_feature_title">Folder Import (Meta-Data)</string>
+    <string name="folder_import_feature_enabled_message">The folder import is currently enabled. Do you want to turn it off?</string>
+    <string name="folder_import_feature_disabled_message">The folder import is currently disabled. Do you want to turn it on?</string>
     <string name="enable">Enable</string>
     <string name="disable">Disable</string>
     <string name="folder_import_feature_enabled_toast">Folder import feature enabled.</string>
@@ -177,6 +175,70 @@
     <string name="deezer_api_not_reachable">Deezer API not reachable: %1$s</string>
     <string name="tutorial_check_status_title">Check status</string>
     <string name="tutorial_check_status_message">Here you can check the Deezer status.</string>
+    <string name="FetchDelay">Fetch Delay (in seconds)</string>
+    <string name="itunes_support_title">iTunes Support (Experimental)</string>
+    <string name="itunes_support_message">
+⚠️ iTunes support is currently experimental.\n\n
+It may provide better or more complete data for some artists —
+especially when releases are missing on Deezer.\n\n
+When enabled, the app compares the discographies from Deezer and iTunes.
+If at least 3 releases match, the artist is shown as a combined result —
+including the newest release from either platform.\n\n
+ℹ️ Enabling or disabling this option will clear your entire search history.
+</string>
+    <string name="dialog_button_understood">Got it</string>
+    <string name="dialog_button_cancel">Cancel</string>
+    <string name="itunes_support_enabled_toast">iTunes support enabled – search history cleared</string>
+    <string name="itunes_support_disabled_toast">iTunes support disabled – search history cleared</string>
+    <string name="itunes_summary_title">iTunes Match Summary</string>
+    <string name="itunes_summary_deezer_ids">🟢 Deezer IDs added: %1$d</string>
+    <string name="itunes_summary_itunes_ids">🔵 iTunes IDs added: %1$d</string>
+    <string name="itunes_summary_no_matches">✅ All artists have an iTunes ID!</string>
+    <string name="itunes_summary_missing_header">❌ No iTunes ID for:</string>
+    <string name="itunes_summary_manage_missing">Manage Missing Artists</string>
+    <string name="dialog_artist_not_found">No iTunes ID was found for this artist. What do you want to do?</string>
+    <string name="action_rescan">🔁 Try Again</string>
+    <string name="action_delete">🗑️ Delete</string>
+    <string name="action_manual_search">🔍 Manual Search</string>
+    <string name="manual_search_title">🔍 Manual iTunes Search</string>
+    <string name="manual_search_hint">Enter artist name</string>
+    <string name="manual_search_button">Search</string>
+    <string name="itunes_results_dialog_title">iTunes Artist Selection</string>
+    <string name="itunes_result_confirm_title">🎯 %1$s</string>
+    <string name="itunes_result_confirm_message">Use this artist?\n\n📀 %1$s · %2$s</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+    <string name="itunes_missing_artists_title">❌ Missing iTunes Artists</string>
+    <string name="back">Back</string>
+    <string name="itunes_artist_not_found_message">No iTunes ID was found for this artist.\nWhat would you like to do?</string>
+    <string name="retry_search">🔁 Try Again</string>
+    <string name="delete_artist">🗑️ Delete</string>
+    <string name="manual_search">🔍 Manual Search</string>
+    <string name="itunes_disabled_toast">🔕 iTunes is disabled</string>
+    <string name="manual_itunes_search_title">🔍 Manual iTunes Search</string>
+    <string name="manual_itunes_search_hint">Enter artist name</string>
+    <string name="search_button">Search</string>
+    <string name="confirm_artist_title">🎯 %1$s</string>
+    <string name="confirm_artist_message">Use this artist?\n\n📀 %1$s · %2$s</string>
+    <string name="no_date">No date</string>
+    <string name="no_release">No release</string>
+    <string name="save_button">Save</string>
+    <string name="itunes_artist_selection_title">iTunes Artist Selection</string>
+    <string name="close_button">Close</string>
+    <string name="latest_release_info">📀 %1$s · %2$s</string>
+    <string name="no_release_found">No release found</string>
+    <string name="unknown_title_fallback">Unknown Title</string>
+    <string name="unknown_artist_fallback">Unknown Artist</string>
+    <string name="release_details_not_found">No details found for this release.</string>
+    <string name="no_tracklist_id_available">No ID available for tracklist</string>
+    <string name="itunes_attempt_1">🔍 Trying to find iTunes IDs… (3 attempts)</string>
+    <string name="itunes_attempt_2">🕵️ 2 attempts left for iTunes IDs…</string>
+    <string name="itunes_attempt_3">📉 Last automatic attempt!</string>
+    <string name="itunes_attempt_final">⏭️ Automatic iTunes search disabled. Switching to manual.</string>
+    <string name="artist_updated">%1$s updated.</string>
+    <string name="manual_fetch_started">Manual fetching started…</string>
+    <string name="manual_fetch_now">Check Releases now</string>
+    <string name="enable_itunes_support">Enable iTunes support?</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

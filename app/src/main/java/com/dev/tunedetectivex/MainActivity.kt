@@ -9,8 +9,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageButton
@@ -20,10 +25,10 @@ import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -31,16 +36,18 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.GranularRoundedCorners
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.dev.tunedetectivex.api.ITunesApiService
+import com.dev.tunedetectivex.models.UnifiedAlbum
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,7 +60,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
@@ -73,7 +80,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
-    private val fetchedArtists = mutableSetOf<Long>()
     private var isNetworkRequestsAllowed = true
     private lateinit var buttonOpenDiscography: MaterialButton
     private lateinit var fabAbout: FloatingActionButton
@@ -100,64 +106,67 @@ class MainActivity : AppCompatActivity() {
 
         recyclerViewArtists = findViewById(R.id.recyclerViewArtists)
         recyclerViewArtists.layoutManager = LinearLayoutManager(this)
+
         editTextArtist = findViewById(R.id.editTextArtist)
         buttonSaveArtist = findViewById(R.id.buttonSaveArtist)
+        buttonOpenDiscography = findViewById(R.id.button_open_discography)
+
         artistInfoContainer = findViewById(R.id.artistInfoContainer)
         textViewname = findViewById(R.id.textViewname)
         textViewAlbumTitle = findViewById(R.id.textViewAlbumTitle)
         textViewrelease_date = findViewById(R.id.textViewrelease_date)
         imageViewAlbumArt = findViewById(R.id.imageViewAlbumArt)
+
         progressBar = findViewById(R.id.progressBarLoading)
-        buttonOpenDiscography = findViewById(R.id.button_open_discography)
         notificationManager = NotificationManagerCompat.from(this)
-        fabAbout = findViewById(R.id.fabAbout)
-        fabAbout.visibility = View.GONE
 
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
         val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
-        val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
         val fabCheckStatus: FloatingActionButton = findViewById(R.id.fabCheckStatus)
 
-        fabSavedArtists.visibility = View.GONE
-        fabSettings.visibility = View.GONE
-        fabSelectFolder.visibility = View.GONE
+        fabAbout = findViewById(R.id.fabAbout)
         fabAbout.visibility = View.GONE
-        fabCheckStatus.visibility = View.GONE
-
-        fabSavedArtists.translationY = 0f
-        fabSettings.translationY = 0f
-        fabSelectFolder.translationY = 0f
-        fabAbout.translationY = 0f
-        fabCheckStatus.translationY = 0f
-
         isFabMenuOpen = false
 
+        val allFabs =
+            listOf(fabSavedArtists, fabSettings, fabSelectFolder, fabAbout, fabCheckStatus)
+        allFabs.forEach {
+            it.visibility = View.GONE
+            it.translationY = 0f
+        }
 
         val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFirstRun = appPreferences.getBoolean("isFirstRun", true)
-
-        if (isFirstRun) {
+        if (appPreferences.getBoolean("isFirstRun", true)) {
             showTutorial()
             appPreferences.edit { putBoolean("isFirstRun", false) }
         }
 
-        val intervalInMinutes =
-            getSharedPreferences("TaskLog", MODE_PRIVATE).getInt("fetchInterval", 30)
+        val intervalInMinutes = getSharedPreferences("TaskLog", MODE_PRIVATE)
+            .getInt("fetchInterval", 90)
         WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
 
         requestNotificationPermission()
         checkNetworkTypeAndSetFlag()
+
         updateSaveButton()
         clearPreviousSearch()
-        setupApiService()
-        setupBackGesture()
+
 
         val searchLayout: TextInputLayout = findViewById(R.id.searchLayout)
+        searchLayout.startIconContentDescription = null
+
+        searchLayout.setStartIconOnClickListener {
+            //  nothing //
+        }
+
         searchLayout.setEndIconOnClickListener {
             showSearchHistory()
         }
+
+        setupApiService()
+        setupBackGesture()
 
         fabMenu.setOnClickListener { view ->
             val popupMenu = PopupMenu(this, view)
@@ -214,36 +223,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         db = AppDatabase.getDatabase(applicationContext)
-        editTextArtist.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
-        editTextArtist.setSingleLine()
-        editTextArtist.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
-                val artistName = editTextArtist.text.toString().trim()
-                Log.d(TAG, "Artist name entered: $artistName")
-                if (artistName.isNotEmpty()) {
-                    fetchSimilarArtists(artistName)
-                }
+        editTextArtist.apply {
+            imeOptions = EditorInfo.IME_ACTION_SEARCH
+            setSingleLine()
 
-                val inputMethodManager =
-                    getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                inputMethodManager.hideSoftInputFromWindow(editTextArtist.windowToken, 0)
-
-                true
-            } else {
-                false
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    triggerArtistSearch()
+                    true
+                } else false
             }
-        }
 
-        editTextArtist.setOnFocusChangeListener { view, hasFocus ->
-            if (!hasFocus) {
-                val artistName = editTextArtist.text.toString().trim()
-                if (artistName.isNotEmpty()) {
-                    fetchSimilarArtists(artistName)
+            setOnFocusChangeListener { view, hasFocus ->
+                if (!hasFocus) {
+                    triggerArtistSearch()
+                } else {
+                    (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                        .showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
                 }
-            } else {
-                val inputMethodManager =
-                    getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                inputMethodManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
             }
         }
 
@@ -257,7 +254,376 @@ class MainActivity : AppCompatActivity() {
             } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
         }
 
+        if (intent != null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) {
+            val releaseId = intent.getLongExtra("releaseId", -1L)
+            val releaseTitle = intent.getStringExtra("releaseTitle")
+            val artistName = intent.getStringExtra("artistName")
+            val albumArtUrl = intent.getStringExtra("albumArtUrl")
+            val deezerId = intent.getLongExtra("deezerId", -1L).takeIf { it > 0 }
+            val itunesId = intent.getLongExtra("itunesId", -1L).takeIf { it > 0 }
 
+            if (releaseId != -1L && releaseTitle != null && artistName != null) {
+                val album = UnifiedAlbum(
+                    id = releaseId.toString(),
+                    title = releaseTitle,
+                    artistName = artistName,
+                    releaseDate = "unknown",
+                    coverUrl = albumArtUrl ?: "",
+                    releaseType = null,
+                    deezerId = deezerId,
+                    itunesId = itunesId
+                )
+                displayReleaseInfo(album)
+            }
+        }
+
+    }
+
+    fun normalizeTitle(title: String): String {
+        return title.lowercase(Locale.getDefault())
+            .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
+            .trim()
+    }
+
+    private fun isItunesSupportEnabled(): Boolean {
+        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        return prefs.getBoolean("itunesSupportEnabled", false)
+    }
+
+
+    private fun displayArtists(artists: List<DeezerArtist>) {
+        showLoading(false)
+
+        if (artists.isNotEmpty()) {
+            recyclerViewArtists.visibility = View.VISIBLE
+            val adapter = SimilarArtistsAdapter(this, artists) { artist ->
+                selectedArtist = artist
+                recyclerViewArtists.visibility = View.GONE
+                buttonOpenDiscography.visibility = View.VISIBLE
+                buttonSaveArtist.visibility = View.GONE
+
+                saveSearchHistory(artist)
+                showLoading(true)
+                val isInitialClick = true
+
+                lifecycleScope.launch(Dispatchers.IO) {
+                    val deezerId = artist.id
+                    val deezerReleases = apiService.getArtistReleases(deezerId, 0)
+                        .execute().body()?.data.orEmpty()
+                    val deezerTitles = deezerReleases.map { normalizeTitle(it.title) }.toSet()
+
+                    val deezerLatest = deezerReleases.maxByOrNull {
+                        SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).parse(it.release_date)?.time ?: 0L
+                    }?.let {
+                        UnifiedAlbum(
+                            id = it.id.toString(),
+                            title = it.title,
+                            releaseDate = it.release_date,
+                            coverUrl = it.getBestCoverUrl(),
+                            artistName = artist.name,
+                            releaseType = it.record_type.replaceFirstChar { c -> c.uppercaseChar() },
+                            deezerId = deezerId
+                        )
+                    }
+
+                    var iTunesLatest: UnifiedAlbum? = null
+
+                    if (isItunesSupportEnabled()) {
+                        val iTunesService = Retrofit.Builder()
+                            .baseUrl("https://itunes.apple.com/")
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .build()
+                            .create(ITunesApiService::class.java)
+
+                        val itunesMatch =
+                            iTunesService.searchArtist(term = artist.name, entity = "musicArtist")
+                                .execute()
+                                .body()?.results?.firstOrNull { it.artistName == artist.name }
+
+                        val itunesArtistId = itunesMatch?.artistId
+                        artist.itunesId = itunesArtistId
+
+                        val iTunesAlbums = itunesArtistId?.let {
+                            iTunesService.lookupArtistWithAlbums(it).execute()
+                                .body()?.results.orEmpty()
+                        } ?: emptyList()
+
+                        val iTunesTitles = iTunesAlbums.mapNotNull {
+                            it.collectionName?.let { name ->
+                                normalizeTitle(name)
+                            }
+                        }.toSet()
+
+                        val common = deezerTitles.intersect(iTunesTitles)
+                        val isMatch = common.size >= 3
+
+                        iTunesLatest = if (isMatch) {
+                            iTunesAlbums.maxByOrNull {
+                                it.releaseDate?.let { d ->
+                                    SimpleDateFormat(
+                                        "yyyy-MM-dd",
+                                        Locale.getDefault()
+                                    ).parse(d)?.time
+                                } ?: 0L
+                            }?.let {
+                                UnifiedAlbum(
+                                    id = it.collectionId.toString(),
+                                    title = it.collectionName
+                                        ?.replace(
+                                            Regex(
+                                                "\\s*-\\s*(Single|EP|Album)",
+                                                RegexOption.IGNORE_CASE
+                                            ), ""
+                                        )
+                                        ?.trim() ?: "Unknown Album",
+                                    releaseDate = it.releaseDate ?: "Unknown Date",
+                                    coverUrl = it.artworkUrl100?.replace("100x100bb", "1200x1200bb")
+                                        ?: "",
+                                    artistName = it.artistName ?: artist.name,
+                                    releaseType = extractReleaseTypeFromTitle(it.collectionName),
+                                    itunesId = itunesArtistId
+                                )
+                            }
+                        } else null
+                    }
+
+                    val newer = listOfNotNull(deezerLatest, iTunesLatest).maxByOrNull {
+                        SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).parse(it.releaseDate)?.time ?: 0L
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        if (newer != null) {
+                            displayReleaseInfo(newer)
+                            buttonSaveArtist.visibility = View.VISIBLE
+                        } else if (!isInitialClick) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.no_releases_found_for_artist, artist.name),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        showLoading(false)
+                    }
+                }
+            }
+            recyclerViewArtists.adapter = adapter
+            recyclerViewArtists.layoutManager = LinearLayoutManager(this)
+        } else {
+            recyclerViewArtists.visibility = View.GONE
+            Toast.makeText(this, getString(R.string.no_similar_artists_found), Toast.LENGTH_SHORT)
+                .show()
+        }
+        setMenuButtonEnabled(true)
+    }
+
+    private fun displayReleaseInfo(unifiedAlbum: UnifiedAlbum) {
+        artistInfoContainer.visibility = View.VISIBLE
+
+        textViewname.text = unifiedAlbum.artistName
+        textViewAlbumTitle.text = buildString {
+            append(unifiedAlbum.title)
+            unifiedAlbum.releaseType?.let {
+                append(" ")
+                append("(${it})")
+            }
+        }
+
+        val primaryTypedValue = TypedValue()
+        theme.resolveAttribute(android.R.attr.textColorPrimary, primaryTypedValue, true)
+        val primaryColor = ContextCompat.getColor(this, primaryTypedValue.resourceId)
+
+        val secondaryTypedValue = TypedValue()
+        theme.resolveAttribute(android.R.attr.textColorSecondary, secondaryTypedValue, true)
+        val secondaryColor = ContextCompat.getColor(this, secondaryTypedValue.resourceId)
+
+        unifiedAlbum.releaseType?.let {
+            val fullText = "${unifiedAlbum.title} ($it)"
+            val spannable = SpannableString(fullText)
+            val start = fullText.indexOf("($it)")
+
+            spannable.setSpan(
+                ForegroundColorSpan(primaryColor),
+                0,
+                start,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+
+            spannable.setSpan(
+                ForegroundColorSpan(secondaryColor),
+                start,
+                fullText.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+
+            textViewAlbumTitle.text = spannable
+        } ?: run {
+            textViewAlbumTitle.text = unifiedAlbum.title
+            textViewAlbumTitle.setTextColor(primaryColor)
+        }
+
+        val formattedDate = try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+            val date = inputFormat.parse(unifiedAlbum.releaseDate)
+            date?.let { outputFormat.format(it) } ?: "Unknown Date"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in date formatting: ${e.message}")
+            "Unknown Date"
+        }
+        textViewrelease_date.text = formattedDate
+
+        progressBar.visibility = View.VISIBLE
+
+        val cornerRadius = 50f
+        val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
+
+        Glide.with(this)
+            .load(highResUrl)
+            .placeholder(R.drawable.ic_discography)
+            .error(
+                Glide.with(this)
+                    .load(unifiedAlbum.coverUrl)
+                    .transform(
+                        CenterCrop(),
+                        GranularRoundedCorners(
+                            cornerRadius,
+                            cornerRadius,
+                            cornerRadius,
+                            cornerRadius
+                        )
+                    )
+            )
+            .transform(
+                CenterCrop(),
+                GranularRoundedCorners(cornerRadius, cornerRadius, cornerRadius, cornerRadius)
+            )
+            .into(object : CustomTarget<Drawable>() {
+                override fun onResourceReady(
+                    resource: Drawable,
+                    transition: Transition<in Drawable>?
+                ) {
+                    imageViewAlbumArt.setImageDrawable(resource)
+                    progressBar.visibility = View.GONE
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    progressBar.visibility = View.GONE
+                }
+            })
+
+        unifiedAlbum.deezerId?.let { id ->
+            selectedArtist?.id = id
+        }
+
+
+        unifiedAlbum.itunesId?.let { id ->
+            selectedArtist?.itunesId = id
+        }
+
+        updateSaveButton()
+
+        artistInfoContainer.setOnClickListener {
+            val deezerId = unifiedAlbum.deezerId
+            val itunesId = unifiedAlbum.itunesId
+
+            val itunesEnabled = isItunesSupportEnabled()
+
+            if (deezerId == null && itunesId != null && !itunesEnabled) {
+                Toast.makeText(this, "No valid API source available", Toast.LENGTH_SHORT)
+                    .show()
+                return@setOnClickListener
+            }
+
+            val intent = Intent(this, ReleaseDetailsActivity::class.java).apply {
+                putExtra("releaseId", unifiedAlbum.id.toLongOrNull() ?: -1L)
+                putExtra("releaseTitle", unifiedAlbum.title)
+                putExtra("artistName", unifiedAlbum.artistName)
+                putExtra("albumArtUrl", unifiedAlbum.coverUrl)
+
+                if (unifiedAlbum.deezerId != null && unifiedAlbum.id.toLongOrNull() != null) {
+                    putExtra(
+                        "deezerId",
+                        unifiedAlbum.id.toLong()
+                    )
+                }
+                if (isItunesSupportEnabled()) {
+                    unifiedAlbum.itunesId?.let { putExtra("itunesId", it) }
+                }
+            }
+
+            startActivity(intent)
+        }
+    }
+
+
+    private fun extractReleaseTypeFromTitle(originalTitle: String?): String? {
+        if (originalTitle == null) return null
+
+        val pattern = Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE)
+        val match = pattern.find(originalTitle)
+        return match?.groupValues?.get(1)?.replaceFirstChar { it.uppercaseChar() }
+    }
+
+
+    private fun triggerArtistSearch() {
+        val artistName = editTextArtist.text.toString().trim()
+        if (artistName.isNotEmpty()) {
+            fetchArtistBasedOnApi(artistName)
+            hideKeyboard()
+        }
+    }
+
+    private fun hideKeyboard() {
+        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+            .hideSoftInputFromWindow(editTextArtist.windowToken, 0)
+    }
+
+
+    private fun fetchArtistBasedOnApi(artistName: String) {
+        fetchSimilarArtistsFromDeezer(artistName)
+    }
+
+    private fun fetchSimilarArtistsFromDeezer(artist: String) {
+        showLoading(true)
+        setMenuButtonEnabled(false)
+        buttonSaveArtist.visibility = View.GONE
+        artistInfoContainer.visibility = View.GONE
+
+        apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
+            override fun onResponse(
+                call: Call<DeezerSimilarArtistsResponse>,
+                response: Response<DeezerSimilarArtistsResponse>
+            ) {
+                showLoading(false)
+                val artists = response.body()?.data ?: emptyList()
+                if (artists.isNotEmpty()) {
+                    displayArtists(artists)
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.no_similar_artists_found),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                setMenuButtonEnabled(true)
+            }
+
+            override fun onFailure(call: Call<DeezerSimilarArtistsResponse>, t: Throwable) {
+                showLoading(false)
+                setMenuButtonEnabled(true)
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.error_loading_artists),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
     }
 
     private fun checkDeezerStatus() {
@@ -326,19 +692,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveSearchHistory(artist: DeezerArtist) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val existingHistory = db.searchHistoryDao().getHistoryByArtistId(artist.id)
+            val existingHistory = db.searchHistoryDao().getByDeezerId(artist.id)
             val history = SearchHistory(
                 artistName = artist.name,
                 profileImageUrl = artist.getBestPictureUrl(),
-                artistId = artist.id
+                deezerId = artist.id,
+                itunesId = artist.itunesId
             )
 
             if (existingHistory == null) {
                 db.searchHistoryDao().insert(history)
             } else {
-                existingHistory.artistName = artist.name
-                existingHistory.profileImageUrl = artist.getBestPictureUrl()
-                db.searchHistoryDao().update(existingHistory)
+                val updated = existingHistory.copy(
+                    artistName = artist.name,
+                    profileImageUrl = artist.getBestPictureUrl()
+                )
+                db.searchHistoryDao().update(updated)
+
             }
 
             withContext(Dispatchers.Main) {
@@ -351,7 +721,7 @@ class MainActivity : AppCompatActivity() {
     private fun showSearchHistory() {
         lifecycleScope.launch(Dispatchers.IO) {
             val historyList = db.searchHistoryDao().getAllHistory()
-            val uniqueHistoryList = historyList.distinctBy { it.artistId }
+            val uniqueHistoryList = historyList.distinctBy { "${it.deezerId}_${it.itunesId}" }
             withContext(Dispatchers.Main) {
                 if (uniqueHistoryList.isNotEmpty()) {
                     val recyclerView = RecyclerView(this@MainActivity).apply {
@@ -368,7 +738,7 @@ class MainActivity : AppCompatActivity() {
                         uniqueHistoryList.toMutableList(),
                         { historyItem ->
                             val artist = DeezerArtist(
-                                id = historyItem.artistId,
+                                id = historyItem.deezerId ?: -1L,
                                 name = historyItem.artistName,
                                 picture = historyItem.profileImageUrl,
                                 picture_small = "",
@@ -395,11 +765,14 @@ class MainActivity : AppCompatActivity() {
                                 return@SearchHistoryAdapter
                             }
 
-                            fetchLatestReleaseForArtist(artist.id,
-                                onSuccess = { album ->
-                                    displayReleaseInfo(album)
+                            processCombinedArtist(
+                                artist,
+                                onAlbumFound = { unifiedAlbum ->
+                                    displayReleaseInfo(unifiedAlbum)
                                     buttonSaveArtist.visibility = View.VISIBLE
                                     showLoading(false)
+
+                                    openArtistDiscography(artist)
                                 },
                                 onFailure = {
                                     Toast.makeText(
@@ -451,43 +824,6 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.search_history_cleared),
                     Toast.LENGTH_SHORT
                 ).show()
-            }
-        }
-    }
-
-    private fun fetchAndCheckDiscography(artistId: Long, title: String) {
-        if (fetchedArtists.contains(artistId)) {
-            Log.d("MainActivity", "Already fetched discography for artist ID: $artistId")
-            return
-        }
-
-        fetchedArtists.add(artistId)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                Log.d("MainActivity", "Fetching discography for artist ID: $artistId")
-                val response = apiService.getArtistReleases(artistId, 0).execute()
-                if (response.isSuccessful) {
-                    val releases = response.body()?.data
-                    if (!releases.isNullOrEmpty()) {
-                        val match =
-                            releases.firstOrNull { it.title.equals(title, ignoreCase = true) }
-                        if (match != null) {
-                            Log.d("MainActivity", "Match found: ${match.title} in discography")
-                        } else {
-                            Log.d("MainActivity", "No matching release found for title: $title")
-                        }
-                    } else {
-                        Log.d("MainActivity", "No releases found for artist ID: $artistId")
-                    }
-                } else {
-                    Log.e(
-                        "MainActivity",
-                        "Deezer API error: ${response.code()} ${response.message()}"
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error fetching discography from Deezer", e)
             }
         }
     }
@@ -672,254 +1008,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchSimilarArtists(artist: String) {
-        if (artist.isBlank()) {
-            Toast.makeText(this, getString(R.string.please_enter_artist_name), Toast.LENGTH_SHORT)
-                .show()
-            return
-        }
-
-        checkNetworkTypeAndSetFlag()
-
-        if (!isNetworkRequestsAllowed) {
-            Log.w(TAG, "Selected network type is not available. Skipping network requests.")
-            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT)
-                .show()
-            return
-        }
-
-        showLoading(true)
-        setMenuButtonEnabled(false)
-
-        buttonSaveArtist.visibility = View.GONE
-        artistInfoContainer.visibility = View.GONE
-
-        Log.d(TAG, "Fetching similar artists for: $artist")
-
-        apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
-            override fun onResponse(
-                call: Call<DeezerSimilarArtistsResponse>,
-                response: Response<DeezerSimilarArtistsResponse>
-            ) {
-                showLoading(false)
-                Log.d(TAG, "Response received: ${response.code()}")
-                val artists = response.body()?.data ?: emptyList()
-
-                if (artists.isNotEmpty()) {
-                    displayArtists(artists)
-                } else {
-                    Toast.makeText(
-                        this@MainActivity,
-                        getString(R.string.no_similar_artists_found),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                setMenuButtonEnabled(true)
-            }
-
-            override fun onFailure(call: Call<DeezerSimilarArtistsResponse>, t: Throwable) {
-                showLoading(false)
-                setMenuButtonEnabled(true)
-                Log.e(TAG, "Error loading artists: ${t.message}", t)
-                Toast.makeText(
-                    this@MainActivity,
-                    getString(R.string.error_loading_artists),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
-    }
-
-    private fun fetchLatestReleaseForArtist(
-        artistId: Long,
-        onSuccess: (DeezerAlbum) -> Unit,
-        onFailure: () -> Unit
-    ) {
-        if (!isNetworkRequestsAllowed) {
-            Log.w(TAG, "Network requests not allowed. Skipping fetch for artist ID: $artistId")
-            onFailure()
-            return
-        }
-
-        showLoading(true)
-
-        apiService.getArtistReleases(artistId, 0).enqueue(object : Callback<DeezerAlbumsResponse> {
-            override fun onResponse(
-                call: Call<DeezerAlbumsResponse>,
-                response: Response<DeezerAlbumsResponse>
-            ) {
-                showLoading(false)
-
-                if (response.isSuccessful) {
-                    val releases = response.body()?.data ?: emptyList()
-                    if (releases.isNotEmpty()) {
-                        val latestRelease = releases.maxByOrNull { release ->
-                            SimpleDateFormat(
-                                "yyyy-MM-dd",
-                                Locale.getDefault()
-                            ).parse(release.release_date)?.time ?: 0L
-                        }
-                        latestRelease?.let {
-                            fetchAndCheckDiscography(artistId, it.title)
-                            fetchArtistProfilePicture(artistId)
-                            onSuccess(it)
-                        } ?: onFailure()
-                    } else {
-                        Log.d(TAG, "No Releases found for Artist ID: $artistId")
-                        onFailure()
-                    }
-                } else {
-                    Log.e(
-                        TAG,
-                        "Error when retrieving releases for Artist ID=$artistId: ${response.code()} ${response.message()}"
-                    )
-                    onFailure()
-                }
-            }
-
-            override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
-                showLoading(false)
-                Log.e(
-                    TAG,
-                    "Error when retrieving releases for Artist ID=$artistId: ${t.message}",
-                    t
-                )
-                onFailure()
-            }
-        })
-    }
-
-    private fun displayArtists(artists: List<DeezerArtist>) {
-        showLoading(false)
-
-        if (artists.isNotEmpty()) {
-            recyclerViewArtists.visibility = View.VISIBLE
-            val adapter = SimilarArtistsAdapter(this, artists) { artist ->
-                selectedArtist = artist
-                recyclerViewArtists.visibility = View.GONE
-                buttonOpenDiscography.visibility = View.VISIBLE
-                buttonSaveArtist.visibility = View.GONE
-
-                saveSearchHistory(artist)
-                fetchLatestReleaseForArtist(
-                    artistId = artist.id,
-                    onSuccess = { album ->
-                        fetchAndCheckDiscography(artist.id, album.title)
-                        displayReleaseInfo(album)
-                        buttonSaveArtist.visibility = View.VISIBLE
-                    },
-                    onFailure = {
-                        Toast.makeText(
-                            this,
-                            getString(R.string.no_releases_found_for_artist, artist.name),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                )
-            }
-            recyclerViewArtists.adapter = adapter
-            recyclerViewArtists.layoutManager = LinearLayoutManager(this)
-        } else {
-            recyclerViewArtists.visibility = View.GONE
-            Toast.makeText(this, getString(R.string.no_similar_artists_found), Toast.LENGTH_SHORT)
-                .show()
-        }
-        setMenuButtonEnabled(true)
-    }
 
     private fun openArtistDiscography(artist: DeezerArtist) {
-        showLoading(true)
-
         val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
-            putExtra("artistId", artist.id)
             putExtra("artistName", artist.name)
             putExtra("artistImageUrl", artist.getBestPictureUrl())
+            putExtra("deezerId", artist.id)
+            putExtra("itunesId", artist.itunesId ?: -1L)
         }
-
         startActivity(intent)
-        showLoading(false)
     }
 
-    private fun displayReleaseInfo(album: DeezerAlbum) {
-        artistInfoContainer.visibility = View.VISIBLE
-
-        Log.d(TAG, "Displaying release info for artist: ${selectedArtist?.name}")
-
-        textViewname.text = selectedArtist?.name ?: getString(R.string.unknown_artist)
-        textViewAlbumTitle.text = album.title
-
-        val formattedDate = try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-            val date = inputFormat.parse(album.release_date)
-            date?.let { outputFormat.format(it) } ?: "Unknown Date"
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing release date: ${e.message}")
-            "Unknown Date"
-        }
-        textViewrelease_date.text = formattedDate
-
-        val coverUrl = album.getBestCoverUrl()
-
-        progressBar.visibility = View.VISIBLE
-
-        Glide.with(this)
-            .load(coverUrl)
-            .placeholder(R.drawable.ic_discography)
-            .error(R.drawable.error_image)
-            .transform(RoundedCorners(30))
-            .into(object : CustomTarget<Drawable>() {
-                override fun onResourceReady(
-                    resource: Drawable,
-                    transition: Transition<in Drawable>?
-                ) {
-                    imageViewAlbumArt.setImageDrawable(resource)
-                    progressBar.visibility = View.GONE
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    progressBar.visibility = View.GONE
-                }
-            })
-
-        updateSaveButton()
-
-        artistInfoContainer.isClickable = true
-        artistInfoContainer.isFocusable = true
-
-        artistInfoContainer.setOnClickListener {
-
-            val intent = Intent(this, ReleaseDetailsActivity::class.java)
-
-            intent.putExtra("releaseId", album.id)
-            intent.putExtra("releaseTitle", album.title)
-            intent.putExtra("artistName", selectedArtist?.name ?: "Unknown Artist")
-            intent.putExtra("albumArtUrl", album.getBestCoverUrl())
-
-            startActivity(intent)
-        }
-    }
-
-
-
-
-    private fun fetchArtistProfilePicture(artistId: Long) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val artistResponse = apiService.getArtistDetails(artistId).execute()
-            if (artistResponse.isSuccessful) {
-                val artist = artistResponse.body()
-                artist?.let {
-                    val profileImageUrl = it.getBestPictureUrl()
-                    Log.d(TAG, "Fetched profile image URL: $profileImageUrl")
-                }
-            } else {
-                Log.e(
-                    TAG,
-                    "Error fetching artist profile picture: ${artistResponse.code()} ${artistResponse.message()}"
-                )
-            }
-        }
-    }
 
     private fun updateSaveButton() {
         val artist = selectedArtist
@@ -929,7 +1028,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val existingArtist = db.savedArtistDao().getArtistById(artist.id)
+            var existingArtist = db.savedArtistDao().getArtistById(artist.id)
+
+            if (existingArtist == null) {
+                existingArtist = db.savedArtistDao().getArtistByName(artist.name)
+            }
+
             withContext(Dispatchers.Main) {
                 buttonSaveArtist.setImageResource(
                     if (existingArtist != null) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
@@ -945,7 +1049,6 @@ class MainActivity : AppCompatActivity() {
         fabMenu.isClickable = enabled
     }
 
-
     private fun saveArtist() {
         val artist = selectedArtist ?: return
         val releaseDate = textViewrelease_date.text.toString()
@@ -954,25 +1057,7 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val existingArtist = db.savedArtistDao().getArtistById(artist.id)
-            if (existingArtist == null) {
-                db.savedArtistDao().insert(
-                    SavedArtist(
-                        id = artist.id,
-                        name = artist.name,
-                        lastReleaseDate = releaseDate,
-                        lastReleaseTitle = releaseTitle,
-                        profileImageUrl = profileImageUrl
-                    )
-                )
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        getString(R.string.artist_saved, artist.name),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    updateSaveButton()
-                }
-            } else {
+            if (existingArtist != null) {
                 db.savedArtistDao().delete(existingArtist)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
@@ -982,8 +1067,85 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                     updateSaveButton()
                 }
+                return@launch
+            }
+
+            var iTunesArtistId: Long? = null
+            var itunesTitles: Set<String>? = emptySet()
+
+            val deezerSearchResults =
+                apiService.searchArtist(artist.name).execute().body()?.data.orEmpty()
+            val exactDeezerMatch = deezerSearchResults.firstOrNull { it.name == artist.name }
+            val deezerArtistId = exactDeezerMatch?.id ?: -1L
+
+            val deezerReleases = if (deezerArtistId > 0) {
+                apiService.getArtistReleases(deezerArtistId, 0).execute().body()?.data.orEmpty()
+            } else emptyList()
+
+            val deezerTitles = deezerReleases.map { normalizeTitle(it.title) }.toSet()
+
+            if (isItunesSupportEnabled()) {
+                val retrofit = Retrofit.Builder()
+                    .baseUrl("https://itunes.apple.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+                val iTunesSearchResults =
+                    iTunesService.searchArtist(term = artist.name, entity = "musicArtist")
+                        .execute().body()?.results.orEmpty()
+                val exactITunesMatch =
+                    iTunesSearchResults.firstOrNull { it.artistName == artist.name }
+                iTunesArtistId = exactITunesMatch?.artistId
+
+                itunesTitles = if (iTunesArtistId != null) {
+                    val albumResponse =
+                        iTunesService.lookupArtistWithAlbums(iTunesArtistId).execute().body()
+                    albumResponse?.results
+                        ?.filter { it.collectionName != null }
+                        ?.map { normalizeTitle(it.collectionName!!) }
+                        ?.toSet()
+                } else emptySet()
+            }
+
+            Log.d(TAG, "Deezer-Title (${deezerTitles.size}): ${deezerTitles.sorted()}")
+            Log.d(TAG, "iTunes-Title (${itunesTitles?.size ?: 0}): ${itunesTitles?.sorted()}")
+
+            val commonReleases = deezerTitles.intersect(itunesTitles ?: emptySet())
+            Log.d(TAG, "Shared releases (${commonReleases.size}): ${commonReleases.sorted()}")
+
+            if (deezerTitles.isEmpty() && itunesTitles.isNullOrEmpty()) {
+                Log.w(TAG, "Neither Deezer nor iTunes releases available. Saving aborted.")
+                return@launch
+            }
+
+            db.savedArtistDao().insert(
+                SavedArtist(
+                    id = if (deezerArtistId > 0) deezerArtistId else artist.id,
+                    name = artist.name,
+                    lastReleaseDate = releaseDate,
+                    lastReleaseTitle = releaseTitle,
+                    profileImageUrl = profileImageUrl,
+                    isFromDeezer = deezerTitles.isNotEmpty(),
+                    isFromITunes = !itunesTitles.isNullOrEmpty(),
+                    deezerId = deezerArtistId.takeIf { it > 0 },
+                    itunesId = if (isItunesSupportEnabled()) iTunesArtistId else null
+                )
+            )
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.artist_saved, artist.name),
+                    Toast.LENGTH_SHORT
+                ).show()
+                updateSaveButton()
             }
         }
+    }
+
+    fun getHighResArtworkUrl(originalUrl: String?): String {
+        return originalUrl?.replace("100x100bb", "1200x1200bb") ?: ""
     }
 
     private fun clearPreviousSearch() {
@@ -993,5 +1155,97 @@ class MainActivity : AppCompatActivity() {
         recyclerViewArtists.adapter = null
         recyclerViewArtists.visibility = View.GONE
 
+    }
+
+    private fun processCombinedArtist(
+        artist: DeezerArtist,
+        onAlbumFound: (UnifiedAlbum) -> Unit,
+        onFailure: () -> Unit
+    ) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val deezerReleases = apiService.getArtistReleases(artist.id, 0)
+                .execute().body()?.data.orEmpty()
+            val deezerTitles = deezerReleases.map { normalizeTitle(it.title) }.toSet()
+
+            val deezerLatest = deezerReleases.maxByOrNull {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.release_date)?.time
+                    ?: 0L
+            }?.let {
+                UnifiedAlbum(
+                    id = it.id.toString(),
+                    title = it.title,
+                    releaseDate = it.release_date,
+                    coverUrl = it.getBestCoverUrl(),
+                    artistName = artist.name,
+                    releaseType = it.record_type.replaceFirstChar { c -> c.uppercaseChar() },
+                    deezerId = artist.id
+                )
+            }
+
+            var iTunesLatest: UnifiedAlbum? = null
+
+            if (isItunesSupportEnabled()) {
+                val iTunesService = Retrofit.Builder()
+                    .baseUrl("https://itunes.apple.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create(ITunesApiService::class.java)
+
+                val itunesMatch =
+                    iTunesService.searchArtist(term = artist.name, entity = "musicArtist")
+                        .execute().body()?.results?.firstOrNull { it.artistName == artist.name }
+
+                val itunesArtistId = itunesMatch?.artistId
+                artist.itunesId = itunesArtistId
+
+                val iTunesAlbums = itunesArtistId?.let {
+                    iTunesService.lookupArtistWithAlbums(it).execute().body()?.results.orEmpty()
+                } ?: emptyList()
+
+                val iTunesTitles =
+                    iTunesAlbums.mapNotNull { it.collectionName?.let { name -> normalizeTitle(name) } }
+                        .toSet()
+                val common = deezerTitles.intersect(iTunesTitles)
+                val isMatch = common.size >= 3
+
+                if (isMatch) {
+                    iTunesLatest = iTunesAlbums.maxByOrNull {
+                        it.releaseDate?.let { d ->
+                            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(d)?.time
+                        } ?: 0L
+                    }?.let {
+                        UnifiedAlbum(
+                            id = it.collectionId.toString(),
+                            title = it.collectionName
+                                ?.replace(
+                                    Regex(
+                                        "\\s*-\\s*(Single|EP|Album)",
+                                        RegexOption.IGNORE_CASE
+                                    ), ""
+                                )
+                                ?.trim() ?: "Unknown Album",
+                            releaseDate = it.releaseDate ?: "Unknown Date",
+                            coverUrl = it.artworkUrl100?.replace("100x100bb", "1200x1200bb") ?: "",
+                            artistName = it.artistName ?: artist.name,
+                            releaseType = extractReleaseTypeFromTitle(it.collectionName),
+                            itunesId = itunesArtistId
+                        )
+                    }
+                }
+            }
+
+            val newest = listOfNotNull(deezerLatest, iTunesLatest).maxByOrNull {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
+                    ?: 0L
+            }
+
+            withContext(Dispatchers.Main) {
+                if (newest != null) {
+                    onAlbumFound(newest)
+                } else {
+                    onFailure()
+                }
+            }
+        }
     }
 }

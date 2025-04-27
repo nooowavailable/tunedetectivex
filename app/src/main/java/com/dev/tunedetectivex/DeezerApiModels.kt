@@ -28,13 +28,14 @@ data class DeezerAlbum(
 }
 
 data class DeezerArtist(
-    val id: Long,
+    var id: Long,
     val name: String,
     val picture: String,
     val picture_small: String,
     val picture_medium: String,
     val picture_big: String,
-    val picture_xl: String
+    val picture_xl: String,
+    var itunesId: Long? = null
 ) {
     fun getBestPictureUrl(): String {
         return when {
@@ -42,6 +43,7 @@ data class DeezerArtist(
             !picture_big.isNullOrEmpty() -> picture_big
             !picture_medium.isNullOrEmpty() -> picture_medium
             !picture_small.isNullOrEmpty() -> picture_small
+            !picture.isNullOrEmpty() -> picture
             else -> ""
         }
     }

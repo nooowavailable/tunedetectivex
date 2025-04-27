@@ -1,6 +1,5 @@
 package com.dev.tunedetectivex
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -16,13 +15,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.dev.tunedetectivex.api.ITunesApiService
+import com.dev.tunedetectivex.util.ItunesResultDialogHelper
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,25 +76,44 @@ class SavedArtistsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val selectedPosition = spinnerViewType.selectedItemPosition
             if (selectedPosition == 0) {
-                val jobs = mutableListOf<Job>()
+                val prefs =
+                    applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+                val isItunesEnabled =
+                    prefs.getBoolean("itunesSupportEnabled", false)
+                getItunesAttemptCount()
 
-                allArtists.forEach { artist ->
-                    val job = launch {
-                        fetchArtistDetails(artist)
+                if (isItunesEnabled) {
+                    val jobs = allArtists.map { artist ->
+                        launch {
+                            fetchArtistDetails(artist)
+                        }
                     }
-                    jobs.add(job)
+                    jobs.joinAll()
+                } else {
+                    Log.d(
+                        "SavedArtistsActivity",
+                        "🔕 iTunes matching disabled - Details update skipped."
+                    )
                 }
-
-                jobs.joinAll()
-            } else {
-                loadSavedReleases()
             }
         }
     }
 
+    private fun getItunesAttemptCount(): Int {
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        return prefs.getInt("itunesMatchingAttempts", 0)
+    }
+
+    private fun incrementItunesAttemptCount() {
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val current = prefs.getInt("itunesMatchingAttempts", 0)
+        prefs.edit { putInt("itunesMatchingAttempts", current + 1) }
+    }
+
+
     private fun checkNetworkTypeAndSetFlag() {
         val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
         isNetworkRequestsAllowed =
             WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
@@ -229,9 +245,10 @@ class SavedArtistsActivity : AppCompatActivity() {
 
     private fun openArtistDiscography(artist: SavedArtistItem) {
         val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
-            putExtra("artistId", artist.id)
             putExtra("artistName", artist.name)
             putExtra("artistImageUrl", artist.picture)
+            putExtra("deezerId", artist.deezerId ?: -1L)
+            putExtra("itunesId", artist.itunesId ?: -1L)
         }
         startActivity(intent)
     }
@@ -312,11 +329,8 @@ class SavedArtistsActivity : AppCompatActivity() {
         checkNetworkTypeAndSetFlag()
 
         if (!isNetworkRequestsAllowed) {
-            Toast.makeText(
-                this,
-                getString(R.string.network_type_not_available),
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT)
+                .show()
             showLoading(false)
             isLoading = false
             return
@@ -324,44 +338,132 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+                val itunesSupportEnabled =
+                    sharedPreferences.getBoolean("itunesSupportEnabled", false)
+                val attemptCount = getItunesAttemptCount()
                 val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
-                val tempList = savedArtists.map {
-                    SavedArtistItem(
-                        id = it.id,
-                        name = it.name,
-                        lastReleaseTitle = it.lastReleaseTitle,
-                        lastReleaseDate = it.lastReleaseDate,
-                        picture = it.profileImageUrl ?: ""
-                    )
-                }.toMutableList()
 
-                withContext(Dispatchers.Main) {
-                    artistAdapter.submitList(tempList)
+                if (savedArtists.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        isLoading = false
+                        Toast.makeText(
+                            this@SavedArtistsActivity,
+                            "No saved artists found.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    return@launch
                 }
 
-                val artistIds = savedArtists.map { it.id }
-                val fetchedArtists = fetchArtistsBatch(artistIds)
+                val updatedList = mutableListOf<SavedArtistItem>()
+                var deezerUpdated = 0
+                var itunesUpdated = 0
 
-                fetchedArtists.forEach { fetchedArtist ->
-                    Log.d(
-                        "SavedArtistsActivity",
-                        "API data: ID=${fetchedArtist.id}, Name=${fetchedArtist.name}, Picture=${fetchedArtist.picture_xl}"
-                    )
-                    tempList.replaceFirstOrAdd(
-                        SavedArtistItem(
-                            id = fetchedArtist.id,
-                            name = fetchedArtist.name,
-                            picture = fetchedArtist.picture_xl
+                for (artist in savedArtists) {
+                    val updated = if (itunesSupportEnabled && attemptCount < 3) {
+                        fetchArtistDetailsByDiscography(artist) ?: artist
+                    } else {
+                        Log.d(
+                            "SavedArtistsActivity",
+                            "⏭️ iTunes matching disabled - skip $artist"
                         )
-                    )
+                        artist
+                    }
+
+
+                    if (artist.deezerId == null && updated.deezerId != null) deezerUpdated++
+                    if (artist.itunesId == null && updated.itunesId != null) itunesUpdated++
+
+                    updatedList.add(updated.toItem())
                 }
 
+                if (itunesSupportEnabled && attemptCount >= 3) {
+                    sharedPreferences.edit { putBoolean("itunesSupportEnabled", true) }
+                }
+
+                if (itunesSupportEnabled && attemptCount < 3) {
+                    incrementItunesAttemptCount()
+                }
+
+                val notMatched = updatedList.filter { it.itunesId == null }
+
                 withContext(Dispatchers.Main) {
-                    allArtists = tempList.toList()
+                    allArtists = updatedList
                     artistAdapter.submitList(allArtists)
+
+                    Log.d("SavedArtistsActivity", "🔄 Auto-Fix completed:")
+                    Log.d("SavedArtistsActivity", "🟢 Deezer-IDs added: $deezerUpdated")
+                    Log.d("SavedArtistsActivity", "🔵 iTunes-IDs added: $itunesUpdated")
+
+                    if (itunesSupportEnabled) {
+                        when (attemptCount) {
+                            0 -> Toast.makeText(
+                                this@SavedArtistsActivity,
+                                getString(R.string.itunes_attempt_1),
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            1 -> Toast.makeText(
+                                this@SavedArtistsActivity,
+                                getString(R.string.itunes_attempt_2),
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            2 -> Toast.makeText(
+                                this@SavedArtistsActivity,
+                                getString(R.string.itunes_attempt_3),
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            3 -> Toast.makeText(
+                                this@SavedArtistsActivity,
+                                getString(R.string.itunes_attempt_final),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        ItunesResultDialogHelper.showResultSummaryDialog(
+                            context = this@SavedArtistsActivity,
+                            deezerUpdated = deezerUpdated,
+                            itunesUpdated = itunesUpdated,
+                            notMatchedArtists = notMatched,
+                            coroutineScope = lifecycleScope,
+                            onDeleteArtist = { artist -> deleteArtist(artist) },
+                            onRescanArtist = { artist, customName ->
+                                val updated = withContext(Dispatchers.IO) {
+                                    val dbArtist = db.savedArtistDao().getArtistById(artist.id)
+                                    dbArtist?.let { fetchArtistDetailsByDiscography(it) }
+                                }
+                                updated?.let {
+                                    val newList = allArtists.toMutableList()
+                                    newList.replaceFirstOrAdd(it.toItem())
+                                    allArtists = newList
+                                    artistAdapter.submitList(newList)
+                                }
+                            },
+                            onManualSelect = { artist, selectedId ->
+                                lifecycleScope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        db.savedArtistDao().updateItunesId(artist.id, selectedId)
+                                    }
+                                    val newList = allArtists.toMutableList()
+                                    newList.replaceFirstOrAdd(artist.copy(itunesId = selectedId))
+                                    allArtists = newList
+                                    artistAdapter.submitList(newList)
+                                    Toast.makeText(
+                                        this@SavedArtistsActivity,
+                                        getString(R.string.artist_updated, artist.name),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        )
+                    }
                 }
             } catch (e: Exception) {
-                Log.e("SavedArtistsActivity", "Error loading the artists: ${e.message}", e)
+                Log.e("SavedArtistsActivity", "Error with loadSavedArtists: ${e.message}", e)
             } finally {
                 withContext(Dispatchers.Main) {
                     showLoading(false)
@@ -371,6 +473,121 @@ class SavedArtistsActivity : AppCompatActivity() {
         }
     }
 
+
+    private suspend fun fetchArtistDetailsByDiscography(artist: SavedArtist): SavedArtist? {
+        val prefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val itunesSupportEnabled = prefs.getBoolean("itunesSupportEnabled", false)
+
+        if (itunesSupportEnabled) {
+            Log.d(
+                "SavedArtistsActivity",
+                "🚫 iTunes matching deactivated - iTunes is skipped completely."
+            )
+            return artist
+        }
+
+
+        val searchName = artist.name
+        val context = applicationContext
+
+        val isNetworkOk = WorkManagerUtil.isSelectedNetworkTypeAvailable(
+            context,
+            prefs.getString("networkType", "Any") ?: "Any"
+        )
+        if (!isNetworkOk) return artist
+
+        return try {
+            var updated = artist
+
+            val deezerSearchResults =
+                apiService.searchArtist(searchName).execute().body()?.data.orEmpty()
+            val deezerMatch = deezerSearchResults.firstOrNull { it.name == searchName }
+            val deezerId = deezerMatch?.id ?: -1L
+
+            val deezerTitles = if (deezerId > 0) {
+                val releases =
+                    apiService.getArtistReleases(deezerId, 0).execute().body()?.data.orEmpty()
+                releases.map { normalizeTitle(it.title) }.toSet()
+            } else emptySet()
+
+            var iTunesId: Long? = null
+            var itunesTitles: Set<String> = emptySet()
+
+            if (itunesSupportEnabled) {
+                Log.d("SavedArtistsActivity", "🔍 Start iTunes matching for $searchName")
+                val retrofit = Retrofit.Builder()
+                    .baseUrl("https://itunes.apple.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+                val iTunesSearchResults =
+                    iTunesService.searchArtist(term = searchName, entity = "musicArtist")
+                        .execute().body()?.results.orEmpty()
+                val iTunesMatch = iTunesSearchResults.firstOrNull { it.artistName == searchName }
+                iTunesId = iTunesMatch?.artistId
+
+                itunesTitles = if (iTunesId != null) {
+                    val releases = iTunesService.lookupArtistWithAlbums(iTunesId).execute()
+                        .body()?.results.orEmpty()
+                    releases.filter { it.collectionName != null }
+                        .map { normalizeTitle(it.collectionName!!) }
+                        .toSet()
+                } else emptySet()
+            } else {
+                Log.d(
+                    "SavedArtistsActivity",
+                    "🚫 iTunes matching deactivated - iTunes is skipped completely."
+                )
+            }
+
+            val common = deezerTitles.intersect(itunesTitles)
+
+            Log.d(
+                "SavedArtistsActivity",
+                "📀 Deezer-Title: ${deezerTitles.size}, iTunes-Title: ${itunesTitles.size}, Combined: ${common.size}"
+            )
+
+            if (deezerId > 0 && updated.deezerId == null) {
+                db.savedArtistDao().updateDeezerId(updated.id, deezerId)
+                updated = updated.copy(deezerId = deezerId)
+                Log.d("SavedArtistsActivity", "✅ Deezer-ID saved: $deezerId")
+            }
+
+            if (iTunesId != null && common.size >= 3 && updated.itunesId == null) {
+                db.savedArtistDao().updateItunesId(updated.id, iTunesId)
+                updated = updated.copy(itunesId = iTunesId)
+                Log.d(
+                    "SavedArtistsActivity",
+                    "✅ iTunes-ID saved: $iTunesId (⟶ ${common.size} unified Releases)"
+                )
+            }
+
+            return updated
+        } catch (e: Exception) {
+            Log.e(
+                "SavedArtistsActivity",
+                "❌ Error with fetchArtistDetailsByDiscography: ${e.message}",
+                e
+            )
+            artist
+        }
+    }
+
+
+    private fun SavedArtist.toItem(): SavedArtistItem {
+        return SavedArtistItem(
+            id = id,
+            name = name,
+            lastReleaseTitle = lastReleaseTitle,
+            lastReleaseDate = lastReleaseDate,
+            picture = profileImageUrl ?: "",
+            deezerId = deezerId,
+            itunesId = itunesId
+        )
+    }
+
+
     private fun MutableList<SavedArtistItem>.replaceFirstOrAdd(newItem: SavedArtistItem) {
         val index = indexOfFirst { it.id == newItem.id }
         if (index != -1) {
@@ -379,79 +596,94 @@ class SavedArtistsActivity : AppCompatActivity() {
             add(newItem)
         }
     }
-    private fun fetchArtistsByName(name: String): List<DeezerArtist> {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-        val isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
 
-        if (!isNetworkRequestsAllowed) {
-            Log.w(
+    private suspend fun fetchArtistDetails(
+        artist: SavedArtistItem,
+        customName: String? = null
+    ): SavedArtistItem? {
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val itunesSupportEnabled = !prefs.getBoolean("itunesSupportEnabled", false)
+
+        val isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(
+            applicationContext,
+            prefs.getString("networkType", "Any") ?: "Any"
+        )
+        if (!isNetworkRequestsAllowed) return artist
+
+        if (itunesSupportEnabled) {
+            Log.d(
                 "SavedArtistsActivity",
-                "Selected network type is not available. Skipping network requests."
-            )
-            return emptyList()
-        }
-
-        return try {
-            val response = apiService.searchArtist(name).execute()
-            if (response.isSuccessful) {
-                response.body()?.data ?: emptyList()
-            } else {
-                Log.e("SavedArtistsActivity", "Error when retrieving the artist by name: $name")
-                emptyList()
-            }
-        } catch (e: Exception) {
-            Log.e("SavedArtistsActivity", "Error when retrieving the artist by name: $name", e)
-            emptyList()
-        }
-    }
-
-    private suspend fun fetchArtistDetails(artist: SavedArtistItem): SavedArtistItem? {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-        val isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
-
-        if (!isNetworkRequestsAllowed) {
-            Log.w(
-                "SavedArtistsActivity",
-                "Selected network type is not available. Skipping network requests."
+                "🚫 iTunes matching disabled - fetchArtistDetails() skips iTunes completely."
             )
             return artist
         }
+
         return try {
-            val fetchedArtists = fetchArtistsByName(artist.name)
-            val bestMatch = fetchedArtists.firstOrNull()
-            if (bestMatch != null) {
+            var updated = artist
+            val searchName = customName ?: artist.name
+
+            val deezerId = artist.deezerId ?: run {
+                val deezerResults =
+                    apiService.searchArtist(searchName).execute().body()?.data.orEmpty()
+                val deezerMatch = deezerResults.firstOrNull { it.name == searchName }
+                deezerMatch?.id?.also {
+                    db.savedArtistDao().updateDeezerId(artist.id, it)
+                    updated = updated.copy(deezerId = it)
+                }
+            } ?: return artist
+
+            val deezerTitles = apiService.getArtistReleases(deezerId, 0)
+                .execute().body()?.data.orEmpty().map { normalizeTitle(it.title) }.toSet()
+
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://itunes.apple.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+            val iTunesResults = iTunesService
+                .searchArtist(term = searchName, entity = "musicArtist")
+                .execute().body()?.results.orEmpty()
+            val exactMatch = iTunesResults.firstOrNull { it.artistName == searchName }
+            val iTunesId = exactMatch?.artistId
+
+            val iTunesTitles = if (iTunesId != null) {
+                iTunesService.lookupArtistWithAlbums(iTunesId).execute().body()?.results
+                    ?.filter { it.collectionName != null }
+                    ?.map { normalizeTitle(it.collectionName!!) }
+                    ?.toSet()
+            } else emptySet()
+
+            val common = deezerTitles.intersect(iTunesTitles ?: emptySet())
+
+            if (common.size >= 3 && iTunesId != null) {
+                db.savedArtistDao().updateItunesId(artist.id, iTunesId)
+                updated = updated.copy(itunesId = iTunesId)
                 Log.d(
                     "SavedArtistsActivity",
-                    "Best matching: ID=${bestMatch.id}, Name=${bestMatch.name}, Picture=${bestMatch.picture_xl}"
+                    "🎯 iTunes-ID for '${artist.name}' set: $iTunesId (${common.size} Matches)"
                 )
-                db.savedArtistDao().updateArtistDetails(
-                    artistId = bestMatch.id,
-                    profileImageUrl = bestMatch.picture_xl
-                )
-                return artist.copy(
-                    id = bestMatch.id,
-                    name = bestMatch.name,
-                    picture = bestMatch.picture_xl
+            } else {
+                Log.d(
+                    "SavedArtistsActivity",
+                    "❌ No iTunes match for '${artist.name}' (${common.size} combined titles)"
                 )
             }
-            Log.w("SavedArtistsActivity", "No match for artists: ${artist.name}")
-            artist
+
+            return updated
         } catch (e: Exception) {
-            Log.e(
-                "SavedArtistsActivity",
-                "Error when retrieving details for ${artist.name}: ${e.message}",
-                e
-            )
+            Log.e("SavedArtistsActivity", "Error with fetchArtistDetails(): ${e.message}", e)
             artist
-        } finally {
         }
     }
+
+
+    fun normalizeTitle(title: String): String {
+        return title.lowercase(Locale.getDefault())
+            .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
+            .trim()
+    }
+
 
     private fun loadSavedReleases() {
         if (isLoading) return
@@ -502,9 +734,22 @@ class SavedArtistsActivity : AppCompatActivity() {
                         putExtra("releaseId", release.id)
                         putExtra("releaseTitle", release.title)
                         putExtra("artistName", release.artistName)
+                        putExtra("albumArtUrl", release.albumArtUrl)
+                        putExtra("deezerId", release.deezerId ?: -1L)
+                        putExtra("itunesId", release.itunesId ?: -1L)
+                        putExtra("apiSource", release.apiSource)
                     }
                     startActivity(intent)
                 }
+
+                adapter.submitList(emptyList())
+
+                recyclerView.adapter = adapter
+                adapter.submitList(sortedReleaseItems)
+                recyclerView.visibility =
+                    if (sortedReleaseItems.isNotEmpty()) View.VISIBLE else View.GONE
+                recyclerView.scrollToPosition(0)
+
 
                 adapter.submitList(emptyList())
 
@@ -526,7 +771,7 @@ class SavedArtistsActivity : AppCompatActivity() {
 
     private suspend fun fetchReleasesForArtist(artistId: Long): List<ReleaseItem> {
         val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any")
         val isNetworkRequestsAllowed =
             WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
@@ -539,85 +784,75 @@ class SavedArtistsActivity : AppCompatActivity() {
             return emptyList()
         }
 
-        return withContext(Dispatchers.IO) {
-            try {
-                val response = apiService.getArtistReleases(artistId, 0).execute()
-                if (response.isSuccessful) {
-                    Log.d("SavedArtistsActivity", "API response successful for Artist ID=$artistId")
-                    response.body()?.data?.map { release ->
-                        ReleaseItem(
-                            id = release.id,
-                            title = release.title,
-                            artistName = db.savedArtistDao().getArtistById(artistId)?.name ?: "Unknown artist",
-                            albumArtUrl = release.getBestCoverUrl(),
-                            releaseDate = release.release_date
-                        )
-                    } ?: emptyList()
-                } else {
-                    Log.e(
-                        "SavedArtistsActivity",
-                        "Error when retrieving releases for Artist ID=$artistId: ${response.code()} ${response.message()}"
+        val artist = db.savedArtistDao().getArtistById(artistId) ?: return emptyList()
+        val releases = mutableListOf<ReleaseItem>()
+
+        try {
+            val deezerResponse =
+                apiService.getArtistReleases(artist.deezerId ?: artist.id, 0).execute()
+            if (deezerResponse.isSuccessful) {
+                val deezerReleases = deezerResponse.body()?.data?.map { release ->
+                    ReleaseItem(
+                        id = release.id,
+                        title = release.title,
+                        artistName = artist.name,
+                        albumArtUrl = release.getBestCoverUrl(),
+                        releaseDate = release.release_date,
+                        apiSource = "Deezer",
+                        deezerId = release.id
                     )
-                    emptyList()
+                } ?: emptyList()
+                releases.addAll(deezerReleases)
+            }
+        } catch (e: Exception) {
+            Log.e("SavedArtistsActivity", "Deezer error for ${artist.name}: ${e.message}", e)
+        }
+
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val itunesSupportEnabled = !prefs.getBoolean("itunesSupportEnabled", false)
+
+        if (itunesSupportEnabled && artist.itunesId != null) {
+            try {
+                val retrofit = Retrofit.Builder()
+
+                    .baseUrl("https://itunes.apple.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+                val iTunesResponse =
+                    iTunesService.lookupArtistWithAlbums(artist.itunesId!!).execute()
+                if (iTunesResponse.isSuccessful) {
+                    val iTunesReleases = iTunesResponse.body()?.results.orEmpty()
+                        .filter { it.collectionType in listOf("Album", "EP", "Single") }
+                        .map { album ->
+                            ReleaseItem(
+                                id = album.collectionId ?: -1L,
+                                title = album.collectionName ?: "Unknown",
+                                artistName = album.artistName ?: artist.name,
+                                albumArtUrl = album.artworkUrl100?.replace(
+                                    "100x100bb",
+                                    "1200x1200bb"
+                                ) ?: "",
+                                releaseDate = album.releaseDate ?: "Unknown Date",
+                                apiSource = "iTunes",
+                                itunesId = album.collectionId
+                            )
+                        }
+                    releases.addAll(iTunesReleases)
                 }
             } catch (e: Exception) {
-                Log.e("SavedArtistsActivity", "Error when retrieving releases for Artist ID=$artistId: ${e.message}", e)
-                emptyList()
+                Log.e(
+                    "SavedArtistsActivity",
+                    "iTunes error for ${artist.name}: ${e.message}",
+                    e
+                )
             }
         }
+
+        return releases
     }
 
-
-    private suspend fun fetchArtistsBatch(artistIds: List<Long>): List<DeezerArtist> {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any")
-        val isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType!!)
-
-        if (!isNetworkRequestsAllowed) {
-            Log.w(
-                "SavedArtistsActivity",
-                "Selected network type is not available. Skipping network requests."
-            )
-            return emptyList()
-        }
-
-        return coroutineScope {
-            artistIds.chunked(10).flatMap { batch ->
-                batch.map { id ->
-                    async(Dispatchers.IO) {
-                        try {
-                            val response = apiService.getArtistDetails(id).execute()
-                            if (response.isSuccessful) {
-                                response.body()?.also {
-                                    Log.d(
-                                        "SavedArtistsActivity",
-                                        "API response successful: ID=$id, Name=${it.name}, Picture=${it.picture_xl}"
-                                    )
-                                }
-                            } else {
-                                Log.e(
-                                    "SavedArtistsActivity",
-                                    "Faulty API response for ID=$id: ${
-                                        response.errorBody()?.string()
-                                    }"
-                                )
-                                null
-                            }
-                        } catch (e: Exception) {
-                            Log.e(
-                                "SavedArtistsActivity",
-                                "Error retrieving artist information: ID=$id, ${e.message}",
-                                e
-                            )
-                            null
-                        }
-                    }
-                }.awaitAll().filterNotNull()
-            }
-        }
-    }
 
     private fun setupApiService() {
         val cacheSize = (5 * 1024 * 1024).toLong()
