@@ -92,5 +92,6 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
-
+    implementation(libs.okhttp3.integration)
+    ksp(libs.ksp)
 }

@@ -191,7 +191,7 @@ class FetchReleasesWorker(
                     UnifiedAlbum(
                         id = "${artist.deezerId}_${it.id}",
                         title = it.title,
-                        artistName = it.artist?.name ?: artist.name,
+                        artistName = it.artist.name,
                         releaseDate = it.release_date,
                         coverUrl = it.getBestCoverUrl(),
                         releaseType = it.record_type,
@@ -276,6 +276,7 @@ class FetchReleasesWorker(
                 Glide.with(applicationContext)
                     .asBitmap()
                     .load(album.coverUrl)
+                    .override(512, 512)
                     .into(object : CustomTarget<Bitmap>() {
                         override fun onResourceReady(
                             resource: Bitmap,
