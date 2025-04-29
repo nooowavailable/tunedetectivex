@@ -6,7 +6,8 @@
     android:layout_height="wrap_content"
     android:padding="12dp"
     android:background="?attr/selectableItemBackground"
-    android:clickable="true">
+    android:clickable="false"
+    android:focusable="false">
 
     <ImageView
         android:id="@+id/imageViewProfile"
@@ -18,17 +19,33 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/buttonNotifyToggle"
+        style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="0dp"
+        android:contentDescription="@string/notify"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_save_artist"
+        app:tint="?attr/colorOnSurface" />
+
     <TextView
         android:id="@+id/textViewArtistName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
+        android:layout_marginStart="20dp"
         android:textStyle="bold"
-        android:layout_marginStart="16dp"
+        android:layout_marginEnd="20dp"
+        android:textSize="20sp"
         app:layout_constraintStart_toEndOf="@id/imageViewProfile"
         app:layout_constraintTop_toTopOf="@id/imageViewProfile"
         app:layout_constraintBottom_toBottomOf="@id/imageViewProfile"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@id/buttonNotifyToggle" />
 
     <ProgressBar
         android:id="@+id/progressBarItemLoading"

@@ -239,6 +239,7 @@ including the newest release from either platform.\n\n
     <string name="manual_fetch_started">Manual fetching started…</string>
     <string name="manual_fetch_now">Check Releases now</string>
     <string name="enable_itunes_support">Enable iTunes support?</string>
+    <string name="notify">Notify</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

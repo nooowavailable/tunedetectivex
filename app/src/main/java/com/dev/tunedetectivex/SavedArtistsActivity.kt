@@ -175,14 +175,20 @@ class SavedArtistsActivity : AppCompatActivity() {
                     name = it.name,
                     lastReleaseTitle = it.lastReleaseTitle,
                     lastReleaseDate = it.lastReleaseDate,
-                    picture = it.profileImageUrl ?: ""
+                    picture = it.profileImageUrl ?: "",
+                    notifyOnNewRelease = it.notifyOnNewRelease
                 )
             }.toMutableList()
 
             withContext(Dispatchers.Main) {
                 artistAdapter = SavedArtistAdapter(
                     onDelete = { artist -> deleteArtistFromDb(artist) },
-                    onArtistClick = { artist -> openArtistDiscography(artist) }
+                    onArtistClick = { artist -> openArtistDiscography(artist) },
+                    onToggleNotifications = { artistItem, newValue ->
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            db.savedArtistDao().setNotifyOnNewRelease(artistItem.id, newValue)
+                        }
+                    }
                 )
                 recyclerView.adapter = artistAdapter
                 artistAdapter.submitList(tempList)
@@ -226,7 +232,12 @@ class SavedArtistsActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         artistAdapter = SavedArtistAdapter(
             onDelete = { artist -> deleteArtistFromDb(artist) },
-            onArtistClick = { artist -> openArtistDiscography(artist) }
+            onArtistClick = { artist -> openArtistDiscography(artist) },
+            onToggleNotifications = { artistItem, newValue ->
+                lifecycleScope.launch(Dispatchers.IO) {
+                    db.savedArtistDao().setNotifyOnNewRelease(artistItem.id, newValue)
+                }
+            }
         )
 
         releaseAdapter = ReleaseAdapter { release ->
@@ -261,7 +272,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                     name = artist.name,
                     lastReleaseTitle = artist.lastReleaseTitle,
                     lastReleaseDate = artist.lastReleaseDate,
-                    profileImageUrl = artist.picture
+                    profileImageUrl = artist.picture,
+                    notifyOnNewRelease = artist.notifyOnNewRelease
                 )
             )
             withContext(Dispatchers.Main) {
@@ -583,7 +595,8 @@ class SavedArtistsActivity : AppCompatActivity() {
             lastReleaseDate = lastReleaseDate,
             picture = profileImageUrl ?: "",
             deezerId = deezerId,
-            itunesId = itunesId
+            itunesId = itunesId,
+            notifyOnNewRelease = notifyOnNewRelease
         )
     }
 

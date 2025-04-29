@@ -483,11 +483,11 @@ class MainActivity : ComponentActivity() {
         val cornerRadius = 50f
         val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
 
-        Glide.with(this)
+        Glide.with(imageViewAlbumArt)
             .load(highResUrl)
             .placeholder(R.drawable.ic_discography)
             .error(
-                Glide.with(this)
+                Glide.with(imageViewAlbumArt)
                     .load(unifiedAlbum.coverUrl)
                     .transform(
                         CenterCrop(),
@@ -1129,7 +1129,8 @@ class MainActivity : ComponentActivity() {
                     isFromDeezer = deezerTitles.isNotEmpty(),
                     isFromITunes = !itunesTitles.isNullOrEmpty(),
                     deezerId = deezerArtistId.takeIf { it > 0 },
-                    itunesId = if (isItunesSupportEnabled()) iTunesArtistId else null
+                    itunesId = if (isItunesSupportEnabled()) iTunesArtistId else null,
+                    notifyOnNewRelease = true
                 )
             )
 

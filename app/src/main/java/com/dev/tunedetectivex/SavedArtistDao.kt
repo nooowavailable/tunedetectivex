@@ -48,4 +48,9 @@ interface SavedArtistDao {
     @Query("UPDATE saved_artist SET deezerId = :deezerId WHERE id = :artistId")
     fun updateDeezerId(artistId: Long, deezerId: Long)
 
+    @Query("SELECT * FROM saved_artist WHERE notifyOnNewRelease = 1")
+    suspend fun getAllWithNotificationsEnabled(): List<SavedArtist>
+
+    @Query("UPDATE saved_artist SET notifyOnNewRelease = :notify WHERE id = :artistId")
+    suspend fun setNotifyOnNewRelease(artistId: Long, notify: Boolean)
 }

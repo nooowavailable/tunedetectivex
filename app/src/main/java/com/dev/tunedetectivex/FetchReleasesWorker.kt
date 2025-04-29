@@ -153,9 +153,9 @@ class FetchReleasesWorker(
     }
 
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Fetching saved artists from database...")
-        val savedArtists = db.savedArtistDao().getAll()
-        Log.d(TAG, "Found ${savedArtists.size} saved artists.")
+        Log.d(TAG, "Fetching saved artists from database (notifications enabled only)...")
+        val savedArtists = db.savedArtistDao().getAllWithNotificationsEnabled()
+        Log.d(TAG, "Found ${savedArtists.size} artists with notifications enabled.")
 
         savedArtists.chunked(10).forEach { artistBatch ->
             coroutineScope {
@@ -187,11 +187,14 @@ class FetchReleasesWorker(
                 apiService.getArtistReleases(artist.deezerId ?: return, 0).execute()
             if (deezerResponse.isSuccessful) {
                 val deezerAlbums = deezerResponse.body()?.data ?: emptyList()
-                releases += deezerAlbums.map {
+                releases += deezerAlbums.mapNotNull {
+                    val artistName =
+                        it.artist?.name ?: artist.name
+
                     UnifiedAlbum(
                         id = "${artist.deezerId}_${it.id}",
                         title = it.title,
-                        artistName = it.artist.name,
+                        artistName = artistName,
                         releaseDate = it.release_date,
                         coverUrl = it.getBestCoverUrl(),
                         releaseType = it.record_type,

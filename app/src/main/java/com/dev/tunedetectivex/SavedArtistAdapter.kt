@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 data class SavedArtistItem(
     val id: Long,
@@ -25,15 +26,15 @@ data class SavedArtistItem(
     val picture_medium: String? = null,
     val picture_big: String? = null,
     val picture_xl: String? = null,
-    val spotifyId: String? = null,
     val deezerId: Long? = null,
-    val itunesId: Long? = null
-
+    val itunesId: Long? = null,
+    var notifyOnNewRelease: Boolean = true
 )
 
 class SavedArtistAdapter(
     private val onDelete: (SavedArtistItem) -> Unit,
-    private val onArtistClick: (SavedArtistItem) -> Unit
+    private val onArtistClick: (SavedArtistItem) -> Unit,
+    private val onToggleNotifications: (SavedArtistItem, Boolean) -> Unit
 ) : ListAdapter<SavedArtistItem, SavedArtistAdapter.SavedArtistViewHolder>(SavedArtistDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SavedArtistViewHolder {
@@ -44,7 +45,7 @@ class SavedArtistAdapter(
 
     override fun onBindViewHolder(holder: SavedArtistViewHolder, position: Int) {
         val artist = getItem(position)
-        holder.bind(artist, onArtistClick)
+        holder.bind(artist, onArtistClick, onToggleNotifications)
     }
 
     fun deleteItem(position: Int) {
@@ -59,11 +60,15 @@ class SavedArtistAdapter(
         private val artistNameTextView: TextView = view.findViewById(R.id.textViewArtistName)
         private val profileImageView: ImageView = view.findViewById(R.id.imageViewProfile)
         private val progressBar: ProgressBar = view.findViewById(R.id.progressBarItemLoading)
+        private val notifyIcon: FloatingActionButton = view.findViewById(R.id.buttonNotifyToggle)
 
         @SuppressLint("SetTextI18n")
-        fun bind(artist: SavedArtistItem, onArtistClick: (SavedArtistItem) -> Unit) {
+        fun bind(
+            artist: SavedArtistItem,
+            onArtistClick: (SavedArtistItem) -> Unit,
+            onToggleNotifications: (SavedArtistItem, Boolean) -> Unit
+        ) {
             artistNameTextView.text = artist.name
-
             profileImageView.setImageResource(R.drawable.placeholder_image)
 
             val profileImageUrl = artist.picture_xl
@@ -86,7 +91,6 @@ class SavedArtistAdapter(
                             transition: Transition<in Drawable>?
                         ) {
                             profileImageView.setImageDrawable(resource)
-
                             progressBar.visibility = View.GONE
                         }
 
@@ -99,12 +103,24 @@ class SavedArtistAdapter(
                 progressBar.visibility = View.GONE
             }
 
-            profileImageView.setOnClickListener {
-                onArtistClick(artist)
-            }
+            profileImageView.setOnClickListener { onArtistClick(artist) }
+            artistNameTextView.setOnClickListener { onArtistClick(artist) }
 
-            artistNameTextView.setOnClickListener {
-                onArtistClick(artist)
+            val iconRes = if (artist.notifyOnNewRelease) {
+                R.drawable.ic_saved_artist
+            } else {
+                R.drawable.ic_save_artist
+            }
+            notifyIcon.setImageResource(iconRes)
+
+            notifyIcon.setOnClickListener {
+                val newValue = !artist.notifyOnNewRelease
+                artist.notifyOnNewRelease = newValue
+                onToggleNotifications(artist, newValue)
+
+                notifyIcon.setImageResource(
+                    if (newValue) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
+                )
             }
         }
     }
