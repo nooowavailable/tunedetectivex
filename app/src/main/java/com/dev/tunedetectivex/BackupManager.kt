@@ -69,6 +69,10 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
 
                     savedArtistDao.insertAll(fixedArtists)
 
+                    fixedArtists.forEach { artist ->
+                        savedArtistDao.setNotifyOnNewRelease(artist.id, true)
+                    }
+
                     val sharedPreferences =
                         context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
                     with(sharedPreferences.edit()) {
@@ -93,10 +97,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                                 val profileImageUrl =
                                     artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
 
-                                savedArtistDao.updateArtistDetails(
-                                    artist.id,
-                                    profileImageUrl
-                                )
+                                savedArtistDao.updateArtistDetails(artist.id, profileImageUrl)
 
                                 val releases = apiService.getArtistReleases(
                                     artist.deezerId ?: return@launch,
