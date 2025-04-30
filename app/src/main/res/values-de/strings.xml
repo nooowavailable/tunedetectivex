@@ -240,6 +240,7 @@ inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
     <string name="manual_fetch_now">Jetzt Releases abrufen</string>
     <string name="enable_itunes_support">iTunes-Support aktivieren?</string>
     <string name="notify">Benachrichtigen</string>
+    <string name="no_saved_artists">Keine gespeicherten Künstler gefunden.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

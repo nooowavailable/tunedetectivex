@@ -1,7 +1,6 @@
 package com.dev.tunedetectivex
 
 import android.annotation.SuppressLint
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,8 +11,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 data class SavedArtistItem(
@@ -48,13 +45,23 @@ class SavedArtistAdapter(
         holder.bind(artist, onArtistClick, onToggleNotifications)
     }
 
+    override fun onViewRecycled(holder: SavedArtistViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.itemView.context)
+            .clear(holder.itemView.findViewById<ImageView>(R.id.imageViewProfile))
+        holder.itemView.findViewById<ImageView>(R.id.imageViewProfile).setImageDrawable(null)
+    }
+
     fun deleteItem(position: Int) {
         val artistToDelete = currentList[position]
         onDelete(artistToDelete)
-        val updatedList = currentList.toMutableList()
-        updatedList.removeAt(position)
-        submitList(updatedList)
+
+        val updatedList = currentList.toMutableList().apply {
+            removeAt(position)
+        }
+        submitList(updatedList.toList())
     }
+
 
     class SavedArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val artistNameTextView: TextView = view.findViewById(R.id.textViewArtistName)
@@ -69,7 +76,12 @@ class SavedArtistAdapter(
             onToggleNotifications: (SavedArtistItem, Boolean) -> Unit
         ) {
             artistNameTextView.text = artist.name
-            profileImageView.setImageResource(R.drawable.placeholder_image)
+
+            val context = profileImageView.context
+            val glide = Glide.with(context)
+
+            glide.clear(profileImageView)
+            profileImageView.setImageDrawable(null)
 
             val profileImageUrl = artist.picture_xl
                 ?: artist.picture_big
@@ -77,47 +89,34 @@ class SavedArtistAdapter(
                 ?: artist.picture_small
                 ?: artist.picture
 
-            progressBar.visibility = View.VISIBLE
-
-            profileImageUrl?.let {
-                Glide.with(itemView.context)
-                    .load(it)
+            if (profileImageUrl != null) {
+                glide
+                    .load(profileImageUrl)
+                    .thumbnail(
+                        glide.load(profileImageUrl)
+                            .circleCrop()
+                            .override(32)
+                    )
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.error_image)
+                    .dontAnimate()
                     .circleCrop()
-                    .into(object : CustomTarget<Drawable>() {
-                        override fun onResourceReady(
-                            resource: Drawable,
-                            transition: Transition<in Drawable>?
-                        ) {
-                            profileImageView.setImageDrawable(resource)
-                            progressBar.visibility = View.GONE
-                        }
-
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                            progressBar.visibility = View.GONE
-                        }
-                    })
-            } ?: run {
+                    .into(profileImageView)
+            } else {
                 profileImageView.setImageResource(R.drawable.error_image)
-                progressBar.visibility = View.GONE
             }
 
             profileImageView.setOnClickListener { onArtistClick(artist) }
             artistNameTextView.setOnClickListener { onArtistClick(artist) }
 
-            val iconRes = if (artist.notifyOnNewRelease) {
-                R.drawable.ic_saved_artist
-            } else {
-                R.drawable.ic_save_artist
-            }
-            notifyIcon.setImageResource(iconRes)
+            notifyIcon.setImageResource(
+                if (artist.notifyOnNewRelease) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
+            )
 
             notifyIcon.setOnClickListener {
                 val newValue = !artist.notifyOnNewRelease
                 artist.notifyOnNewRelease = newValue
                 onToggleNotifications(artist, newValue)
-
                 notifyIcon.setImageResource(
                     if (newValue) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
                 )

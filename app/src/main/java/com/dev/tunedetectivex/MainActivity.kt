@@ -49,6 +49,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -84,6 +87,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var buttonOpenDiscography: MaterialButton
     private lateinit var fabAbout: FloatingActionButton
     private lateinit var artistInfoContainer: LinearLayout
+    private lateinit var recyclerViewReleases: RecyclerView
+    private lateinit var fabScrollToTop: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,6 +140,13 @@ class MainActivity : ComponentActivity() {
         allFabs.forEach {
             it.visibility = View.GONE
             it.translationY = 0f
+        }
+
+        fabScrollToTop = findViewById(R.id.fabScrollToTop)
+
+        fabScrollToTop.setOnClickListener {
+            recyclerViewReleases.smoothScrollToPosition(0)
+            recyclerViewArtists.smoothScrollToPosition(0)
         }
 
         val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
@@ -276,6 +288,35 @@ class MainActivity : ComponentActivity() {
                 displayReleaseInfo(album)
             }
         }
+
+        recyclerViewReleases = findViewById(R.id.recyclerViewReleases)
+        recyclerViewReleases.layoutManager = LinearLayoutManager(this)
+        progressBar.visibility = View.VISIBLE
+        loadSavedReleases()
+
+        recyclerViewReleases.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                fabScrollToTop.visibility =
+                    if ((recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition() > 3) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
+            }
+        })
+
+        recyclerViewArtists.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                fabScrollToTop.visibility =
+                    if ((recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition() > 3) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
+            }
+        })
+
+
 
     }
 
@@ -572,12 +613,15 @@ class MainActivity : ComponentActivity() {
 
 
     private fun triggerArtistSearch() {
+        recyclerViewReleases.visibility = View.GONE
+
         val artistName = editTextArtist.text.toString().trim()
         if (artistName.isNotEmpty()) {
             fetchArtistBasedOnApi(artistName)
             hideKeyboard()
         }
     }
+
 
     private fun hideKeyboard() {
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
@@ -1249,4 +1293,124 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun loadSavedReleases() {
+        progressBar.visibility = View.VISIBLE
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val savedArtists = db.savedArtistDao().getAll()
+
+            if (savedArtists.isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.no_saved_artists),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    progressBar.visibility = View.GONE
+                    recyclerViewReleases.visibility = View.GONE
+                }
+                return@launch
+            }
+
+            val releaseItems = coroutineScope {
+                savedArtists.map { artist ->
+                    async { fetchReleasesForArtist(artist) }
+                }.awaitAll().flatten()
+            }
+
+            val sortedReleaseItems = releaseItems.sortedByDescending {
+                try {
+                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                val adapter = ReleaseAdapter { release ->
+                    val intent =
+                        Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
+                            putExtra("releaseId", release.id)
+                            putExtra("releaseTitle", release.title)
+                            putExtra("artistName", release.artistName)
+                            putExtra("albumArtUrl", release.albumArtUrl)
+                            putExtra("deezerId", release.deezerId ?: -1L)
+                            putExtra("itunesId", release.itunesId ?: -1L)
+                            putExtra("apiSource", release.apiSource)
+                        }
+                    startActivity(intent)
+                }
+
+                recyclerViewReleases.adapter = adapter
+                adapter.submitList(sortedReleaseItems)
+                recyclerViewReleases.visibility =
+                    if (sortedReleaseItems.isNotEmpty()) View.VISIBLE else View.GONE
+
+                progressBar.visibility = View.GONE
+            }
+        }
+    }
+
+
+    private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
+        val releases = mutableListOf<ReleaseItem>()
+
+        try {
+            val deezerResponse =
+                apiService.getArtistReleases(artist.deezerId ?: artist.id, 0).execute()
+            if (deezerResponse.isSuccessful) {
+                val deezerReleases = deezerResponse.body()?.data?.map { release ->
+                    ReleaseItem(
+                        id = release.id,
+                        title = release.title,
+                        artistName = artist.name,
+                        albumArtUrl = release.getBestCoverUrl(),
+                        releaseDate = release.release_date,
+                        apiSource = "Deezer",
+                        deezerId = release.id
+                    )
+                } ?: emptyList()
+                releases.addAll(deezerReleases)
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Deezer error for ${artist.name}: ${e.message}", e)
+        }
+
+        if (isItunesSupportEnabled() && artist.itunesId != null) {
+            try {
+                val retrofit = Retrofit.Builder()
+                    .baseUrl("https://itunes.apple.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+                val response = iTunesService.lookupArtistWithAlbums(artist.itunesId).execute()
+                if (response.isSuccessful) {
+                    val iTunesReleases = response.body()?.results.orEmpty()
+                        .filter { it.collectionType in listOf("Album", "EP", "Single") }
+                        .map { album ->
+                            ReleaseItem(
+                                id = album.collectionId ?: -1L,
+                                title = album.collectionName ?: "Unknown",
+                                artistName = album.artistName ?: artist.name,
+                                albumArtUrl = album.artworkUrl100?.replace(
+                                    "100x100bb",
+                                    "1200x1200bb"
+                                ) ?: "",
+                                releaseDate = album.releaseDate ?: "Unknown",
+                                apiSource = "iTunes",
+                                itunesId = album.collectionId
+                            )
+                        }
+                    releases.addAll(iTunesReleases)
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "iTunes error for ${artist.name}: ${e.message}", e)
+            }
+        }
+
+        return releases
+    }
+
 }

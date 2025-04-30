@@ -135,6 +135,13 @@
                 android:translationZ="0dp"
                 tools:listitem="@layout/artist_item" />
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewReleases"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+
         </LinearLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -227,11 +234,28 @@
             android:translationZ="10dp"
             app:elevation="4dp"
             app:srcCompat="@drawable/ic_about" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabScrollToTop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_arrow_upward" />
+
     </RelativeLayout>
 
 
     <ProgressBar
         android:id="@+id/progressBarLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressBarReleases"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
