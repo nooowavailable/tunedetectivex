@@ -8,7 +8,12 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [SavedArtist::class, SentNotification::class, ReleaseItem::class, SearchHistory::class],
+    entities = [
+        SavedArtist::class,
+        SentNotification::class,
+        ReleaseItem::class,
+        SearchHistory::class
+    ],
     version = 3,
     exportSchema = false
 )
@@ -48,7 +53,6 @@ abstract class AppDatabase : RoomDatabase() {
                 }
             }
         }
-
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
