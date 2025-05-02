@@ -11,8 +11,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.dev.tunedetectivex.models.UnifiedAlbum
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -78,24 +76,37 @@ class UnifiedDiscographyAdapter(
 
             progressBar.visibility = View.VISIBLE
 
+            Glide.with(itemView.context).clear(albumCover)
+            albumCover.setImageDrawable(null)
+
             Glide.with(itemView.context)
                 .load(album.coverUrl)
-                .placeholder(R.drawable.ic_discography)
                 .error(R.drawable.ic_discography)
+                .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .transform(RoundedCorners(30))
-                .into(object : CustomTarget<Drawable>() {
-                    override fun onResourceReady(
-                        resource: Drawable,
-                        transition: Transition<in Drawable>?
-                    ) {
-                        albumCover.setImageDrawable(resource)
+                .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: com.bumptech.glide.load.engine.GlideException?,
+                        model: Any?,
+                        target: com.bumptech.glide.request.target.Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
                         progressBar.visibility = View.GONE
+                        return false
                     }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: com.bumptech.glide.request.target.Target<Drawable>?,
+                        dataSource: com.bumptech.glide.load.DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
                         progressBar.visibility = View.GONE
+                        return false
                     }
                 })
+                .into(albumCover)
         }
     }
 }

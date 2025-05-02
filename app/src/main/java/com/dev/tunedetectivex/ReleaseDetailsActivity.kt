@@ -173,11 +173,15 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadInitialAlbumArt(url: String) {
+        Glide.with(this).clear(albumCover)
+        albumCover.setImageDrawable(null)
+
         if (url.isNotBlank()) {
             progressBar.visibility = View.VISIBLE
+
             Glide.with(this)
                 .load(url.toSafeArtwork())
-                .placeholder(R.drawable.ic_discography)
+                .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .error(R.drawable.error_image)
                 .transform(RoundedCorners(20))
                 .into(object : CustomTarget<Drawable>() {
@@ -203,7 +207,6 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             progressBar.visibility = View.GONE
         }
     }
-
 
     private fun showReleaseDetailsTutorial() {
         TapTargetSequence(this)

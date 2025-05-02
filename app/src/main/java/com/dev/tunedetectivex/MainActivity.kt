@@ -323,6 +323,7 @@ class MainActivity : ComponentActivity() {
     fun normalizeTitle(title: String): String {
         return title.lowercase(Locale.getDefault())
             .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("[^a-z0-9]+"), " ")
             .trim()
     }
 
@@ -465,15 +466,7 @@ class MainActivity : ComponentActivity() {
 
     private fun displayReleaseInfo(unifiedAlbum: UnifiedAlbum) {
         artistInfoContainer.visibility = View.VISIBLE
-
         textViewname.text = unifiedAlbum.artistName
-        textViewAlbumTitle.text = buildString {
-            append(unifiedAlbum.title)
-            unifiedAlbum.releaseType?.let {
-                append(" ")
-                append("(${it})")
-            }
-        }
 
         val primaryTypedValue = TypedValue()
         theme.resolveAttribute(android.R.attr.textColorPrimary, primaryTypedValue, true)
@@ -1319,7 +1312,13 @@ class MainActivity : ComponentActivity() {
                 }.awaitAll().flatten()
             }
 
-            val sortedReleaseItems = releaseItems.sortedByDescending {
+            val uniqueReleases = releaseItems.distinctBy {
+                val normTitle = normalizeTitle(it.title)
+                val shortDate = it.releaseDate.take(10)
+                "$normTitle|$shortDate"
+            }
+
+            val sortedReleaseItems = uniqueReleases.sortedByDescending {
                 try {
                     SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
                 } catch (e: Exception) {

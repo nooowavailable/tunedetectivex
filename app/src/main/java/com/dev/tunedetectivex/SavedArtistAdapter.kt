@@ -82,27 +82,47 @@ class SavedArtistAdapter(
 
             glide.clear(profileImageView)
             profileImageView.setImageDrawable(null)
+            progressBar.visibility = View.VISIBLE
 
-            val profileImageUrl = artist.picture_xl
-                ?: artist.picture_big
-                ?: artist.picture_medium
-                ?: artist.picture_small
-                ?: artist.picture
+            val profileImageUrl = listOfNotNull(
+                artist.picture_xl,
+                artist.picture_big,
+                artist.picture_medium,
+                artist.picture_small,
+                artist.picture
+            ).firstOrNull()
 
             if (profileImageUrl != null) {
                 glide
                     .load(profileImageUrl)
-                    .thumbnail(
-                        glide.load(profileImageUrl)
-                            .circleCrop()
-                            .override(32)
-                    )
-                    .placeholder(R.drawable.placeholder_image)
-                    .error(R.drawable.error_image)
                     .dontAnimate()
                     .circleCrop()
+                    .listener(object :
+                        com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
+                        override fun onLoadFailed(
+                            e: com.bumptech.glide.load.engine.GlideException?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            progressBar.visibility = View.GONE
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: android.graphics.drawable.Drawable?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
+                            dataSource: com.bumptech.glide.load.DataSource?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            progressBar.visibility = View.GONE
+                            return false
+                        }
+                    })
                     .into(profileImageView)
             } else {
+                progressBar.visibility = View.GONE
                 profileImageView.setImageResource(R.drawable.error_image)
             }
 

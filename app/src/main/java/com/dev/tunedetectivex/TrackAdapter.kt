@@ -44,10 +44,14 @@ class TrackAdapter : RecyclerView.Adapter<TrackAdapter.TrackViewHolder>() {
             trackTitle.text = track.title
             trackDuration.text = formatDuration(track.duration)
 
+            trackTitle.isSelected = false
+            trackTitle.isSelected = true
+
             itemView.setOnClickListener {
                 checkNetworkTypeAndSetFlag()
             }
         }
+
 
         @SuppressLint("DefaultLocale")
         private fun formatDuration(duration: Int): String {
