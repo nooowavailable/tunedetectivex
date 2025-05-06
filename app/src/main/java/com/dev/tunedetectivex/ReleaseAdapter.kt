@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
@@ -30,7 +31,8 @@ data class ReleaseItem(
     val apiSource: String,
     val isHeader: Boolean = false,
     val deezerId: Long? = null,
-    val itunesId: Long? = null
+    val itunesId: Long? = null,
+    val artistImageUrl: String? = null
 )
 
 class ReleaseAdapter(
@@ -73,54 +75,67 @@ class ReleaseAdapter(
     class ReleaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val albumArt: ImageView = view.findViewById(R.id.imageViewAlbumArt)
         private val title: TextView = view.findViewById(R.id.textViewTitle)
+        private val artistThumb: ImageView? = view.findViewById(R.id.imageViewArtistThumb)
         private val artistName: TextView = view.findViewById(R.id.textViewArtistName)
-        private val releaseDate: TextView = view.findViewById(R.id.textViewReleaseDate)
+        private val releaseMeta: TextView = view.findViewById(R.id.textViewReleaseMeta)
 
+        @SuppressLint("SetTextI18n")
         fun bind(item: ReleaseItem) {
             title.text = item.title
-            artistName.text = item.artistName
-            releaseDate.text = formatReleaseDate(item.releaseDate)
-
-            Log.d(
-                "ReleaseAdapter",
-                "Binding release: ID=${item.id}, Title=${item.title}, Artist=${item.artistName}, Date=${item.releaseDate}"
-            )
-
             val progressBar: ProgressBar = itemView.findViewById(R.id.progressBarLoading)
             progressBar.visibility = View.VISIBLE
 
             Glide.with(itemView.context).clear(albumArt)
 
-            Glide.with(itemView.context)
-                .load(item.albumArtUrl)
-                .error(R.drawable.error_image)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .transform(RoundedCorners(30))
-                .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: com.bumptech.glide.request.target.Target<Drawable>?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        progressBar.visibility = View.GONE
-                        return false
-                    }
+            if (!item.albumArtUrl.isNullOrBlank()) {
+                Glide.with(itemView.context)
+                    .load(item.albumArtUrl)
+                    .error(R.drawable.error_image)
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .transform(RoundedCorners(30))
+                    .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<Drawable>?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            progressBar.visibility = View.GONE
+                            return false
+                        }
 
-                    override fun onResourceReady(
-                        resource: Drawable?,
-                        model: Any?,
-                        target: com.bumptech.glide.request.target.Target<Drawable>?,
-                        dataSource: com.bumptech.glide.load.DataSource?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        progressBar.visibility = View.GONE
-                        return false
-                    }
-                })
-                .into(albumArt)
+                        override fun onResourceReady(
+                            resource: Drawable?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<Drawable>?,
+                            dataSource: com.bumptech.glide.load.DataSource?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            progressBar.visibility = View.GONE
+                            return false
+                        }
+                    })
+                    .into(albumArt)
+            } else {
+                albumArt.setImageResource(R.drawable.placeholder_image)
+                progressBar.visibility = View.GONE
+            }
+
+            artistThumb?.let {
+                if (!item.artistImageUrl.isNullOrBlank()) {
+                    Glide.with(itemView.context)
+                        .load(item.artistImageUrl)
+                        .placeholder(R.drawable.placeholder_image)
+                        .circleCrop()
+                        .into(it)
+                } else {
+                    it.setImageResource(R.drawable.placeholder_image)
+                }
+            }
+
+            artistName.text = item.artistName
+            releaseMeta.text = formatReleaseDate(item.releaseDate)
         }
-
 
 
         private fun formatReleaseDate(date: String): String {

@@ -802,6 +802,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         }
 
         val releases = mutableListOf<ReleaseItem>()
+        val artistImage = artist.profileImageUrl ?: ""
 
         try {
             val deezerResponse =
@@ -812,10 +813,11 @@ class SavedArtistsActivity : AppCompatActivity() {
                         id = release.id,
                         title = release.title,
                         artistName = artist.name,
-                        albumArtUrl = release.getBestCoverUrl(),
+                        albumArtUrl = release.getBestCoverUrl()?.takeIf { it.isNotBlank() } ?: "",
                         releaseDate = release.release_date,
                         apiSource = "Deezer",
-                        deezerId = release.id
+                        deezerId = release.id,
+                        artistImageUrl = artistImage
                     )
                 }
                 releases.addAll(deezerReleases)
@@ -847,13 +849,13 @@ class SavedArtistsActivity : AppCompatActivity() {
                                 id = album.collectionId ?: -1L,
                                 title = album.collectionName ?: "Unknown",
                                 artistName = album.artistName ?: artist.name,
-                                albumArtUrl = album.artworkUrl100?.replace(
-                                    "100x100bb",
-                                    "1200x1200bb"
-                                ) ?: "",
+                                albumArtUrl = album.artworkUrl100
+                                    ?.replace("100x100bb", "1200x1200bb")
+                                    ?.takeIf { it.isNotBlank() } ?: "",
                                 releaseDate = album.releaseDate ?: "Unknown",
                                 apiSource = "iTunes",
-                                itunesId = album.collectionId
+                                itunesId = album.collectionId,
+                                artistImageUrl = artistImage
                             )
                         }
                     releases.addAll(iTunesReleases)

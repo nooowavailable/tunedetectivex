@@ -241,6 +241,10 @@ including the newest release from either platform.\n\n
     <string name="enable_itunes_support">Enable iTunes support?</string>
     <string name="notify">Notify</string>
     <string name="no_saved_artists">No saved artists found.</string>
+    <string name="auto_load_releases_label">Show recent releases on startup</string>
+    <string name="auto_load_enabled_toast">Recent releases will be shown on startup</string>
+    <string name="auto_load_disabled_toast">Recent releases will no longer be shown on startup</string>
+    <string name="past_releases">Past Releases:</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

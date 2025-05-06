@@ -89,6 +89,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var artistInfoContainer: LinearLayout
     private lateinit var recyclerViewReleases: RecyclerView
     private lateinit var fabScrollToTop: FloatingActionButton
+    private lateinit var textViewPastReleases: TextView
+    private lateinit var textViewNoSavedArtists: TextView
+    private lateinit var imageViewArtistProfile: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,6 +127,10 @@ class MainActivity : ComponentActivity() {
 
         progressBar = findViewById(R.id.progressBarLoading)
         notificationManager = NotificationManagerCompat.from(this)
+
+        textViewPastReleases = findViewById(R.id.textViewPastReleases)
+        textViewNoSavedArtists = findViewById(R.id.textViewNoSavedArtists)
+        imageViewArtistProfile = findViewById(R.id.imageViewArtistProfile)
 
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
@@ -291,8 +298,14 @@ class MainActivity : ComponentActivity() {
 
         recyclerViewReleases = findViewById(R.id.recyclerViewReleases)
         recyclerViewReleases.layoutManager = LinearLayoutManager(this)
-        progressBar.visibility = View.VISIBLE
-        loadSavedReleases()
+
+        if (isAutoLoadReleasesEnabled()) {
+            progressBar.visibility = View.VISIBLE
+            loadSavedReleases()
+        } else {
+            progressBar.visibility = View.GONE
+            recyclerViewReleases.visibility = View.GONE
+        }
 
         recyclerViewReleases.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -319,6 +332,12 @@ class MainActivity : ComponentActivity() {
 
 
     }
+
+    private fun isAutoLoadReleasesEnabled(): Boolean {
+        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        return prefs.getBoolean("autoLoadReleases", true)
+    }
+
 
     fun normalizeTitle(title: String): String {
         return title.lowercase(Locale.getDefault())
@@ -511,6 +530,14 @@ class MainActivity : ComponentActivity() {
             "Unknown Date"
         }
         textViewrelease_date.text = formattedDate
+
+        Glide.with(imageViewArtistProfile.context)
+            .load(selectedArtist?.getBestPictureUrl())
+            .placeholder(R.drawable.placeholder_image)
+            .error(R.drawable.error_image)
+            .circleCrop()
+            .into(imageViewArtistProfile)
+
 
         progressBar.visibility = View.VISIBLE
 
@@ -1089,7 +1116,7 @@ class MainActivity : ComponentActivity() {
     private fun saveArtist() {
         val artist = selectedArtist ?: return
         val releaseDate = textViewrelease_date.text.toString()
-        val profileImageUrl = artist.getBestPictureUrl()
+        val profileImageUrl = artist.getBestPictureUrl() ?: ""
         val releaseTitle = textViewAlbumTitle.text.toString()
 
         lifecycleScope.launch(Dispatchers.IO) {
@@ -1289,19 +1316,17 @@ class MainActivity : ComponentActivity() {
 
     private fun loadSavedReleases() {
         progressBar.visibility = View.VISIBLE
+        textViewPastReleases.visibility = View.GONE
+        textViewNoSavedArtists.visibility = View.GONE
+        recyclerViewReleases.visibility = View.GONE
 
         lifecycleScope.launch(Dispatchers.IO) {
             val savedArtists = db.savedArtistDao().getAll()
 
             if (savedArtists.isEmpty()) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        getString(R.string.no_saved_artists),
-                        Toast.LENGTH_SHORT
-                    ).show()
                     progressBar.visibility = View.GONE
-                    recyclerViewReleases.visibility = View.GONE
+                    textViewNoSavedArtists.visibility = View.VISIBLE
                 }
                 return@launch
             }
@@ -1327,6 +1352,16 @@ class MainActivity : ComponentActivity() {
             }
 
             withContext(Dispatchers.Main) {
+                progressBar.visibility = View.GONE
+
+                if (sortedReleaseItems.isEmpty()) {
+                    textViewNoSavedArtists.visibility = View.VISIBLE
+                    return@withContext
+                }
+
+                textViewPastReleases.visibility = View.VISIBLE
+                recyclerViewReleases.visibility = View.VISIBLE
+
                 val adapter = ReleaseAdapter { release ->
                     val intent =
                         Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
@@ -1343,10 +1378,6 @@ class MainActivity : ComponentActivity() {
 
                 recyclerViewReleases.adapter = adapter
                 adapter.submitList(sortedReleaseItems)
-                recyclerViewReleases.visibility =
-                    if (sortedReleaseItems.isNotEmpty()) View.VISIBLE else View.GONE
-
-                progressBar.visibility = View.GONE
             }
         }
     }
@@ -1354,6 +1385,7 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
         val releases = mutableListOf<ReleaseItem>()
+        val artistImage = artist.profileImageUrl ?: ""
 
         try {
             val deezerResponse =
@@ -1367,7 +1399,8 @@ class MainActivity : ComponentActivity() {
                         albumArtUrl = release.getBestCoverUrl(),
                         releaseDate = release.release_date,
                         apiSource = "Deezer",
-                        deezerId = release.id
+                        deezerId = release.id,
+                        artistImageUrl = artistImage
                     )
                 } ?: emptyList()
                 releases.addAll(deezerReleases)
@@ -1399,7 +1432,8 @@ class MainActivity : ComponentActivity() {
                                 ) ?: "",
                                 releaseDate = album.releaseDate ?: "Unknown",
                                 apiSource = "iTunes",
-                                itunesId = album.collectionId
+                                itunesId = album.collectionId,
+                                artistImageUrl = artistImage
                             )
                         }
                     releases.addAll(iTunesReleases)

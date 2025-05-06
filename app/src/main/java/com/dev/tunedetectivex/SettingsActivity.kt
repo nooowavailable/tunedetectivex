@@ -157,6 +157,19 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        val autoLoadSwitch = findViewById<SwitchMaterial>(R.id.switch_auto_load_releases)
+        autoLoadSwitch.isChecked = isAutoLoadReleasesEnabled()
+
+        autoLoadSwitch.setOnCheckedChangeListener { _, isChecked ->
+            setAutoLoadReleasesEnabled(isChecked)
+            Toast.makeText(
+                this,
+                if (isChecked) getString(R.string.auto_load_enabled_toast)
+                else getString(R.string.auto_load_disabled_toast),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
 
         sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         editor = sharedPreferences.edit()
@@ -494,4 +507,13 @@ class SettingsActivity : AppCompatActivity() {
         Toast.makeText(this, getString(R.string.manual_fetch_started), Toast.LENGTH_SHORT).show()
     }
 
+    private fun isAutoLoadReleasesEnabled(): Boolean {
+        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        return prefs.getBoolean("autoLoadReleases", true)
+    }
+
+    private fun setAutoLoadReleasesEnabled(enabled: Boolean) {
+        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        prefs.edit { putBoolean("autoLoadReleases", enabled) }
+    }
 }
