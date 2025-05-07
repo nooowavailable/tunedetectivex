@@ -245,6 +245,8 @@ including the newest release from either platform.\n\n
     <string name="auto_load_enabled_toast">Recent releases will be shown on startup</string>
     <string name="auto_load_disabled_toast">Recent releases will no longer be shown on startup</string>
     <string name="past_releases">Past Releases:</string>
+    <string name="fetch_delay_title">Delay Before Fetch</string>
+    <string name="fetch_delay_description">Waiting time (in seconds) before fetching new releases for each artist.</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

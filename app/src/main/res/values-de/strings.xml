@@ -245,6 +245,8 @@ inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
     <string name="auto_load_enabled_toast">Neueste Releases werden beim Start geladen</string>
     <string name="auto_load_disabled_toast">Neueste Releases werden nicht mehr automatisch geladen</string>
     <string name="past_releases">Vergangene Releases:</string>
+    <string name="fetch_delay_title">Verzögerung vor Abruf</string>
+    <string name="fetch_delay_description">Wartezeit (in Sekunden), bevor neue Releases von jedem Künstler abgerufen werden.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

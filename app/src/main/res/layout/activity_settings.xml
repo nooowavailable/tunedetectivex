@@ -55,12 +55,6 @@
             android:stepSize="1"
             android:layout_marginBottom="16dp" />
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switch_auto_load_releases"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/auto_load_releases_label" />
-
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
@@ -182,6 +176,16 @@
             android:text="@string/experimental_settings"
             android:textColor="@color/md_theme_onBackground"
             android:textSize="16sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_auto_load_releases"
+            style="@style/Widget.Material3.CompoundButton.Switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0.5"
+            android:checked="false"
+            android:paddingVertical="12dp"
+            android:text="@string/auto_load_releases_label" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_folder_import"

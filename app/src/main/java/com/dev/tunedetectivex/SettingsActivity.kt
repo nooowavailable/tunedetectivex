@@ -441,6 +441,12 @@ class SettingsActivity : AppCompatActivity() {
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
+                    delayInput,
+                    getString(R.string.fetch_delay_title),
+                    getString(R.string.fetch_delay_description)
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
                     findViewById<MaterialButton>(R.id.button_request_battery_optimization),
                     getString(R.string.request_battery_optimization_title),
                     getString(R.string.request_battery_optimization_description)
@@ -473,9 +479,7 @@ class SettingsActivity : AppCompatActivity() {
                     ).show()
                 }
 
-                override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {
-                }
-
+                override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {}
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@SettingsActivity,
@@ -509,7 +513,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun isAutoLoadReleasesEnabled(): Boolean {
         val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return prefs.getBoolean("autoLoadReleases", true)
+        return prefs.getBoolean("autoLoadReleases", false)
     }
 
     private fun setAutoLoadReleasesEnabled(enabled: Boolean) {

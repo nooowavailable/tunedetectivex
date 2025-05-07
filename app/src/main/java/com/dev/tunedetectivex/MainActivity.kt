@@ -328,14 +328,11 @@ class MainActivity : ComponentActivity() {
                     }
             }
         })
-
-
-
     }
 
     private fun isAutoLoadReleasesEnabled(): Boolean {
         val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
-        return prefs.getBoolean("autoLoadReleases", true)
+        return prefs.getBoolean("autoLoadReleases", false)
     }
 
 
@@ -659,6 +656,8 @@ class MainActivity : ComponentActivity() {
         buttonSaveArtist.visibility = View.GONE
         artistInfoContainer.visibility = View.GONE
 
+        textViewNoSavedArtists.visibility = View.GONE
+
         apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
             override fun onResponse(
                 call: Call<DeezerSimilarArtistsResponse>,
@@ -669,6 +668,7 @@ class MainActivity : ComponentActivity() {
                 if (artists.isNotEmpty()) {
                     displayArtists(artists)
                 } else {
+                    recyclerViewArtists.visibility = View.GONE
                     Toast.makeText(
                         this@MainActivity,
                         getString(R.string.no_similar_artists_found),
@@ -1326,10 +1326,15 @@ class MainActivity : ComponentActivity() {
             if (savedArtists.isEmpty()) {
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
-                    textViewNoSavedArtists.visibility = View.VISIBLE
+                    if (editTextArtist.text.isNullOrBlank()) {
+                        textViewNoSavedArtists.visibility = View.VISIBLE
+                    } else {
+                        textViewNoSavedArtists.visibility = View.GONE
+                    }
                 }
                 return@launch
             }
+
 
             val releaseItems = coroutineScope {
                 savedArtists.map { artist ->
