@@ -2,37 +2,71 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:paddingTop="16dp"
     android:fitsSystemWindows="true">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchViewArtists"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:queryHint="@string/searchViewArtists" />
+
+        <Spinner
+            android:id="@+id/spinnerViewType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:spinnerMode="dropdown" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewSavedArtists"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            tools:ignore="RtlSymmetry" />
+
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:baselineAligned="false"
+            android:gravity="end"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:visibility="visible">
 
-            <androidx.appcompat.widget.SearchView
-                android:id="@+id/searchViewArtists"
-                android:layout_width="match_parent"
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/buttonIgnoreSelected"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                android:queryHint="@string/searchViewArtists" />
+                android:layout_marginEnd="16dp"
+                android:visibility="visible"
+                app:srcCompat="@drawable/ic_notifications_off" />
 
-            <Spinner
-                android:id="@+id/spinnerViewType"
-                android:layout_width="match_parent"
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/buttonDeleteSelected"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:spinnerMode="dropdown"
-                android:layout_margin="16dp" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewSavedArtists"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
-                tools:ignore="RtlSymmetry" />
+                android:visibility="visible"
+                app:backgroundTint="?attr/colorErrorContainer"
+                app:srcCompat="@drawable/ic_delete" />
         </LinearLayout>
+
+    </LinearLayout>
+
 
     <ProgressBar
         android:id="@+id/progressBar"

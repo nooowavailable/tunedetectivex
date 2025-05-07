@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 data class SavedArtistItem(
@@ -34,16 +35,70 @@ class SavedArtistAdapter(
     private val onToggleNotifications: (SavedArtistItem, Boolean) -> Unit
 ) : ListAdapter<SavedArtistItem, SavedArtistAdapter.SavedArtistViewHolder>(SavedArtistDiffCallback()) {
 
+    private val selectedItems = mutableSetOf<Long>()
+    var selectionMode = false
+    var onSelectionChanged: ((List<SavedArtistItem>) -> Unit)? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SavedArtistViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.saved_artist_item, parent, false)
         return SavedArtistViewHolder(view)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onBindViewHolder(holder: SavedArtistViewHolder, position: Int) {
         val artist = getItem(position)
-        holder.bind(artist, onArtistClick, onToggleNotifications)
+        val isSelected = selectedItems.contains(artist.id)
+
+        holder.bind(
+            artist = artist,
+            onArtistClick = onArtistClick,
+            onToggleNotifications = onToggleNotifications,
+            isSelected = isSelected,
+            selectionMode = selectionMode
+        )
+
+        holder.itemView.setOnClickListener {
+            if (selectionMode) {
+                toggleSelection(artist)
+            } else {
+                onArtistClick(artist)
+            }
+        }
+
+        holder.itemView.setOnLongClickListener {
+            if (!selectionMode) selectionMode = true
+            toggleSelection(artist)
+            true
+        }
     }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun toggleSelection(artist: SavedArtistItem) {
+        val index = currentList.indexOfFirst { it.id == artist.id }
+        if (index != -1) {
+            if (selectedItems.contains(artist.id)) {
+                selectedItems.remove(artist.id)
+            } else {
+                selectedItems.add(artist.id)
+            }
+            notifyItemChanged(index)
+            onSelectionChanged?.invoke(currentList.filter { selectedItems.contains(it.id) })
+        }
+    }
+
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun clearSelection() {
+        selectedItems.clear()
+        selectionMode = false
+        notifyDataSetChanged()
+        onSelectionChanged?.invoke(emptyList())
+    }
+
+    fun isInSelectionMode(): Boolean = selectionMode
+
+
 
     override fun onViewRecycled(holder: SavedArtistViewHolder) {
         super.onViewRecycled(holder)
@@ -73,7 +128,9 @@ class SavedArtistAdapter(
         fun bind(
             artist: SavedArtistItem,
             onArtistClick: (SavedArtistItem) -> Unit,
-            onToggleNotifications: (SavedArtistItem, Boolean) -> Unit
+            onToggleNotifications: (SavedArtistItem, Boolean) -> Unit,
+            isSelected: Boolean,
+            selectionMode: Boolean
         ) {
             artistNameTextView.text = artist.name
 
@@ -126,21 +183,41 @@ class SavedArtistAdapter(
                 profileImageView.setImageResource(R.drawable.error_image)
             }
 
-            profileImageView.setOnClickListener { onArtistClick(artist) }
-            artistNameTextView.setOnClickListener { onArtistClick(artist) }
-
             notifyIcon.setImageResource(
                 if (artist.notifyOnNewRelease) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
             )
 
-            notifyIcon.setOnClickListener {
-                val newValue = !artist.notifyOnNewRelease
-                artist.notifyOnNewRelease = newValue
-                onToggleNotifications(artist, newValue)
-                notifyIcon.setImageResource(
-                    if (newValue) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
-                )
+            notifyIcon.apply {
+                isFocusable = false
+                isFocusableInTouchMode = false
+                isClickable = true
+                isLongClickable = false
+                isEnabled = !selectionMode
+                visibility = if (selectionMode) View.INVISIBLE else View.VISIBLE
+
+                setOnClickListener {
+                    if (selectionMode) return@setOnClickListener
+
+                    val newValue = !artist.notifyOnNewRelease
+                    artist.notifyOnNewRelease = newValue
+                    onToggleNotifications(artist, newValue)
+                    setImageResource(
+                        if (newValue) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
+                    )
+                }
             }
+
+            val selectedColor = MaterialColors.getColor(
+                context,
+                com.google.android.material.R.attr.colorSurfaceVariant,
+                "fallback"
+            )
+            val normalColor = android.graphics.Color.TRANSPARENT
+            itemView.setBackgroundColor(if (isSelected) selectedColor else normalColor)
+
+            notifyIcon.isEnabled = !selectionMode
+            notifyIcon.visibility = if (selectionMode) View.INVISIBLE else View.VISIBLE
+
         }
     }
 

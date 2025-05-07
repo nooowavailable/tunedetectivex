@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
@@ -64,7 +65,6 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         setupApiService()
         setupRecyclerView()
-        setupRecyclerViewWithPlaceholder()
         setupSearchView()
         setupSpinner()
 
@@ -100,6 +100,21 @@ class SavedArtistsActivity : AppCompatActivity() {
                 }
             }
         }
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (::artistAdapter.isInitialized && artistAdapter.isInSelectionMode()) {
+                        artistAdapter.clearSelection()
+                    } else {
+                        finish()
+                    }
+                }
+            }
+        )
+
+
     }
 
     private fun getItunesAttemptCount(): Int {
@@ -166,39 +181,6 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
 
-    private fun setupRecyclerViewWithPlaceholder() {
-        recyclerView.adapter = PlaceholderAdapter()
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
-            val tempList = savedArtists.map {
-                SavedArtistItem(
-                    id = it.id,
-                    name = it.name,
-                    lastReleaseTitle = it.lastReleaseTitle,
-                    lastReleaseDate = it.lastReleaseDate,
-                    picture = it.profileImageUrl ?: "",
-                    notifyOnNewRelease = it.notifyOnNewRelease
-                )
-            }.toMutableList()
-
-            withContext(Dispatchers.Main) {
-                artistAdapter = SavedArtistAdapter(
-                    onDelete = { artist -> deleteArtistFromDb(artist) },
-                    onArtistClick = { artist -> openArtistDiscography(artist) },
-                    onToggleNotifications = { artistItem, newValue ->
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            db.savedArtistDao().setNotifyOnNewRelease(artistItem.id, newValue)
-                        }
-                    }
-                )
-                recyclerView.adapter = artistAdapter
-                artistAdapter.submitList(tempList)
-            }
-        }
-    }
-
     private fun setupSearchView() {
         searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -241,7 +223,64 @@ class SavedArtistsActivity : AppCompatActivity() {
                     db.savedArtistDao().setNotifyOnNewRelease(artistItem.id, newValue)
                 }
             }
-        )
+        ).apply {
+            onSelectionChanged = { selectedItems ->
+                val ignoreBtn =
+                    findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(
+                        R.id.buttonIgnoreSelected
+                    )
+                val deleteBtn =
+                    findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(
+                        R.id.buttonDeleteSelected
+                    )
+
+                ignoreBtn.visibility = if (selectedItems.isNotEmpty()) View.VISIBLE else View.GONE
+                deleteBtn.visibility = if (selectedItems.isNotEmpty()) View.VISIBLE else View.GONE
+
+                ignoreBtn.setOnClickListener {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        selectedItems.forEach {
+                            db.savedArtistDao().setNotifyOnNewRelease(it.id, false)
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@SavedArtistsActivity,
+                                "Benachrichtigungen deaktiviert",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            artistAdapter.clearSelection()
+                            loadSavedArtists()
+                        }
+                    }
+                }
+
+                deleteBtn.setOnClickListener {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        selectedItems.forEach {
+                            db.savedArtistDao().delete(
+                                SavedArtist(
+                                    id = it.id,
+                                    name = it.name,
+                                    lastReleaseTitle = it.lastReleaseTitle,
+                                    lastReleaseDate = it.lastReleaseDate,
+                                    profileImageUrl = it.picture,
+                                    notifyOnNewRelease = it.notifyOnNewRelease
+                                )
+                            )
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@SavedArtistsActivity,
+                                "Künstler gelöscht",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            artistAdapter.clearSelection()
+                            loadSavedArtists()
+                        }
+                    }
+                }
+            }
+        }
 
         releaseAdapter = ReleaseAdapter { release ->
             val intent = Intent(this, ReleaseDetailsActivity::class.java).apply {
@@ -256,6 +295,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         recyclerView.adapter = artistAdapter
         enableSwipeToDelete()
     }
+
 
     private fun openArtistDiscography(artist: SavedArtistItem) {
         val intent = Intent(this, ArtistDiscographyActivity::class.java).apply {
@@ -380,13 +420,9 @@ class SavedArtistsActivity : AppCompatActivity() {
                     val updated = if (itunesSupportEnabled && attemptCount < 3) {
                         fetchArtistDetailsByDiscography(artist) ?: artist
                     } else {
-                        Log.d(
-                            "SavedArtistsActivity",
-                            "⏭️ iTunes matching disabled - skip $artist"
-                        )
+                        Log.d("SavedArtistsActivity", "⏭️ iTunes matching disabled - skip $artist")
                         artist
                     }
-
 
                     if (artist.deezerId == null && updated.deezerId != null) deezerUpdated++
                     if (artist.itunesId == null && updated.itunesId != null) itunesUpdated++
@@ -406,6 +442,11 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 withContext(Dispatchers.Main) {
                     allArtists = updatedList
+
+                    if (recyclerView.adapter != artistAdapter) {
+                        recyclerView.adapter = artistAdapter
+                    }
+
                     artistAdapter.submitList(allArtists)
 
                     Log.d("SavedArtistsActivity", "🔄 Auto-Fix completed:")
@@ -446,12 +487,12 @@ class SavedArtistsActivity : AppCompatActivity() {
                             notMatchedArtists = notMatched,
                             coroutineScope = lifecycleScope,
                             onDeleteArtist = { artist -> deleteArtist(artist) },
-                            onRescanArtist = { artist, customName ->
-                                val updated = withContext(Dispatchers.IO) {
-                                    val dbArtist = db.savedArtistDao().getArtistById(artist.id)
-                                    dbArtist?.let { fetchArtistDetailsByDiscography(it) }
+                            onRescanArtist = { artist, _ ->
+                                val updated = lifecycleScope.async(Dispatchers.IO) {
+                                    db.savedArtistDao().getArtistById(artist.id)
+                                        ?.let { fetchArtistDetailsByDiscography(it) }
                                 }
-                                updated?.let {
+                                updated.await()?.let {
                                     val newList = allArtists.toMutableList()
                                     newList.replaceFirstOrAdd(it.toItem())
                                     allArtists = newList

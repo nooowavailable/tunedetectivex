@@ -6,8 +6,9 @@
     android:layout_height="wrap_content"
     android:padding="12dp"
     android:background="?attr/selectableItemBackground"
-    android:clickable="false"
-    android:focusable="false">
+    android:clickable="true"
+    android:descendantFocusability="blocksDescendants"
+    android:focusable="true">
 
     <ImageView
         android:id="@+id/imageViewProfile"
@@ -17,6 +18,8 @@
         android:scaleType="centerCrop"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        android:clickable="false"
+        android:focusable="false"
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -45,6 +48,8 @@
         app:layout_constraintStart_toEndOf="@id/imageViewProfile"
         app:layout_constraintTop_toTopOf="@id/imageViewProfile"
         app:layout_constraintBottom_toBottomOf="@id/imageViewProfile"
+        android:clickable="false"
+        android:focusable="false"
         app:layout_constraintEnd_toStartOf="@id/buttonNotifyToggle" />
 
     <ProgressBar
