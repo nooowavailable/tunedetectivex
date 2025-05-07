@@ -20,6 +20,7 @@ import com.dev.tunedetectivex.api.ITunesApiService
 import com.dev.tunedetectivex.util.ItunesResultDialogHelper
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -215,6 +216,9 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun setupRecyclerView() {
+        val ignoreBtn = findViewById<FloatingActionButton>(R.id.buttonIgnoreSelected)
+        val deleteBtn = findViewById<FloatingActionButton>(R.id.buttonDeleteSelected)
+
         artistAdapter = SavedArtistAdapter(
             onDelete = { artist -> deleteArtistFromDb(artist) },
             onArtistClick = { artist -> openArtistDiscography(artist) },
@@ -225,59 +229,57 @@ class SavedArtistsActivity : AppCompatActivity() {
             }
         ).apply {
             onSelectionChanged = { selectedItems ->
-                val ignoreBtn =
-                    findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(
-                        R.id.buttonIgnoreSelected
-                    )
-                val deleteBtn =
-                    findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(
-                        R.id.buttonDeleteSelected
-                    )
+                val visible = selectedItems.isNotEmpty()
+                ignoreBtn.visibility = if (visible) View.VISIBLE else View.GONE
+                deleteBtn.visibility = if (visible) View.VISIBLE else View.GONE
+            }
+        }
 
-                ignoreBtn.visibility = if (selectedItems.isNotEmpty()) View.VISIBLE else View.GONE
-                deleteBtn.visibility = if (selectedItems.isNotEmpty()) View.VISIBLE else View.GONE
-
-                ignoreBtn.setOnClickListener {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        selectedItems.forEach {
-                            db.savedArtistDao().setNotifyOnNewRelease(it.id, false)
-                        }
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@SavedArtistsActivity,
-                                "Benachrichtigungen deaktiviert",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            artistAdapter.clearSelection()
-                            loadSavedArtists()
-                        }
-                    }
+        ignoreBtn.setOnClickListener {
+            val selectedItems = artistAdapter.currentList.filter { artistAdapter.isSelected(it.id) }
+            lifecycleScope.launch(Dispatchers.IO) {
+                selectedItems.forEach {
+                    db.savedArtistDao().setNotifyOnNewRelease(it.id, false)
                 }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@SavedArtistsActivity,
+                        "Benachrichtigungen deaktiviert",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    artistAdapter.clearSelection()
+                    ignoreBtn.visibility = View.GONE
+                    deleteBtn.visibility = View.GONE
+                    loadSavedArtists()
+                }
+            }
+        }
 
-                deleteBtn.setOnClickListener {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        selectedItems.forEach {
-                            db.savedArtistDao().delete(
-                                SavedArtist(
-                                    id = it.id,
-                                    name = it.name,
-                                    lastReleaseTitle = it.lastReleaseTitle,
-                                    lastReleaseDate = it.lastReleaseDate,
-                                    profileImageUrl = it.picture,
-                                    notifyOnNewRelease = it.notifyOnNewRelease
-                                )
-                            )
-                        }
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@SavedArtistsActivity,
-                                "Künstler gelöscht",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            artistAdapter.clearSelection()
-                            loadSavedArtists()
-                        }
-                    }
+        deleteBtn.setOnClickListener {
+            val selectedItems = artistAdapter.currentList.filter { artistAdapter.isSelected(it.id) }
+            lifecycleScope.launch(Dispatchers.IO) {
+                selectedItems.forEach {
+                    db.savedArtistDao().delete(
+                        SavedArtist(
+                            id = it.id,
+                            name = it.name,
+                            lastReleaseTitle = it.lastReleaseTitle,
+                            lastReleaseDate = it.lastReleaseDate,
+                            profileImageUrl = it.picture,
+                            notifyOnNewRelease = it.notifyOnNewRelease
+                        )
+                    )
+                }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@SavedArtistsActivity,
+                        "Künstler gelöscht",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    artistAdapter.clearSelection()
+                    ignoreBtn.visibility = View.GONE
+                    deleteBtn.visibility = View.GONE
+                    loadSavedArtists()
                 }
             }
         }

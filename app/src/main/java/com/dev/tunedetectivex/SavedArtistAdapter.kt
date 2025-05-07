@@ -79,6 +79,10 @@ class SavedArtistAdapter(
         if (index != -1) {
             if (selectedItems.contains(artist.id)) {
                 selectedItems.remove(artist.id)
+
+                if (selectedItems.isEmpty()) {
+                    selectionMode = false
+                }
             } else {
                 selectedItems.add(artist.id)
             }
@@ -116,6 +120,8 @@ class SavedArtistAdapter(
         }
         submitList(updatedList.toList())
     }
+
+    fun isSelected(id: Long): Boolean = selectedItems.contains(id)
 
 
     class SavedArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
