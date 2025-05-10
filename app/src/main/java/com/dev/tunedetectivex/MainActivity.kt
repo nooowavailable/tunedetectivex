@@ -631,6 +631,7 @@ class MainActivity : ComponentActivity() {
 
     private fun triggerArtistSearch() {
         recyclerViewReleases.visibility = View.GONE
+        textViewPastReleases.visibility = View.GONE
 
         val artistName = editTextArtist.text.toString().trim()
         if (artistName.isNotEmpty()) {
@@ -1219,7 +1220,7 @@ class MainActivity : ComponentActivity() {
         artistInfoContainer.visibility = View.GONE
         recyclerViewArtists.adapter = null
         recyclerViewArtists.visibility = View.GONE
-
+        textViewPastReleases.visibility = View.GONE
     }
 
     private fun processCombinedArtist(
