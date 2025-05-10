@@ -129,10 +129,10 @@
     <string name="release_type_single">Single</string>
     <string name="release_type_ep">EP</string>
     <string name="release_type_default">Release</string>
-    <string name="notification_new_release_title_album">New Album from %2$s</string>
-    <string name="notification_new_release_title_single">New Single from %2$s</string>
-    <string name="notification_new_release_title_ep">New EP from %2$s</string>
-    <string name="notification_new_release_title_default">New Release from %2$s</string>
+    <string name="notification_new_release_title_album">New %2$s from %1$s</string>
+    <string name="notification_new_release_title_single">New %2$s from %1$s</string>
+    <string name="notification_new_release_title_ep">New %2$s from %1$s</string>
+    <string name="notification_new_release_title_default">New %2$s from %1$s</string>
     <string name="notification_release_text">%1$s released %2$s</string>
     <string name="notification_channel_fetch">Background Fetch Notifications</string>
     <string name="notification_channel_release">New Release Notifications</string>

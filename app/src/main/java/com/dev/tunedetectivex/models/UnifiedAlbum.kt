@@ -8,5 +8,7 @@ data class UnifiedAlbum(
     val coverUrl: String,
     val releaseType: String? = null,
     val deezerId: Long? = null,
-    val itunesId: Long? = null
+    val itunesId: Long? = null,
+    val rawTitle: String? = null,
+    val rawReleaseType: String? = null
 )

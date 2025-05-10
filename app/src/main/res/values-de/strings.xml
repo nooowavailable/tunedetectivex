@@ -125,15 +125,6 @@
     <string name="import_completed_message">Import abgeschlossen!</string>
     <string name="fetching_releases_title">Abrufen von Veröffentlichungen</string>
     <string name="fetching_releases_text">Abrufen von Veröffentlichungen der gespeicherten Künstlern.</string>
-    <string name="release_type_album">Album</string>
-    <string name="release_type_single">Single</string>
-    <string name="release_type_ep">EP</string>
-    <string name="release_type_default">Veröffentlichung</string>
-    <string name="notification_new_release_title_album">Neues Album von %2$s</string>
-    <string name="notification_new_release_title_single">Neue Single von %2$s</string>
-    <string name="notification_new_release_title_ep">Neue EP von %2$s</string>
-    <string name="notification_new_release_title_default">Neue Veröffentlichung von %2$s</string>
-    <string name="notification_release_text">%1$s hat %2$s veröffentlicht</string>
     <string name="notification_channel_fetch">Hintergrunds-Benachrichtigungen</string>
     <string name="notification_channel_release">Benachrichtigungen über neue Veröffentlichungen</string>
     <string name="notification_channel_fetch_description">Stille Benachrichtigungen für den Hintergrundfetch von Veröffentlichungen</string>
@@ -247,6 +238,15 @@ inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
     <string name="past_releases">Vergangene Releases:</string>
     <string name="fetch_delay_title">Verzögerung vor Abruf</string>
     <string name="fetch_delay_description">Wartezeit (in Sekunden), bevor neue Releases von jedem Künstler abgerufen werden.</string>
+    <string name="notification_new_release_title_album">%1$s hat ein neues %2$s veröffentlicht</string>
+    <string name="notification_new_release_title_single">%1$s hat eine neue %2$s veröffentlicht</string>
+    <string name="notification_new_release_title_ep">%1$s hat ein neues %2$s veröffentlicht</string>
+    <string name="notification_new_release_title_default">%1$s hat eine neue %2$s veröffentlicht</string>
+    <string name="notification_release_text">%1$s hat „%2$s“ veröffentlicht</string>
+    <string name="release_type_album">Album</string>
+    <string name="release_type_single">Single</string>
+    <string name="release_type_ep">EP</string>
+    <string name="release_type_default">Release</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

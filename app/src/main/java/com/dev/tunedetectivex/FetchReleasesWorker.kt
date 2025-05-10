@@ -193,12 +193,14 @@ class FetchReleasesWorker(
 
                     UnifiedAlbum(
                         id = "${artist.deezerId}_${it.id}",
-                        title = it.title,
+                        title = cleanTitle(it.title),
                         artistName = artistName,
                         releaseDate = it.release_date,
                         coverUrl = it.getBestCoverUrl(),
                         releaseType = it.record_type,
-                        deezerId = artist.deezerId
+                        deezerId = artist.deezerId,
+                        rawTitle = it.title,
+                        rawReleaseType = it.record_type
                     )
                 }
             }
@@ -213,14 +215,17 @@ class FetchReleasesWorker(
                     releases += albums.mapNotNull {
                         UnifiedAlbum(
                             id = "${artist.itunesId}_${it.collectionId}",
-                            title = it.collectionName ?: return@mapNotNull null,
+                            title = cleanTitle(it.collectionName ?: return@mapNotNull null),
                             artistName = it.artistName ?: artist.name,
                             releaseDate = it.releaseDate?.substring(0, 10)
                                 ?: return@mapNotNull null,
                             coverUrl = it.getHighResArtwork() ?: "",
                             releaseType = it.collectionType,
-                            itunesId = artist.itunesId
+                            itunesId = artist.itunesId,
+                            rawTitle = it.collectionName,
+                            rawReleaseType = it.collectionType
                         )
+
                     }
                 }
             }
@@ -246,7 +251,7 @@ class FetchReleasesWorker(
                 return
             }
 
-            val releaseTypeEnum = ReleaseType.from(latest.releaseType)
+            val releaseTypeEnum = determineAccurateReleaseType(latest)
 
             sendUnifiedReleaseNotification(
                 artist,
@@ -297,7 +302,7 @@ class FetchReleasesWorker(
                                 artist = artist,
                                 album = album,
                                 albumArtBitmap = resource,
-                                releaseTypeEnum = releaseTypeEnum, // <-- hier Enum!
+                                releaseTypeEnum = releaseTypeEnum,
                                 channelId = RELEASE_CHANNEL_ID
                             )
 
@@ -328,7 +333,7 @@ class FetchReleasesWorker(
                                 artist = artist,
                                 album = album,
                                 albumArtBitmap = null,
-                                releaseTypeEnum = releaseTypeEnum, // <-- hier ebenfalls Enum!
+                                releaseTypeEnum = releaseTypeEnum,
                                 channelId = RELEASE_CHANNEL_ID
                             )
 
@@ -438,6 +443,12 @@ class FetchReleasesWorker(
         manager.createNotificationChannel(releaseChannel)
     }
 
+    private fun cleanTitle(title: String): String {
+        return title
+            .replace(Regex("\\s*-\\s*(Single|EP|Album)\$", RegexOption.IGNORE_CASE), "")
+            .trim()
+    }
+
     private fun hasNotificationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
@@ -446,4 +457,17 @@ class FetchReleasesWorker(
             ) == PackageManager.PERMISSION_GRANTED
         } else true
     }
+
+    private fun determineAccurateReleaseType(album: UnifiedAlbum): ReleaseType {
+        val rawTitle = album.rawTitle?.lowercase(Locale.getDefault()) ?: ""
+        val rawType = album.rawReleaseType?.lowercase(Locale.getDefault()) ?: ""
+
+        return when {
+            rawType.contains("single") || rawTitle.contains("single") -> ReleaseType.SINGLE
+            rawType.contains("ep") || rawTitle.contains("ep") -> ReleaseType.EP
+            rawType.contains("album") || rawTitle.contains("album") -> ReleaseType.ALBUM
+            else -> ReleaseType.from(album.releaseType)
+        }
+    }
+
 }
