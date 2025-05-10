@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.android") version "2.1.20-RC"  // Update to compatible Kotlin version
-    id("com.android.application") version "8.9.2"
+    id("com.android.application") version "8.10.0"
     id("kotlin-android")
     id("kotlin-kapt")
     id("com.google.devtools.ksp") version "2.1.20-RC-1.0.31"
