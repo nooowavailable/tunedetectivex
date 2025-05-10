@@ -247,20 +247,23 @@ class FetchReleasesWorker(
             }
 
             val releaseTypeEnum = ReleaseType.from(latest.releaseType)
-            val releaseTypeStr = when (releaseTypeEnum) {
-                ReleaseType.ALBUM -> applicationContext.getString(R.string.release_type_album)
-                ReleaseType.SINGLE -> applicationContext.getString(R.string.release_type_single)
-                ReleaseType.EP -> applicationContext.getString(R.string.release_type_ep)
-                ReleaseType.DEFAULT -> applicationContext.getString(R.string.release_type_default)
-            }
 
             sendUnifiedReleaseNotification(
                 artist,
                 latest,
                 releaseHash,
                 releaseDateMillis,
-                releaseTypeStr
+                releaseTypeEnum
             )
+
+            sendUnifiedReleaseNotification(
+                artist,
+                latest,
+                releaseHash,
+                releaseDateMillis,
+                releaseTypeEnum
+            )
+
 
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for new release: ${e.message}", e)
@@ -272,7 +275,7 @@ class FetchReleasesWorker(
         album: UnifiedAlbum,
         releaseHash: Int,
         releaseDate: Long,
-        releaseType: String
+        releaseTypeEnum: ReleaseType
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -286,10 +289,7 @@ class FetchReleasesWorker(
                             transition: Transition<in Bitmap>?
                         ) {
                             if (!hasNotificationPermission()) {
-                                Log.w(
-                                    TAG,
-                                    "Notification permission not granted. Skipping notification."
-                                )
+                                Log.w(TAG, "Notification permission not granted. Skipping notification.")
                                 return
                             }
 
@@ -297,7 +297,7 @@ class FetchReleasesWorker(
                                 artist = artist,
                                 album = album,
                                 albumArtBitmap = resource,
-                                releaseType = releaseType,
+                                releaseTypeEnum = releaseTypeEnum, // <-- hier Enum!
                                 channelId = RELEASE_CHANNEL_ID
                             )
 
@@ -320,10 +320,7 @@ class FetchReleasesWorker(
 
                         override fun onLoadFailed(errorDrawable: Drawable?) {
                             if (!hasNotificationPermission()) {
-                                Log.w(
-                                    TAG,
-                                    "Notification permission not granted. Skipping fallback notification."
-                                )
+                                Log.w(TAG, "Notification permission not granted. Skipping fallback notification.")
                                 return
                             }
 
@@ -331,7 +328,7 @@ class FetchReleasesWorker(
                                 artist = artist,
                                 album = album,
                                 albumArtBitmap = null,
-                                releaseType = releaseType,
+                                releaseTypeEnum = releaseTypeEnum, // <-- hier ebenfalls Enum!
                                 channelId = RELEASE_CHANNEL_ID
                             )
 
@@ -339,11 +336,7 @@ class FetchReleasesWorker(
                                 NotificationManagerCompat.from(applicationContext)
                                     .notify(releaseHash, fallback)
                             } catch (e: SecurityException) {
-                                Log.e(
-                                    TAG,
-                                    "SecurityException while sending fallback notification",
-                                    e
-                                )
+                                Log.e(TAG, "SecurityException while sending fallback notification", e)
                             }
                         }
                     })
@@ -357,34 +350,36 @@ class FetchReleasesWorker(
         artist: SavedArtist,
         album: UnifiedAlbum,
         albumArtBitmap: Bitmap?,
-        releaseType: String,
+        releaseTypeEnum: ReleaseType,
         channelId: String
     ): Notification {
-        val releaseTypeEnum = ReleaseType.from(releaseType)
+        val releaseTypeString = when (releaseTypeEnum) {
+            ReleaseType.ALBUM -> applicationContext.getString(R.string.release_type_album)
+            ReleaseType.SINGLE -> applicationContext.getString(R.string.release_type_single)
+            ReleaseType.EP -> applicationContext.getString(R.string.release_type_ep)
+            ReleaseType.DEFAULT -> applicationContext.getString(R.string.release_type_default)
+        }
 
         val notificationTitle = when (releaseTypeEnum) {
             ReleaseType.ALBUM -> applicationContext.getString(
                 R.string.notification_new_release_title_album,
-                "Album",
-                artist.name
+                artist.name,
+                releaseTypeString
             )
-
             ReleaseType.SINGLE -> applicationContext.getString(
                 R.string.notification_new_release_title_single,
-                "Single",
-                artist.name
+                artist.name,
+                releaseTypeString
             )
-
             ReleaseType.EP -> applicationContext.getString(
                 R.string.notification_new_release_title_ep,
-                "EP",
-                artist.name
+                artist.name,
+                releaseTypeString
             )
-
             ReleaseType.DEFAULT -> applicationContext.getString(
                 R.string.notification_new_release_title_default,
-                "Release",
-                artist.name
+                artist.name,
+                releaseTypeString
             )
         }
 
