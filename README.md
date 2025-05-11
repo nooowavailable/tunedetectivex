@@ -1,16 +1,21 @@
 # TuneDetectiveX
 
-### I'm back! 🎉
+### TuneDetective is back! 🎉
 
 ![Logo](https://github.com/nooowavailable/tunedetectivex/blob/master/app/src/main/ic_launcher-playstore.png?raw=true)
 
-TuneDetectiveX empowers music enthusiasts to independently explore and monitor their favorite artists and their latest releases, providing a personalized experience without reliance on mainstream music streaming platforms. The app integrates with the Deezer API to fetch artist information, album releases, and allows users to save their favorite artists for easy access. However, please note that this may not be 100% reliable, as some data for certain artists may be missing from the API.
+TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this app to get notified for new music releases of your fav. artists.
+
+This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API and combines them* , to obtain in some cases more accurate and more up-to-date music information.
+
+*work in progress
+
 
 ## 🌟 Features
 
 - **🔍 Search for Artists**: Easily search for artists and view their latest releases.
 - **💾 Save Artists**: Save your favorite artists to quickly access their information and releases.
-- **📥 Import Music**: Import music from your device and check for matching artists and releases.
+- **📥 Import Artists**: Import music-artists from your device using metadata + filenames and check for matching artists and releases. **experimental (opt-in)
 - **🔔 Notifications**: Get notified about new releases from your saved artists.
 - **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
 
