@@ -183,7 +183,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 .load(url.toSafeArtwork())
                 .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .error(R.drawable.error_image)
-                .transform(RoundedCorners(20))
+                .transform(RoundedCorners(50))
                 .into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
                         resource: Drawable,
@@ -395,7 +395,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                     .load(coverUrl)
                                     .placeholder(R.drawable.ic_discography)
                                     .error(R.drawable.error_image)
-                                    .transform(RoundedCorners(30))
+                                    .transform(RoundedCorners(50))
                                     .into(albumCover)
                             }
 
@@ -436,7 +436,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 .load(coverUrl)
                 .placeholder(R.drawable.ic_discography)
                 .error(R.drawable.ic_discography)
-                .transform(RoundedCorners(30))
+                .transform(RoundedCorners(50))
                 .into(albumCover)
         } else {
             albumCover.setImageResource(R.drawable.error_image)

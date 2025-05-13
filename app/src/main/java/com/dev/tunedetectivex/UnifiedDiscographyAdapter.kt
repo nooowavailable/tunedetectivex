@@ -47,7 +47,6 @@ class UnifiedDiscographyAdapter(
     override fun getItemCount(): Int = albums.size
 
     class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val albumTitle: TextView = view.findViewById(R.id.textViewAlbumTitle)
         private val albumCover: ImageView = view.findViewById(R.id.imageViewAlbumCover)
         private val releaseDate: TextView = view.findViewById(R.id.textViewReleaseDate)
         private val progressBar: ProgressBar = view.findViewById(R.id.progressBarLoading)
@@ -57,25 +56,46 @@ class UnifiedDiscographyAdapter(
             Log.d("UnifiedDiscography", "  Deezer ID: ${album.deezerId ?: "❌"}")
             Log.d("UnifiedDiscography", "  iTunes ID: ${album.itunesId ?: "❌"}")
 
-            albumTitle.text = buildString {
-                append(album.title)
-                album.releaseType?.let {
-                    append(" ($it)")
-                }
+            val rawTitle = album.title
+            val parenMatch = Regex("\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE).find(rawTitle)
+            val dashMatch = Regex("-(\\s*)(Single|EP|Album)", RegexOption.IGNORE_CASE).find(rawTitle)
+
+            val extractedType = when {
+                parenMatch != null -> parenMatch.groupValues[1]
+                dashMatch != null -> dashMatch.groupValues[2]
+                else -> null
+            }?.replaceFirstChar { it.uppercaseChar() }
+
+            val finalType = album.releaseType ?: extractedType
+
+            val cleanedTitle = rawTitle
+                .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
+                .trim()
+
+            val titleMain: TextView = itemView.findViewById(R.id.textViewTitleMain)
+            val titleType: TextView = itemView.findViewById(R.id.textViewTitleType)
+
+            titleMain.text = cleanedTitle
+            if (!finalType.isNullOrBlank()) {
+                titleType.text = "($finalType)"
+                titleType.visibility = View.VISIBLE
+            } else {
+                titleType.text = ""
+                titleType.visibility = View.GONE
             }
 
             val formattedDate = try {
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
                 val date = inputFormat.parse(album.releaseDate)
-                outputFormat.format(date!!)
+                outputFormat.format(date ?: album.releaseDate)
             } catch (e: Exception) {
                 "Unknown Date"
             }
             releaseDate.text = formattedDate
 
             progressBar.visibility = View.VISIBLE
-
             Glide.with(itemView.context).clear(albumCover)
             albumCover.setImageDrawable(null)
 
@@ -83,7 +103,7 @@ class UnifiedDiscographyAdapter(
                 .load(album.coverUrl)
                 .error(R.drawable.ic_discography)
                 .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
-                .transform(RoundedCorners(30))
+                .transform(RoundedCorners(50))
                 .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                     override fun onLoadFailed(
                         e: com.bumptech.glide.load.engine.GlideException?,

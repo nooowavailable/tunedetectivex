@@ -247,6 +247,8 @@ including the newest release from either platform.\n\n
     <string name="past_releases">Past Releases:</string>
     <string name="fetch_delay_title">Delay Before Fetch</string>
     <string name="fetch_delay_description">Waiting time (in seconds) before fetching new releases for each artist.</string>
+    <string name="notifications_disabled">Notifications disabled</string>
+    <string name="artists_deleted">Artists deleted</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

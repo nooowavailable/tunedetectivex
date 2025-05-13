@@ -247,6 +247,8 @@ inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
     <string name="release_type_single">Single</string>
     <string name="release_type_ep">EP</string>
     <string name="release_type_default">Release</string>
+    <string name="notifications_disabled">Benachrichtigungen deaktiviert</string>
+    <string name="artists_deleted">Künstler gelöscht</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

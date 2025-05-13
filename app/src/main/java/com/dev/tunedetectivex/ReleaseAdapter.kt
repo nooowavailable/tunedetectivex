@@ -32,7 +32,8 @@ data class ReleaseItem(
     val isHeader: Boolean = false,
     val deezerId: Long? = null,
     val itunesId: Long? = null,
-    val artistImageUrl: String? = null
+    val artistImageUrl: String? = null,
+    val releaseType: String? = null
 )
 
 class ReleaseAdapter(
@@ -74,17 +75,41 @@ class ReleaseAdapter(
 
     class ReleaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val albumArt: ImageView = view.findViewById(R.id.imageViewAlbumArt)
-        private val title: TextView = view.findViewById(R.id.textViewTitle)
         private val artistThumb: ImageView? = view.findViewById(R.id.imageViewArtistThumb)
         private val artistName: TextView = view.findViewById(R.id.textViewArtistName)
         private val releaseMeta: TextView = view.findViewById(R.id.textViewReleaseMeta)
 
         @SuppressLint("SetTextI18n")
         fun bind(item: ReleaseItem) {
-            title.text = item.title
+            val titleMain: TextView = itemView.findViewById(R.id.textViewTitleMain)
+            val titleType: TextView = itemView.findViewById(R.id.textViewTitleType)
             val progressBar: ProgressBar = itemView.findViewById(R.id.progressBarLoading)
-            progressBar.visibility = View.VISIBLE
 
+            val rawTitle = item.title
+
+            val parenMatch = Regex("\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE).find(rawTitle)
+            val dashMatch = Regex("-(\\s*)(Single|EP|Album)", RegexOption.IGNORE_CASE).find(rawTitle)
+
+            val type = when {
+                parenMatch != null -> parenMatch.groupValues[1]
+                dashMatch != null -> dashMatch.groupValues[2]
+                else -> null
+            }?.replaceFirstChar { it.uppercaseChar() }
+            val cleanedTitle = rawTitle
+                .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
+                .trim()
+
+            titleMain.text = cleanedTitle
+            if (type != null) {
+                titleType.text = "($type)"
+                titleType.visibility = View.VISIBLE
+            } else {
+                titleType.text = ""
+                titleType.visibility = View.GONE
+            }
+
+            progressBar.visibility = View.VISIBLE
             Glide.with(itemView.context).clear(albumArt)
 
             if (!item.albumArtUrl.isNullOrBlank()) {
@@ -92,7 +117,7 @@ class ReleaseAdapter(
                     .load(item.albumArtUrl)
                     .error(R.drawable.error_image)
                     .transition(DrawableTransitionOptions.withCrossFade())
-                    .transform(RoundedCorners(30))
+                    .transform(RoundedCorners(50))
                     .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                         override fun onLoadFailed(
                             e: GlideException?,

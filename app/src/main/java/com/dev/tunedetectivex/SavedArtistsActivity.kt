@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.Toast
@@ -17,7 +18,6 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dev.tunedetectivex.api.ITunesApiService
-import com.dev.tunedetectivex.util.ItunesResultDialogHelper
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -69,7 +69,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         setupSearchView()
         setupSpinner()
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         val isFirstRunSavedArtists = sharedPreferences.getBoolean("isFirstRunSavedArtists", true)
 
         if (isFirstRunSavedArtists) {
@@ -216,6 +216,7 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun setupRecyclerView() {
+        val actionButtonsContainer = findViewById<LinearLayout>(R.id.actionButtonsContainer)
         val ignoreBtn = findViewById<FloatingActionButton>(R.id.buttonIgnoreSelected)
         val deleteBtn = findViewById<FloatingActionButton>(R.id.buttonDeleteSelected)
 
@@ -230,8 +231,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         ).apply {
             onSelectionChanged = { selectedItems ->
                 val visible = selectedItems.isNotEmpty()
-                ignoreBtn.visibility = if (visible) View.VISIBLE else View.GONE
-                deleteBtn.visibility = if (visible) View.VISIBLE else View.GONE
+                actionButtonsContainer.visibility = if (visible) View.VISIBLE else View.GONE
             }
         }
 
@@ -244,12 +244,11 @@ class SavedArtistsActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Benachrichtigungen deaktiviert",
+                        getString(R.string.notifications_disabled),
                         Toast.LENGTH_SHORT
                     ).show()
                     artistAdapter.clearSelection()
-                    ignoreBtn.visibility = View.GONE
-                    deleteBtn.visibility = View.GONE
+                    actionButtonsContainer.visibility = View.GONE
                     loadSavedArtists()
                 }
             }
@@ -273,12 +272,11 @@ class SavedArtistsActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@SavedArtistsActivity,
-                        "Künstler gelöscht",
+                        getString(R.string.artists_deleted),
                         Toast.LENGTH_SHORT
                     ).show()
                     artistAdapter.clearSelection()
-                    ignoreBtn.visibility = View.GONE
-                    deleteBtn.visibility = View.GONE
+                    actionButtonsContainer.visibility = View.GONE
                     loadSavedArtists()
                 }
             }
@@ -395,7 +393,7 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+                val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
                 val itunesSupportEnabled =
                     sharedPreferences.getBoolean("itunesSupportEnabled", false)
                 val attemptCount = getItunesAttemptCount()
@@ -451,74 +449,6 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                     artistAdapter.submitList(allArtists)
 
-                    Log.d("SavedArtistsActivity", "🔄 Auto-Fix completed:")
-                    Log.d("SavedArtistsActivity", "🟢 Deezer-IDs added: $deezerUpdated")
-                    Log.d("SavedArtistsActivity", "🔵 iTunes-IDs added: $itunesUpdated")
-
-                    if (itunesSupportEnabled) {
-                        when (attemptCount) {
-                            0 -> Toast.makeText(
-                                this@SavedArtistsActivity,
-                                getString(R.string.itunes_attempt_1),
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            1 -> Toast.makeText(
-                                this@SavedArtistsActivity,
-                                getString(R.string.itunes_attempt_2),
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            2 -> Toast.makeText(
-                                this@SavedArtistsActivity,
-                                getString(R.string.itunes_attempt_3),
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            3 -> Toast.makeText(
-                                this@SavedArtistsActivity,
-                                getString(R.string.itunes_attempt_final),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        ItunesResultDialogHelper.showResultSummaryDialog(
-                            context = this@SavedArtistsActivity,
-                            deezerUpdated = deezerUpdated,
-                            itunesUpdated = itunesUpdated,
-                            notMatchedArtists = notMatched,
-                            coroutineScope = lifecycleScope,
-                            onDeleteArtist = { artist -> deleteArtist(artist) },
-                            onRescanArtist = { artist, _ ->
-                                val updated = lifecycleScope.async(Dispatchers.IO) {
-                                    db.savedArtistDao().getArtistById(artist.id)
-                                        ?.let { fetchArtistDetailsByDiscography(it) }
-                                }
-                                updated.await()?.let {
-                                    val newList = allArtists.toMutableList()
-                                    newList.replaceFirstOrAdd(it.toItem())
-                                    allArtists = newList
-                                    artistAdapter.submitList(newList)
-                                }
-                            },
-                            onManualSelect = { artist, selectedId ->
-                                lifecycleScope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        db.savedArtistDao().updateItunesId(artist.id, selectedId)
-                                    }
-                                    val newList = allArtists.toMutableList()
-                                    newList.replaceFirstOrAdd(artist.copy(itunesId = selectedId))
-                                    allArtists = newList
-                                    artistAdapter.submitList(newList)
-                                    Toast.makeText(
-                                        this@SavedArtistsActivity,
-                                        getString(R.string.artist_updated, artist.name),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        )
-                    }
                 }
             } catch (e: Exception) {
                 Log.e("SavedArtistsActivity", "Error with loadSavedArtists: ${e.message}", e)
@@ -531,9 +461,8 @@ class SavedArtistsActivity : AppCompatActivity() {
         }
     }
 
-
     private suspend fun fetchArtistDetailsByDiscography(artist: SavedArtist): SavedArtist? {
-        val prefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val prefs = applicationContext.getSharedPreferences("AppSettings", MODE_PRIVATE)
         val itunesSupportEnabled = prefs.getBoolean("itunesSupportEnabled", false)
 
         if (itunesSupportEnabled) {
@@ -647,15 +576,6 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
 
-    private fun MutableList<SavedArtistItem>.replaceFirstOrAdd(newItem: SavedArtistItem) {
-        val index = indexOfFirst { it.id == newItem.id }
-        if (index != -1) {
-            this[index] = newItem
-        } else {
-            add(newItem)
-        }
-    }
-
     private suspend fun fetchArtistDetails(
         artist: SavedArtistItem,
         customName: String? = null
@@ -738,7 +658,8 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     fun normalizeTitle(title: String): String {
-        return title.lowercase(Locale.getDefault())
+        return title
+            .lowercase(Locale.getDefault())
             .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
             .replace(Regex("[^a-z0-9]+"), " ")
             .trim()
@@ -783,27 +704,40 @@ class SavedArtistsActivity : AppCompatActivity() {
                     async { fetchReleasesForArtist(artist) }
                 }.awaitAll().flatten()
             }
+            val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-            val uniqueReleases = releaseItems.distinctBy {
-                val normTitle = normalizeTitle(it.title)
-                val shortDate = it.releaseDate.take(10)
-                "$normTitle|$shortDate"
+            val grouped = releaseItems.groupBy {
+                "${normalizeTitle(it.title)}|${it.releaseDate.take(10)}"
             }
 
-            val sortedReleaseItems = uniqueReleases.sortedByDescending {
-                try {
-                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
-                } catch (e: Exception) {
-                    null
+            val deduplicated = grouped.mapNotNull { (_, group) ->
+                group.maxWithOrNull { a, b ->
+                    val dateA = try { format.parse(a.releaseDate) } catch (e: Exception) { null }
+                    val dateB = try { format.parse(b.releaseDate) } catch (e: Exception) { null }
+
+                    val cmpDate = when {
+                        dateA == null && dateB == null -> 0
+                        dateA == null -> -1
+                        dateB == null -> 1
+                        else -> dateA.compareTo(dateB)
+                    }
+
+                    if (cmpDate != 0) cmpDate * -1 else {
+                        val scoreA = (if (a.albumArtUrl.isNotBlank()) 1 else 0) + (if (!a.artistImageUrl.isNullOrBlank()) 1 else 0)
+                        val scoreB = (if (b.albumArtUrl.isNotBlank()) 1 else 0) + (if (!b.artistImageUrl.isNullOrBlank()) 1 else 0)
+
+                        scoreA.compareTo(scoreB)
+                    }
                 }
+            }
+
+            val sorted = deduplicated.sortedByDescending {
+                try { format.parse(it.releaseDate)?.time } catch (e: Exception) { null }
             }
 
             withContext(Dispatchers.Main) {
                 val adapter = ReleaseAdapter { release ->
-                    val intent = Intent(
-                        this@SavedArtistsActivity,
-                        ReleaseDetailsActivity::class.java
-                    ).apply {
+                    val intent = Intent(this@SavedArtistsActivity, ReleaseDetailsActivity::class.java).apply {
                         putExtra("releaseId", release.id)
                         putExtra("releaseTitle", release.title)
                         putExtra("artistName", release.artistName)
@@ -815,12 +749,21 @@ class SavedArtistsActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
 
+                val prettifiedList = sorted.map { release ->
+                    val rawTitle = release.title
+                    val cleanedTitle = rawTitle.replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "").trim()
+                    val typeMatch = Regex("(?i)\\b(Single|EP|Album)\\b").find(rawTitle)
+                    val type = typeMatch?.value?.replaceFirstChar { it.uppercaseChar() }
+
+                    release.copy(title = if (type != null) "$cleanedTitle ($type)" else cleanedTitle)
+                }
+
                 recyclerView.adapter = adapter
-                adapter.submitList(sortedReleaseItems)
-                recyclerView.visibility = if (sortedReleaseItems.isNotEmpty()) View.VISIBLE else View.GONE
+                adapter.submitList(prettifiedList)
+                recyclerView.visibility = if (prettifiedList.isNotEmpty()) View.VISIBLE else View.GONE
                 recyclerView.scrollToPosition(0)
 
-                val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+                val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
                 val isFirstRunReleases = sharedPreferences.getBoolean("isFirstRunReleases", true)
                 if (isFirstRunReleases) {
                     showReleasesTutorial()
@@ -834,7 +777,7 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
         val isNetworkAvailable =
             WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
@@ -860,7 +803,8 @@ class SavedArtistsActivity : AppCompatActivity() {
                         releaseDate = release.release_date,
                         apiSource = "Deezer",
                         deezerId = release.id,
-                        artistImageUrl = artistImage
+                        artistImageUrl = artistImage,
+                        releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
                     )
                 }
                 releases.addAll(deezerReleases)
@@ -898,7 +842,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                                 releaseDate = album.releaseDate ?: "Unknown",
                                 apiSource = "iTunes",
                                 itunesId = album.collectionId,
-                                artistImageUrl = artistImage
+                                artistImageUrl = artistImage,
                             )
                         }
                     releases.addAll(iTunesReleases)

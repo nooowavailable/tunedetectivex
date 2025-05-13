@@ -95,7 +95,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         editor = sharedPreferences.edit()
 
         setContentView(R.layout.activity_settings)
@@ -171,7 +171,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
 
-        sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
         editor = sharedPreferences.edit()
 
         findViewById<MaterialButton>(R.id.button_backup).setOnClickListener {

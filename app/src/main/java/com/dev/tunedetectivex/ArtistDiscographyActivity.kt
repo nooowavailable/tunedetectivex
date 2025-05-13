@@ -99,21 +99,24 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             if (deezerLoaded && itunesLoaded) {
                 showLoading(false)
 
-                unifiedAlbums.sortByDescending {
-                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
-                        ?: 0L
+                val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+                val uniqueAlbums = unifiedAlbums.distinctBy {
+                    normalizeTitle(it.title) + "|" + it.releaseDate.take(10)
                 }
 
-                recyclerView.adapter = UnifiedDiscographyAdapter(unifiedAlbums) { album ->
+                val sorted = uniqueAlbums.sortedByDescending {
+                    try { format.parse(it.releaseDate)?.time } catch (e: Exception) { null }
+                }
+
+                recyclerView.adapter = UnifiedDiscographyAdapter(sorted) { album ->
                     album.deezerId?.let { selectedArtist?.id = it }
                     album.itunesId?.let { selectedArtist?.itunesId = it }
 
                     val isFromDeezer = album.deezerId != null
-                    val releaseId =
-                        if (isFromDeezer) album.deezerId!!.toLong() else album.itunesId!!.toLong()
+                    val releaseId = if (isFromDeezer) album.deezerId!!.toLong() else album.itunesId!!.toLong()
 
-                    val validCoverUrl =
-                        album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
+                    val validCoverUrl = album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
 
                     Intent(this, ReleaseDetailsActivity::class.java).apply {
                         putExtra("releaseId", releaseId)
@@ -129,7 +132,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     .load(artistImageUrl)
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.error_image)
-                    .transform(RoundedCorners(30))
+                    .transform(RoundedCorners(50))
                     .into(findViewById(R.id.imageViewArtist))
 
                 recyclerView.visibility = View.VISIBLE
@@ -224,13 +227,24 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun extractReleaseType(title: String): String? {
+        val parenMatch = Regex("\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE).find(title)
+        val dashMatch = Regex("-(\\s*)(Single|EP|Album)", RegexOption.IGNORE_CASE).find(title)
+
         return when {
-            title.contains(" - Single", ignoreCase = true) -> "Single"
-            title.contains(" - EP", ignoreCase = true) -> "EP"
-            title.contains(" - Album", ignoreCase = true) -> "Album"
+            parenMatch != null -> parenMatch.groupValues[1]
+            dashMatch != null -> dashMatch.groupValues[2]
             else -> null
-        }
+        }?.replaceFirstChar { it.uppercaseChar() }
     }
+
+    private fun normalizeTitle(title: String): String {
+        return title
+            .lowercase(Locale.getDefault())
+            .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("[^a-z0-9]+"), " ")
+            .trim()
+    }
+
 
     private fun showLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE

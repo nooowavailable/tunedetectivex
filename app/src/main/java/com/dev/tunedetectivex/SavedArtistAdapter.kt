@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
+
 data class SavedArtistItem(
     val id: Long,
     val name: String = "Unknown Artist",

@@ -492,10 +492,27 @@ class MainActivity : ComponentActivity() {
         theme.resolveAttribute(android.R.attr.textColorSecondary, secondaryTypedValue, true)
         val secondaryColor = ContextCompat.getColor(this, secondaryTypedValue.resourceId)
 
-        unifiedAlbum.releaseType?.let {
-            val fullText = "${unifiedAlbum.title} ($it)"
+        val rawTitle = unifiedAlbum.title
+        val parenMatch = Regex("\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE).find(rawTitle)
+        val dashMatch = Regex("-(\\s*)(Single|EP|Album)", RegexOption.IGNORE_CASE).find(rawTitle)
+
+        val extractedType = when {
+            parenMatch != null -> parenMatch.groupValues[1]
+            dashMatch != null -> dashMatch.groupValues[2]
+            else -> null
+        }?.replaceFirstChar { it.uppercaseChar() }
+
+        val finalType = unifiedAlbum.releaseType ?: extractedType
+
+        val cleanedTitle = rawTitle
+            .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
+            .trim()
+
+        if (finalType != null) {
+            val fullText = "$cleanedTitle ($finalType)"
             val spannable = SpannableString(fullText)
-            val start = fullText.indexOf("($it)")
+            val start = fullText.indexOf("($finalType)")
 
             spannable.setSpan(
                 ForegroundColorSpan(primaryColor),
@@ -512,8 +529,8 @@ class MainActivity : ComponentActivity() {
             )
 
             textViewAlbumTitle.text = spannable
-        } ?: run {
-            textViewAlbumTitle.text = unifiedAlbum.title
+        } else {
+            textViewAlbumTitle.text = cleanedTitle
             textViewAlbumTitle.setTextColor(primaryColor)
         }
 
@@ -535,9 +552,7 @@ class MainActivity : ComponentActivity() {
             .circleCrop()
             .into(imageViewArtistProfile)
 
-
         progressBar.visibility = View.VISIBLE
-
         val cornerRadius = 50f
         val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
 
@@ -575,14 +590,8 @@ class MainActivity : ComponentActivity() {
                 }
             })
 
-        unifiedAlbum.deezerId?.let { id ->
-            selectedArtist?.id = id
-        }
-
-
-        unifiedAlbum.itunesId?.let { id ->
-            selectedArtist?.itunesId = id
-        }
+        unifiedAlbum.deezerId?.let { selectedArtist?.id = it }
+        unifiedAlbum.itunesId?.let { selectedArtist?.itunesId = it }
 
         updateSaveButton()
 
@@ -590,11 +599,8 @@ class MainActivity : ComponentActivity() {
             val deezerId = unifiedAlbum.deezerId
             val itunesId = unifiedAlbum.itunesId
 
-            val itunesEnabled = isItunesSupportEnabled()
-
-            if (deezerId == null && itunesId != null && !itunesEnabled) {
-                Toast.makeText(this, "No valid API source available", Toast.LENGTH_SHORT)
-                    .show()
+            if (deezerId == null && itunesId != null && !isItunesSupportEnabled()) {
+                Toast.makeText(this, "No valid API source available", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -603,16 +609,8 @@ class MainActivity : ComponentActivity() {
                 putExtra("releaseTitle", unifiedAlbum.title)
                 putExtra("artistName", unifiedAlbum.artistName)
                 putExtra("albumArtUrl", unifiedAlbum.coverUrl)
-
-                if (unifiedAlbum.deezerId != null && unifiedAlbum.id.toLongOrNull() != null) {
-                    putExtra(
-                        "deezerId",
-                        unifiedAlbum.id.toLong()
-                    )
-                }
-                if (isItunesSupportEnabled()) {
-                    unifiedAlbum.itunesId?.let { putExtra("itunesId", it) }
-                }
+                unifiedAlbum.deezerId?.let { putExtra("deezerId", it) }
+                unifiedAlbum.itunesId?.let { putExtra("itunesId", it) }
             }
 
             startActivity(intent)
@@ -1336,7 +1334,6 @@ class MainActivity : ComponentActivity() {
                 return@launch
             }
 
-
             val releaseItems = coroutineScope {
                 savedArtists.map { artist ->
                     async { fetchReleasesForArtist(artist) }
@@ -1349,13 +1346,24 @@ class MainActivity : ComponentActivity() {
                 "$normTitle|$shortDate"
             }
 
-            val sortedReleaseItems = uniqueReleases.sortedByDescending {
-                try {
-                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
-                } catch (e: Exception) {
-                    null
+            val sortedReleaseItems = uniqueReleases
+                .map { release ->
+                    val cleanedTitle = release.title
+                        .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
+                        .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
+                        .trim()
+
+                    val type = release.releaseType?.replaceFirstChar { it.uppercaseChar() }
+                    val displayTitle = if (!type.isNullOrBlank()) "$cleanedTitle ($type)" else cleanedTitle
+                    release.copy(title = displayTitle)
                 }
-            }
+                .sortedByDescending {
+                    try {
+                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
 
             withContext(Dispatchers.Main) {
                 progressBar.visibility = View.GONE
@@ -1369,16 +1377,15 @@ class MainActivity : ComponentActivity() {
                 recyclerViewReleases.visibility = View.VISIBLE
 
                 val adapter = ReleaseAdapter { release ->
-                    val intent =
-                        Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
-                            putExtra("releaseId", release.id)
-                            putExtra("releaseTitle", release.title)
-                            putExtra("artistName", release.artistName)
-                            putExtra("albumArtUrl", release.albumArtUrl)
-                            putExtra("deezerId", release.deezerId ?: -1L)
-                            putExtra("itunesId", release.itunesId ?: -1L)
-                            putExtra("apiSource", release.apiSource)
-                        }
+                    val intent = Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
+                        putExtra("releaseId", release.id)
+                        putExtra("releaseTitle", release.title)
+                        putExtra("artistName", release.artistName)
+                        putExtra("albumArtUrl", release.albumArtUrl)
+                        putExtra("deezerId", release.deezerId ?: -1L)
+                        putExtra("itunesId", release.itunesId ?: -1L)
+                        putExtra("apiSource", release.apiSource)
+                    }
                     startActivity(intent)
                 }
 
@@ -1406,7 +1413,8 @@ class MainActivity : ComponentActivity() {
                         releaseDate = release.release_date,
                         apiSource = "Deezer",
                         deezerId = release.id,
-                        artistImageUrl = artistImage
+                        artistImageUrl = artistImage,
+                        releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
                     )
                 } ?: emptyList()
                 releases.addAll(deezerReleases)
@@ -1428,18 +1436,21 @@ class MainActivity : ComponentActivity() {
                     val iTunesReleases = response.body()?.results.orEmpty()
                         .filter { it.collectionType in listOf("Album", "EP", "Single") }
                         .map { album ->
+                            val extractedType = Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE)
+                                .find(album.collectionName ?: "")
+                                ?.groupValues?.get(1)
+                                ?.replaceFirstChar { it.uppercaseChar() }
+
                             ReleaseItem(
                                 id = album.collectionId ?: -1L,
                                 title = album.collectionName ?: "Unknown",
                                 artistName = album.artistName ?: artist.name,
-                                albumArtUrl = album.artworkUrl100?.replace(
-                                    "100x100bb",
-                                    "1200x1200bb"
-                                ) ?: "",
+                                albumArtUrl = album.artworkUrl100?.replace("100x100bb", "1200x1200bb") ?: "",
                                 releaseDate = album.releaseDate ?: "Unknown",
                                 apiSource = "iTunes",
                                 itunesId = album.collectionId,
-                                artistImageUrl = artistImage
+                                artistImageUrl = artistImage,
+                                releaseType = extractedType
                             )
                         }
                     releases.addAll(iTunesReleases)
