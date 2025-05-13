@@ -67,15 +67,6 @@ class FetchReleasesWorker(
             .create(ITunesApiService::class.java)
 
         createNotificationChannels()
-        checkNetworkTypeAndSetFlag()
-    }
-
-    private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
     }
 
     override suspend fun doWork(): Result {
@@ -153,6 +144,14 @@ class FetchReleasesWorker(
     }
 
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)) {
+            Log.w(TAG, "Aborting fetch: selected network type ($networkType) not available.")
+            return@withContext
+        }
+
         Log.d(TAG, "Fetching saved artists from database (notifications enabled only)...")
         val savedArtists = db.savedArtistDao().getAllWithNotificationsEnabled()
         Log.d(TAG, "Found ${savedArtists.size} artists with notifications enabled.")
@@ -168,7 +167,15 @@ class FetchReleasesWorker(
     }
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
-        val sharedPreferences = applicationContext.getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkPrefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = networkPrefs.getString("networkType", "Any") ?: "Any"
+
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)) {
+            Log.w(TAG, "Skipping check: network type '$networkType' not available.")
+            return
+        }
+
         val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
         val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()

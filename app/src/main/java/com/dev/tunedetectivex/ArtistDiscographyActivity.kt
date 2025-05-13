@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -69,20 +70,21 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBarLoading)
         supportActionBar?.title = artistName
 
-        checkNetworkTypeAndSetFlag()
 
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
         loadCombinedDiscography(selectedArtist?.id ?: -1L, selectedArtist?.itunesId ?: -1L)
     }
 
-    private fun checkNetworkTypeAndSetFlag() {
+    private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
+
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
-    }
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
+            return
+        }
 
-    private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
         showLoading(true)
 
         val unifiedAlbums = mutableListOf<UnifiedAlbum>()
@@ -245,12 +247,19 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             .trim()
     }
 
-
     private fun showLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
     private fun setupApiService() {
+
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val retrofit = Retrofit.Builder()
             .baseUrl("https://api.deezer.com/")
             .addConverterFactory(GsonConverterFactory.create())

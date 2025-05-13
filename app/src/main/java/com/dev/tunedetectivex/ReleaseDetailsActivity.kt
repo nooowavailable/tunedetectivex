@@ -140,7 +140,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun isItunesSupportEnabled(): Boolean {
-        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return prefs.getBoolean("itunesSupportEnabled", false)
     }
 
@@ -183,7 +183,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 .load(url.toSafeArtwork())
                 .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .error(R.drawable.error_image)
-                .transform(RoundedCorners(50))
+                .transform(RoundedCorners(20))
                 .into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
                         resource: Drawable,
@@ -395,7 +395,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                     .load(coverUrl)
                                     .placeholder(R.drawable.ic_discography)
                                     .error(R.drawable.error_image)
-                                    .transform(RoundedCorners(50))
+                                    .transform(RoundedCorners(30))
                                     .into(albumCover)
                             }
 
@@ -436,7 +436,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 .load(coverUrl)
                 .placeholder(R.drawable.ic_discography)
                 .error(R.drawable.ic_discography)
-                .transform(RoundedCorners(50))
+                .transform(RoundedCorners(30))
                 .into(albumCover)
         } else {
             albumCover.setImageResource(R.drawable.error_image)
@@ -550,43 +550,42 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
 
     private fun loadTracklistFromITunes(releaseId: Long) {
-        showLoading(true)
+        checkNetworkAndProceed {
+            showLoading(true)
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://itunes.apple.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://itunes.apple.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
 
-        val iTunesService = retrofit.create(ITunesApiService::class.java)
+            val iTunesService = retrofit.create(ITunesApiService::class.java)
 
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = iTunesService.lookupAlbumWithTracks(releaseId).execute()
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    if (response.isSuccessful) {
-                        val tracks = response.body()?.results
-                            ?.filter { it.wrapperType == "track" && it.kind == "song" }
-                            ?.map {
-                                Track(
-                                    title = it.trackName
-                                        ?: this@ReleaseDetailsActivity.getString(R.string.unknown_title),
-                                    duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
-                                )
-                            } ?: emptyList()
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val response = iTunesService.lookupAlbumWithTracks(releaseId).execute()
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        if (response.isSuccessful) {
+                            val tracks = response.body()?.results
+                                ?.filter { it.wrapperType == "track" && it.kind == "song" }
+                                ?.map {
+                                    Track(
+                                        title = it.trackName
+                                            ?: getString(R.string.unknown_title),
+                                        duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
+                                    )
+                                } ?: emptyList()
 
-                        trackAdapter.submitList(tracks)
-                    } else {
-                        Log.e(
-                            "ReleaseDetailsActivity",
-                            "iTunes: Failed to load tracks: ${response.message()}"
-                        )
+                            trackAdapter.submitList(tracks)
+                        } else {
+                            Log.e("ReleaseDetailsActivity", "iTunes: Failed to load tracks: ${response.message()}")
+                        }
                     }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    Log.e("ReleaseDetailsActivity", "iTunes: Error loading tracks", e)
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        showLoading(false)
+                        Log.e("ReleaseDetailsActivity", "iTunes: Error loading tracks", e)
+                    }
                 }
             }
         }

@@ -18,7 +18,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
             try {
                 val artists = savedArtistDao.getAll()
                 val sharedPreferences =
-                    context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+                    context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
                 val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
                 val releaseAgeWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
                 val fetchDelay = sharedPreferences.getInt("fetchDelay", 1)
@@ -74,7 +74,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                     }
 
                     val sharedPreferences =
-                        context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+                        context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
                     with(sharedPreferences.edit()) {
                         putInt("fetchInterval", backupData.fetchInterval)
                         putInt("releaseAgeWeeks", backupData.releaseAgeWeeks)

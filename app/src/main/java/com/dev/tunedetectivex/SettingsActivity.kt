@@ -95,7 +95,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         editor = sharedPreferences.edit()
 
         setContentView(R.layout.activity_settings)
@@ -171,7 +171,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
 
-        sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         editor = sharedPreferences.edit()
 
         findViewById<MaterialButton>(R.id.button_backup).setOnClickListener {
@@ -376,7 +376,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun saveFetchInterval(minutes: Int) {
         Log.d("SettingsActivity", "saveFetchInterval called with: $minutes")
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         sharedPreferences.edit { putInt("fetchInterval", minutes) }
         Log.d("SettingsActivity", "Fetch interval saved in SharedPreferences.")
         setupFetchReleasesWorker(minutes)
@@ -384,27 +384,27 @@ class SettingsActivity : AppCompatActivity() {
 
 
     private fun saveFetchDelay(seconds: Int) {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         sharedPreferences.edit { putInt("fetchDelay", seconds) }
     }
 
     private fun loadFetchDelay(): Int {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return sharedPreferences.getInt("fetchDelay", 1)
     }
 
     private fun saveReleaseAgePreference(weeks: Int) {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         sharedPreferences.edit { putInt("releaseAgeWeeks", weeks) }
     }
 
     private fun loadFetchInterval(): Int {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return sharedPreferences.getInt("fetchInterval", 90)
     }
 
     private fun loadReleaseAgePreference(): Int {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return sharedPreferences.getInt("releaseAgeWeeks", 4)
     }
 
@@ -492,12 +492,12 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun isItunesSupportEnabled(): Boolean {
-        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return prefs.getBoolean("itunesSupportEnabled", false)
     }
 
     private fun setItunesSupportEnabled(enabled: Boolean) {
-        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         prefs.edit { putBoolean("itunesSupportEnabled", enabled) }
     }
 
@@ -512,12 +512,12 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun isAutoLoadReleasesEnabled(): Boolean {
-        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return prefs.getBoolean("autoLoadReleases", false)
     }
 
     private fun setAutoLoadReleasesEnabled(enabled: Boolean) {
-        val prefs = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         prefs.edit { putBoolean("autoLoadReleases", enabled) }
     }
 }

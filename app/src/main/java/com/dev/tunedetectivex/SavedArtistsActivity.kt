@@ -69,7 +69,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         setupSearchView()
         setupSpinner()
 
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isFirstRunSavedArtists = sharedPreferences.getBoolean("isFirstRunSavedArtists", true)
 
         if (isFirstRunSavedArtists) {
@@ -393,7 +393,7 @@ class SavedArtistsActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+                val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
                 val itunesSupportEnabled =
                     sharedPreferences.getBoolean("itunesSupportEnabled", false)
                 val attemptCount = getItunesAttemptCount()
@@ -462,7 +462,7 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private suspend fun fetchArtistDetailsByDiscography(artist: SavedArtist): SavedArtist? {
-        val prefs = applicationContext.getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val prefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val itunesSupportEnabled = prefs.getBoolean("itunesSupportEnabled", false)
 
         if (itunesSupportEnabled) {
@@ -763,7 +763,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                 recyclerView.visibility = if (prettifiedList.isNotEmpty()) View.VISIBLE else View.GONE
                 recyclerView.scrollToPosition(0)
 
-                val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+                val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
                 val isFirstRunReleases = sharedPreferences.getBoolean("isFirstRunReleases", true)
                 if (isFirstRunReleases) {
                     showReleasesTutorial()
@@ -777,7 +777,7 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
-        val sharedPreferences = getSharedPreferences("AppSettings", MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
         val isNetworkAvailable =
             WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
