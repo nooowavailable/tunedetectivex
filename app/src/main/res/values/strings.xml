@@ -160,7 +160,7 @@
     <string name="exit_confirmation_message">Are you sure you want to exit the app?</string>
     <string name="exit_confirmation_positive">Yes</string>
     <string name="exit_confirmation_negative">No</string>
-    <string name="toggle_folder_import">Toggle folder / meta-data import function</string>
+    <string name="toggle_folder_import">Toggle folder / meta-data import function, may be removed one day.</string>
     <string name="experimental_settings">Advanced / Experimental Options</string>
     <string name="folder_import_feature_title">Folder Import (Meta-Data)</string>
     <string name="folder_import_feature_enabled_message">The folder import is currently enabled. Do you want to turn it off?</string>
@@ -249,6 +249,9 @@ including the newest release from either platform.\n\n
     <string name="fetch_delay_description">Waiting time (in seconds) before fetching new releases for each artist.</string>
     <string name="notifications_disabled">Notifications disabled</string>
     <string name="artists_deleted">Artists deleted</string>
+    <string name="auto_load_releases_title">Auto-load saved releases</string>
+    <string name="auto_load_releases_description">If enabled, your saved artist releases will load automatically on app start.</string>
+    <string name="restart_required_note">* Manual app restart required to apply changes.</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

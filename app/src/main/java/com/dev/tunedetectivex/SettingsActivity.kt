@@ -323,7 +323,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun showNetworkTypeDialog() {
         val networkTypes = arrayOf(
             "Wi-Fi Only",
-            "Mobile Data Only",
             "Any"
         )
 
@@ -334,7 +333,6 @@ class SettingsActivity : AppCompatActivity() {
             .setSingleChoiceItems(
                 arrayOf(
                     getString(R.string.network_type_wifi),
-                    getString(R.string.network_type_mobile),
                     getString(R.string.network_type_any)
                 ),
                 networkTypes.indexOf(currentNetworkType)
@@ -435,6 +433,12 @@ class SettingsActivity : AppCompatActivity() {
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(
+                    findViewById<SwitchMaterial>(R.id.switch_auto_load_releases),
+                    getString(R.string.auto_load_releases_title),
+                    getString(R.string.auto_load_releases_description)
+                ).transparentTarget(true).cancelable(false),
+
+                TapTarget.forView(
                     releaseAgeSlider,
                     getString(R.string.release_age_title),
                     getString(R.string.release_age_description)
@@ -480,6 +484,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 override fun onSequenceStep(tapTarget: TapTarget, targetClicked: Boolean) {}
+
                 override fun onSequenceCanceled(tapTarget: TapTarget?) {
                     Toast.makeText(
                         this@SettingsActivity,
@@ -513,7 +518,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun isAutoLoadReleasesEnabled(): Boolean {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        return prefs.getBoolean("autoLoadReleases", false)
+        return prefs.getBoolean("autoLoadReleases", true)
     }
 
     private fun setAutoLoadReleasesEnabled(enabled: Boolean) {

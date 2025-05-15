@@ -331,7 +331,7 @@ class MainActivity : ComponentActivity() {
 
     private fun isAutoLoadReleasesEnabled(): Boolean {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        return prefs.getBoolean("autoLoadReleases", false)
+        return prefs.getBoolean("autoLoadReleases", true)
     }
 
 

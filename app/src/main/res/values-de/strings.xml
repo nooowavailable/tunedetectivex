@@ -151,7 +151,7 @@
     <string name="exit_confirmation_message">Sicher, dass du die App verlassen möchten?</string>
     <string name="exit_confirmation_positive">Ja</string>
     <string name="exit_confirmation_negative">Nein</string>
-    <string name="toggle_folder_import">Aktiviere die (experimentelle) Ordner-Importier / Meta-Data Funktion</string>
+    <string name="toggle_folder_import">Aktiviere die (experimentelle) Ordner-Importier / Meta-Data Funktion, wird vielleicht eines Tages entfernt.</string>
     <string name="folder_import_feature_title">Ordner-Import</string>
     <string name="folder_import_feature_enabled_message">Der Ordner-Import ist derzeit aktiviert. Möchtest du ihn deaktivieren?</string>
     <string name="folder_import_feature_disabled_message">Der Ordner-Import ist derzeit deaktiviert. Möchtest du ihn aktivieren?</string>
@@ -249,6 +249,9 @@ inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
     <string name="release_type_default">Release</string>
     <string name="notifications_disabled">Benachrichtigungen deaktiviert</string>
     <string name="artists_deleted">Künstler gelöscht</string>
+    <string name="auto_load_releases_title">Releases automatisch anzeigen</string>
+    <string name="auto_load_releases_description">Wenn aktiviert, werden deine gespeicherten Künstler-Releases direkt beim Start geladen.</string>
+    <string name="restart_required_note">* Manueller Neustart der App erforderlich, um Änderungen zu übernehmen.</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>
