@@ -1372,11 +1372,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun loadSavedReleases() {
-
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val isNetworkAvailable = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
+
+        if (!isNetworkAvailable) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
+            progressBar.visibility = View.GONE
+            recyclerViewReleases.visibility = View.GONE
             return
         }
 
