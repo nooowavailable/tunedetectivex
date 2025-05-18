@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
@@ -22,11 +23,18 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                 val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
                 val releaseAgeWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
                 val fetchDelay = sharedPreferences.getInt("fetchDelay", 1)
+                val autoLoadReleases = sharedPreferences.getBoolean("autoLoadReleases", true)
+                val itunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
+                val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+
                 val backupData = BackupData(
                     artists = artists,
                     fetchInterval = fetchInterval,
                     releaseAgeWeeks = releaseAgeWeeks,
-                    fetchDelay = fetchDelay
+                    fetchDelay = fetchDelay,
+                    autoLoadReleases = autoLoadReleases,
+                    itunesSupportEnabled = itunesSupportEnabled,
+                    networkType = networkType
                 )
                 val json = gson.toJson(backupData)
                 withContext(Dispatchers.Main) {
@@ -51,6 +59,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
         }
     }
 
+    @SuppressLint("UseKtx")
     fun restoreBackup(uri: Uri) {
         CoroutineScope(Dispatchers.IO).launch {
             withContext(Dispatchers.Main) {
@@ -79,6 +88,9 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                         putInt("fetchInterval", backupData.fetchInterval)
                         putInt("releaseAgeWeeks", backupData.releaseAgeWeeks)
                         putInt("fetchDelay", backupData.fetchDelay)
+                        putBoolean("autoLoadReleases", backupData.autoLoadReleases)
+                        putBoolean("itunesSupportEnabled", backupData.itunesSupportEnabled)
+                        putString("networkType", backupData.networkType)
                         apply()
                     }
 
@@ -149,6 +161,9 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
         val artists: List<SavedArtist>,
         val fetchInterval: Int,
         val releaseAgeWeeks: Int,
-        val fetchDelay: Int
+        val fetchDelay: Int,
+        val autoLoadReleases: Boolean,
+        val itunesSupportEnabled: Boolean,
+        val networkType: String
     )
 }
