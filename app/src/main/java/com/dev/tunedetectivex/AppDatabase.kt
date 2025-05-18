@@ -4,8 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
@@ -25,35 +23,6 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        private val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                try {
-                    database.execSQL("ALTER TABLE saved_artist ADD COLUMN deezerId INTEGER")
-                } catch (_: Exception) {
-                }
-
-                try {
-                    database.execSQL("ALTER TABLE saved_artist ADD COLUMN itunesId INTEGER")
-                } catch (_: Exception) {
-                }
-
-                try {
-                    database.execSQL("ALTER TABLE saved_artist ADD COLUMN isFromDeezer INTEGER NOT NULL DEFAULT 0")
-                } catch (_: Exception) {
-                }
-
-                try {
-                    database.execSQL("ALTER TABLE saved_artist ADD COLUMN isFromITunes INTEGER NOT NULL DEFAULT 0")
-                } catch (_: Exception) {
-                }
-
-                try {
-                    database.execSQL("ALTER TABLE saved_artist ADD COLUMN lastReleaseType TEXT")
-                } catch (_: Exception) {
-                }
-            }
-        }
-
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -61,7 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .addMigrations(MIGRATION_3_4)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
