@@ -21,7 +21,7 @@ android {
         minSdk = 31
         targetSdk = 35
         versionCode = 7
-        versionName = "1.3"
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,13 +41,13 @@ android {
         create("github") {
             dimension = "default"
             applicationId = "com.dev.tunedetectivex"
-            versionName = "1.3-github"
+            versionName = "1.4-github"
         }
 
         create("accrescent") {
             dimension = "default"
             applicationId = "com.tunedetectivex.accrescent"
-            versionName = "1.3-accrescent"
+            versionName = "1.4-accrescent"
         }
     }
 
