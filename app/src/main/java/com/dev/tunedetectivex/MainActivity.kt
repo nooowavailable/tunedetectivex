@@ -83,7 +83,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var progressBar: ProgressBar
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
-    private var isNetworkRequestsAllowed = true
     private lateinit var buttonOpenDiscography: MaterialButton
     private lateinit var fabAbout: FloatingActionButton
     private lateinit var artistInfoContainer: LinearLayout
@@ -1165,7 +1164,7 @@ class MainActivity : ComponentActivity() {
 
         val artist = selectedArtist ?: return
         val releaseDate = textViewrelease_date.text.toString()
-        val profileImageUrl = artist.getBestPictureUrl() ?: ""
+        val profileImageUrl = artist.getBestPictureUrl()
         val releaseTitle = textViewAlbumTitle.text.toString()
 
         lifecycleScope.launch(Dispatchers.IO) {
@@ -1429,7 +1428,7 @@ class MainActivity : ComponentActivity() {
                 .sortedByDescending {
                     try {
                         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                 }
@@ -1497,7 +1496,7 @@ class MainActivity : ComponentActivity() {
                         apiSource = "Deezer",
                         deezerId = release.id,
                         artistImageUrl = artistImage,
-                        releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
+                        releaseType = release.record_type.replaceFirstChar { it.uppercaseChar() }
                     )
                 } ?: emptyList()
                 releases.addAll(deezerReleases)

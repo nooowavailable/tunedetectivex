@@ -1,16 +1,15 @@
 plugins {
-    id("org.jetbrains.kotlin.android") version "2.1.20-RC"  // Update to compatible Kotlin version
+    id("org.jetbrains.kotlin.android") version "2.2.0-RC"
     id("com.android.application") version "8.10.0"
     id("kotlin-android")
     id("kotlin-kapt")
-    id("com.google.devtools.ksp") version "2.1.20-RC-1.0.31"
+    id("com.google.devtools.ksp") version "2.2.0-RC-2.0.1"
 }
 
 android {
     namespace = "com.dev.tunedetectivex"
     compileSdk = 35
     flavorDimensions += "default"
-
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -22,7 +21,6 @@ android {
         targetSdk = 35
         versionCode = 7
         versionName = "1.4"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -43,7 +41,6 @@ android {
             applicationId = "com.dev.tunedetectivex"
             versionName = "1.4-github"
         }
-
         create("accrescent") {
             dimension = "default"
             applicationId = "com.tunedetectivex.accrescent"
@@ -52,12 +49,14 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     buildFeatures {

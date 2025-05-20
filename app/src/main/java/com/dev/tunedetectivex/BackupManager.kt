@@ -1,9 +1,9 @@
 package com.dev.tunedetectivex
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
+import androidx.core.content.edit
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +59,6 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
         }
     }
 
-    @SuppressLint("UseKtx")
     fun restoreBackup(uri: Uri) {
         CoroutineScope(Dispatchers.IO).launch {
             withContext(Dispatchers.Main) {
@@ -84,14 +83,13 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
 
                     val sharedPreferences =
                         context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-                    with(sharedPreferences.edit()) {
+                    sharedPreferences.edit {
                         putInt("fetchInterval", backupData.fetchInterval)
                         putInt("releaseAgeWeeks", backupData.releaseAgeWeeks)
                         putInt("fetchDelay", backupData.fetchDelay)
                         putBoolean("autoLoadReleases", backupData.autoLoadReleases)
                         putBoolean("itunesSupportEnabled", backupData.itunesSupportEnabled)
                         putString("networkType", backupData.networkType)
-                        apply()
                     }
 
                     withContext(Dispatchers.Main) {
@@ -112,7 +110,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                                 savedArtistDao.updateArtistDetails(artist.id, profileImageUrl)
 
                                 val releases = apiService.getArtistReleases(
-                                    artist.deezerId ?: return@launch,
+                                    artist.deezerId,
                                     0
                                 ).execute().body()?.data ?: emptyList()
 

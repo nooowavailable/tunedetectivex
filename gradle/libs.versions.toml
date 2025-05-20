@@ -2,36 +2,27 @@
 activityKtx = "1.10.1"
 agp = "8.10.0"
 compiler = "4.14.2"
-fontawesome = "0.2.0"
-fontawesomeVersion = "0.0.5"
-glide = "4.12.0"
-gradle = "14.0.2"
-kotlin = "1.9.0"
-coreKtx = "1.15.0"
+glide = "4.15.1"
+coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
-kotlinStdlib = "2.1.10"
-kotlinxCoroutinesAndroid = "1.7.3"
+kotlinStdlib = "2.1.21"
 kotlinxCoroutinesCore = "1.7.3"
-kotlinxCoroutinesCoreVersion = "1.7.3"
-lifecycleRuntimeKtx = "2.8.7"
-loggingInterceptor = "5.0.0"
+lifecycleRuntimeKtx = "2.9.0"
 material = "1.12.0"
 constraintlayout = "2.2.1"
-navigationFragmentKtx = "2.8.8"
-navigationUiKtx = "2.8.8"
+navigationFragmentKtx = "2.9.0"
+navigationUiKtx = "2.9.0"
 okhttp3Integration = "4.15.1"
 retrofit = "2.9.0"
 recyclerview = "1.4.0"
-roomRuntime = "2.6.1"
+roomRuntime = "2.7.1"
 taptargetview = "1.13.3"
-workRuntimeKtx = "2.10.0"
-swiperefreshlayout = "1.1.0"
+workRuntimeKtx = "2.10.1"
 
 [libraries]
-androidhive-fontawesome = { module = "info.androidhive:fontawesome", version.ref = "fontawesomeVersion" }
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
@@ -41,20 +32,15 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "compiler" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-fontawesome = { module = "com.shirishkoirala:FontAwesome", version.ref = "fontawesome" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
-gradle = { module = "com.chaquo.python:gradle", version.ref = "gradle" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesCore" }
-kotlinx-coroutines-android-v160 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
-kotlinx-coroutines-core-v160 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCoreVersion" }
 ksp = { module = "com.github.bumptech.glide:ksp", version.ref = "okhttp3Integration" }
-logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptor" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
@@ -62,10 +48,8 @@ androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation
 okhttp3-integration = { module = "com.github.bumptech.glide:okhttp3-integration", version.ref = "okhttp3Integration" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
-androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 taptargetview = { module = "com.getkeepsafe.taptargetview:taptargetview", version.ref = "taptargetview" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.1.20-RC" }
-
+kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.2.0-RC" }
