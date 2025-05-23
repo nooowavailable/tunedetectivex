@@ -19,7 +19,7 @@ android {
         applicationId = "com.tunedetectivex.nooowavailable"
         minSdk = 31
         targetSdk = 35
-        versionCode = 7
+        versionCode = 8
         versionName = "1.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
