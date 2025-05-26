@@ -51,5 +51,15 @@ This app uses by default the Deezer API (and via in-app settings (opt-in) the iT
 - **SHA256**: `20:9E:82:40:62:03:6E:B6:13:82:5D:F7:B8:11:44:25:B7:B6:10:09:FC:AF:5E:6F:B2:D9:B3:A9:6F:AE:10:57`
 
 ## 📥 Download Link
+<br>
+<a href="https://github.com/nooowavailable/tunedetectivex/releases">
+  <img src="https://img.shields.io/badge/GitHub-Download-black?logo=github&style=for-the-badge" alt="Download from GitHub" width="200"/>
+</a>
 
-[Download TuneDetectiveX](https://github.com/nooowavailable/tunedetectivex/releases)
+<br>
+<br>
+
+<a href="https://apt.izzysoft.de/fdroid/index/apk/com.dev.tunedetectivex">
+  <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Download from IzzyOnDroid" width="200"/>
+</a>
+
