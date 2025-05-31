@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">TDX</string>
     <string name="action_settings">Einstellungen</string>
-    <string name="importing_artist">Importieren  Künstler…</string>
+    <string name="importing_artist">Importiere Künstler…</string>
     <string name="artist_cover">Künstlerbild</string>
     <string name="textViewProgress">Fortschritt: 0/0</string>
     <string name="imageViewArtistCoverDesc">Bild des Künstlers</string>
