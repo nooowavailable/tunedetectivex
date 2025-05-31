@@ -13,7 +13,7 @@ import androidx.room.RoomDatabase
         SearchHistory::class
     ],
     version = 4,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun savedArtistDao(): SavedArtistDao
@@ -25,13 +25,12 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                val builder = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .fallbackToDestructiveMigration(true) // will be changed in v1.5
-                    .build()
+                val instance = builder.build()
                 INSTANCE = instance
                 instance
             }

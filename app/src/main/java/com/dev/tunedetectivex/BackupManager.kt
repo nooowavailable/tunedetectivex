@@ -36,7 +36,9 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                     itunesSupportEnabled = itunesSupportEnabled,
                     networkType = networkType
                 )
+
                 val json = gson.toJson(backupData)
+
                 withContext(Dispatchers.Main) {
                     context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                         outputStream.write(json.toByteArray(Charsets.UTF_8))
@@ -58,7 +60,6 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
             }
         }
     }
-
     fun restoreBackup(uri: Uri) {
         CoroutineScope(Dispatchers.IO).launch {
             withContext(Dispatchers.Main) {
@@ -70,26 +71,31 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                     val json = inputStream.bufferedReader().use { it.readText() }
                     val backupData = gson.fromJson(json, BackupData::class.java)
 
-                    val fixedArtists = backupData.artists.map {
+                    val artistsToInsert = backupData.artists?.map {
                         val fixedDeezerId = it.deezerId ?: it.id
                         it.copy(deezerId = fixedDeezerId)
+                    } ?: emptyList()
+
+                    if (artistsToInsert.isNotEmpty()) {
+                        savedArtistDao.insertAll(artistsToInsert)
+
+                        artistsToInsert.forEach { artist ->
+                            savedArtistDao.setNotifyOnNewRelease(artist.id, true)
+                        }
                     }
 
-                    savedArtistDao.insertAll(fixedArtists)
-
-                    fixedArtists.forEach { artist ->
-                        savedArtistDao.setNotifyOnNewRelease(artist.id, true)
-                    }
-
-                    val sharedPreferences =
-                        context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-                    sharedPreferences.edit {
-                        putInt("fetchInterval", backupData.fetchInterval)
-                        putInt("releaseAgeWeeks", backupData.releaseAgeWeeks)
-                        putInt("fetchDelay", backupData.fetchDelay)
-                        putBoolean("autoLoadReleases", backupData.autoLoadReleases)
-                        putBoolean("itunesSupportEnabled", backupData.itunesSupportEnabled)
-                        putString("networkType", backupData.networkType)
+                    context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE).edit {
+                        backupData.fetchInterval?.let { putInt("fetchInterval", it) }
+                        backupData.releaseAgeWeeks?.let { putInt("releaseAgeWeeks", it) }
+                        backupData.fetchDelay?.let { putInt("fetchDelay", it) }
+                        backupData.autoLoadReleases?.let { putBoolean("autoLoadReleases", it) }
+                        backupData.itunesSupportEnabled?.let {
+                            putBoolean(
+                                "itunesSupportEnabled",
+                                it
+                            )
+                        }
+                        backupData.networkType?.let { putString("networkType", it) }
                     }
 
                     withContext(Dispatchers.Main) {
@@ -98,21 +104,18 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                         }
                     }
 
-                    val fetchJobs = fixedArtists.map { artist ->
+                    val fetchJobs = artistsToInsert.map { artist ->
                         launch {
                             try {
-                                val artistDetails =
-                                    apiService.getArtistDetails(artist.deezerId ?: return@launch)
-                                        .execute().body()
-                                val profileImageUrl =
-                                    artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
+                                val deezerId = artist.deezerId ?: return@launch
+                                val artistDetailsResponse = apiService.getArtistDetails(deezerId).execute()
+                                val artistDetails = artistDetailsResponse.body()
+                                val profileImageUrl = artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
 
                                 savedArtistDao.updateArtistDetails(artist.id, profileImageUrl)
 
-                                val releases = apiService.getArtistReleases(
-                                    artist.deezerId,
-                                    0
-                                ).execute().body()?.data ?: emptyList()
+                                val releasesResponse = apiService.getArtistReleases(deezerId, 0).execute()
+                                val releases = releasesResponse.body()?.data ?: emptyList()
 
                                 releases.forEach { release ->
                                     savedArtistDao.insertRelease(
@@ -131,7 +134,6 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                             }
                         }
                     }
-
                     fetchJobs.forEach { it.join() }
 
                     withContext(Dispatchers.Main) {
@@ -154,14 +156,13 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
         }
     }
 
-
     data class BackupData(
-        val artists: List<SavedArtist>,
-        val fetchInterval: Int,
-        val releaseAgeWeeks: Int,
-        val fetchDelay: Int,
-        val autoLoadReleases: Boolean,
-        val itunesSupportEnabled: Boolean,
-        val networkType: String
+        val artists: List<SavedArtist>? = null,
+        val fetchInterval: Int? = null,
+        val releaseAgeWeeks: Int? = null,
+        val fetchDelay: Int? = null,
+        val autoLoadReleases: Boolean? = null,
+        val itunesSupportEnabled: Boolean? = null,
+        val networkType: String? = null
     )
 }
