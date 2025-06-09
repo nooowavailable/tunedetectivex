@@ -18,6 +18,7 @@
     <string name="general_settings">Allgemeine Einstellungen</string>
     <string name="intervalInput">Abrufintervall (in Minuten)</string>
     <string name="releaseAgeLabel">Benachrichtigungen für Veröffentlichungen innerhalb der letzten 4 Wochen</string>
+    <string name="futureReleaseMonthsLabel">Benachrichtigungen für Veröffentlichungen innerhalb der nächsten 4 Monate</string>
     <string name="fetchSettings">Intervall für automatische Updates</string>
     <string name="BatteryNetwork">Batterie und Netzwerk</string>
     <string name="BatteryRestrictions">Batterienutzung Einschränkungen</string>

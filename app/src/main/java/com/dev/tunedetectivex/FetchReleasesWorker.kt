@@ -67,6 +67,7 @@ class FetchReleasesWorker(
             .create(ITunesApiService::class.java)
 
         createNotificationChannels()
+        loadFutureReleaseMonths()
     }
 
     override suspend fun doWork(): Result {
@@ -132,6 +133,13 @@ class FetchReleasesWorker(
         }
     }
 
+    private fun loadFutureReleaseMonths(): Int {
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences",
+            MODE_PRIVATE
+        )
+        return sharedPreferences.getInt("futureReleaseMonths", 4)
+    }
+
     private fun createForegroundNotification(): Notification {
         val builder = NotificationCompat.Builder(applicationContext, FETCH_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -143,8 +151,26 @@ class FetchReleasesWorker(
         return builder.build()
     }
 
+    private fun getReleaseTimeWindow(): Pair<Long, Long> {
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences",
+            MODE_PRIVATE
+        )
+        val weeksBack = sharedPreferences.getInt("releaseAgeWeeks", 4)
+        val futureMonths = sharedPreferences.getInt("futureReleaseMonths", 4)
+
+        val now = System.currentTimeMillis()
+        val pastMillis = weeksBack * 7L * 24 * 60 * 60 * 1000
+        val futureMillis = futureMonths * 30L * 24 * 60 * 60 * 1000
+
+        val minTime = now - pastMillis
+        val maxTime = now + futureMillis
+        return Pair(minTime, maxTime)
+    }
+
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
-        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences",
+            MODE_PRIVATE
+        )
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
 
         if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)) {
@@ -167,7 +193,9 @@ class FetchReleasesWorker(
     }
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
-        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences",
+            MODE_PRIVATE
+        )
         val networkPrefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = networkPrefs.getString("networkType", "Any") ?: "Any"
 
@@ -176,8 +204,7 @@ class FetchReleasesWorker(
             return
         }
 
-        val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
-        val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
+        val (minTime, maxTime) = getReleaseTimeWindow()
         val currentTime = System.currentTimeMillis()
 
         val isItunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
@@ -194,9 +221,9 @@ class FetchReleasesWorker(
                 apiService.getArtistReleases(artist.deezerId ?: return, 0).execute()
             if (deezerResponse.isSuccessful) {
                 val deezerAlbums = deezerResponse.body()?.data ?: emptyList()
-                releases += deezerAlbums.mapNotNull {
+                releases += deezerAlbums.map {
                     val artistName =
-                        it.artist?.name ?: artist.name
+                        it.artist.name
 
                     UnifiedAlbum(
                         id = "${artist.deezerId}_${it.id}",
@@ -232,7 +259,6 @@ class FetchReleasesWorker(
                             rawTitle = it.collectionName,
                             rawReleaseType = it.collectionType
                         )
-
                     }
                 }
             }
@@ -245,14 +271,17 @@ class FetchReleasesWorker(
             val releaseDateMillis = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .parse(latest.releaseDate)?.time ?: return
 
-            if (currentTime - releaseDateMillis > maxReleaseAgeInMillis) {
+            if (releaseDateMillis < minTime || releaseDateMillis > maxTime) {
+                Log.d(TAG, "Release ${latest.title} is outside the considered window.")
+                return
+            }
+
+            if (currentTime - releaseDateMillis > loadMaxPastMillis()) {
                 Log.d(TAG, "Release ${latest.title} is too old.")
                 return
             }
 
-            val releaseHash = "${latest.artistName.trim().lowercase()}_${
-                latest.title.trim().lowercase()
-            }_${latest.releaseDate}".hashCode()
+            val releaseHash = "${latest.artistName.trim().lowercase()}_${latest.title.trim().lowercase()}_${latest.releaseDate}".hashCode()
             if (db.savedArtistDao().isNotificationSent(releaseHash)) {
                 Log.d(TAG, "Notification already sent for ${latest.title}")
                 return
@@ -260,26 +289,18 @@ class FetchReleasesWorker(
 
             val releaseTypeEnum = determineAccurateReleaseType(latest)
 
-            sendUnifiedReleaseNotification(
-                artist,
-                latest,
-                releaseHash,
-                releaseDateMillis,
-                releaseTypeEnum
-            )
-
-            sendUnifiedReleaseNotification(
-                artist,
-                latest,
-                releaseHash,
-                releaseDateMillis,
-                releaseTypeEnum
-            )
-
-
+            sendUnifiedReleaseNotification(artist, latest, releaseHash, releaseDateMillis, releaseTypeEnum)
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for new release: ${e.message}", e)
         }
+    }
+
+    private fun loadMaxPastMillis(): Long {
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences",
+            MODE_PRIVATE
+        )
+        val weeksBack = sharedPreferences.getInt("releaseAgeWeeks", 4)
+        return weeksBack * 7L * 24 * 60 * 60 * 1000
     }
 
     private fun sendUnifiedReleaseNotification(
@@ -452,7 +473,7 @@ class FetchReleasesWorker(
 
     private fun cleanTitle(title: String): String {
         return title
-            .replace(Regex("\\s*-\\s*(Single|EP|Album)\$", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s*-\\s*(Single|EP|Album)$", RegexOption.IGNORE_CASE), "")
             .trim()
     }
 

@@ -46,6 +46,8 @@ class SettingsActivity : AppCompatActivity() {
     private var updateRunnable: Runnable? = null
     private var isNetworkRequestsAllowed = true
     private var ignoreNextToggleChange = false
+    private lateinit var futureReleaseMonthsSlider: Slider
+    private lateinit var futureReleaseMonthsLabel: TextView
 
     private val backupManager by lazy {
         val apiService = DeezerApiService.create()
@@ -104,6 +106,19 @@ class SettingsActivity : AppCompatActivity() {
         releaseAgeSlider = findViewById(R.id.releaseAgeSlider)
         releaseAgeLabel = findViewById(R.id.releaseAgeLabel)
         delayInput = findViewById(R.id.delayInput)
+        futureReleaseMonthsSlider = findViewById(R.id.futureReleaseMonthsSlider)
+        futureReleaseMonthsLabel = findViewById(R.id.futureReleaseMonthsLabel)
+
+        loadFutureReleaseMonthsPreference()
+
+        futureReleaseMonthsSlider.value = loadFutureReleaseMonthsPreference().toFloat()
+        updateFutureReleaseMonthsLabel(futureReleaseMonthsSlider.value.toInt())
+
+        futureReleaseMonthsSlider.addOnChangeListener { _, value, _ ->
+            val months = value.toInt()
+            updateFutureReleaseMonthsLabel(months)
+            saveFutureReleaseMonthsPreference(months)
+        }
 
         val folderImportSwitch = findViewById<SwitchMaterial>(R.id.switch_folder_import)
         val isFolderImportEnabled = sharedPreferences.getBoolean("isFolderImportEnabled", false)
@@ -404,6 +419,23 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadReleaseAgePreference(): Int {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return sharedPreferences.getInt("releaseAgeWeeks", 4)
+    }
+
+    private fun updateFutureReleaseMonthsLabel(months: Int) {
+        val labelText = if (months == 0) {
+            "Include no future releases"
+        } else {
+            "Include releases within $months month(s)"
+        }
+        futureReleaseMonthsLabel.text = labelText
+    }
+
+    private fun saveFutureReleaseMonthsPreference(months: Int) {
+        sharedPreferences.edit { putInt("futureReleaseMonths", months) }
+    }
+
+    private fun loadFutureReleaseMonthsPreference(): Int {
+        return sharedPreferences.getInt("futureReleaseMonths", 0)
     }
 
     private fun setupFetchReleasesWorker(intervalMinutes: Int) {

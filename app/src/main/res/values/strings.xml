@@ -18,6 +18,7 @@
     <string name="general_settings">General Settings</string>
     <string name="intervalInput">Fetch Interval (in minutes)</string>
     <string name="releaseAgeLabel">Notifications for releases within the last 4 weeks</string>
+    <string name="futureReleaseMonthsLabel">Notifications for releases within the next 4 months</string>
     <string name="fetchSettings">Update interval settings</string>
     <string name="BatteryNetwork">Battery and Network</string>
     <string name="BatteryRestrictions">Battery Restrictions</string>
