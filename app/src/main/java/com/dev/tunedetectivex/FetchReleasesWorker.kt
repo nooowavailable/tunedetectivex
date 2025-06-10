@@ -16,7 +16,6 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
@@ -30,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
@@ -67,7 +67,6 @@ class FetchReleasesWorker(
             .create(ITunesApiService::class.java)
 
         createNotificationChannels()
-        loadFutureReleaseMonths()
     }
 
     override suspend fun doWork(): Result {
@@ -81,20 +80,6 @@ class FetchReleasesWorker(
         return try {
             val sharedPreferences =
                 applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
-
-            val now = System.currentTimeMillis()
-            val lastFetchTime = sharedPreferences.getLong("lastFetchTime", 0L)
-            val fetchIntervalMillis =
-                sharedPreferences.getInt("fetchIntervalHours", 6) * 60 * 60 * 1000L
-
-            if ((now - lastFetchTime) < fetchIntervalMillis) {
-                Log.d(
-                    TAG,
-                    "Skipping fetch: Only ${(now - lastFetchTime) / 1000 / 3600}h since last run (Required: ${fetchIntervalMillis / 1000 / 3600}h)"
-                )
-                return Result.success()
-            }
-
             val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
             isNetworkRequestsAllowed =
                 WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
@@ -104,10 +89,14 @@ class FetchReleasesWorker(
                 return Result.failure()
             }
 
+            val isManual = inputData.getBoolean("manual", false)
+            val fetchDelay = sharedPreferences.getInt("fetchDelay", 1) * 1000L
+            if (!isManual && fetchDelay > 0) {
+                delay(fetchDelay)
+            }
+
+
             fetchSavedArtists()
-
-            sharedPreferences.edit { putLong("lastFetchTime", now) }
-
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Error in FetchReleasesWorker: ${e.message}", e)
@@ -143,14 +132,6 @@ class FetchReleasesWorker(
         }
     }
 
-    private fun loadFutureReleaseMonths(): Int {
-        val sharedPreferences = applicationContext.getSharedPreferences(
-            "AppPreferences",
-            MODE_PRIVATE
-        )
-        return sharedPreferences.getInt("futureReleaseMonths", 4)
-    }
-
     private fun createForegroundNotification(): Notification {
         val builder = NotificationCompat.Builder(applicationContext, FETCH_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -162,28 +143,8 @@ class FetchReleasesWorker(
         return builder.build()
     }
 
-    private fun getReleaseTimeWindow(): Pair<Long, Long> {
-        val sharedPreferences = applicationContext.getSharedPreferences(
-            "AppPreferences",
-            MODE_PRIVATE
-        )
-        val weeksBack = sharedPreferences.getInt("releaseAgeWeeks", 4)
-        val futureMonths = sharedPreferences.getInt("futureReleaseMonths", 4)
-
-        val now = System.currentTimeMillis()
-        val pastMillis = weeksBack * 7L * 24 * 60 * 60 * 1000
-        val futureMillis = futureMonths * 30L * 24 * 60 * 60 * 1000
-
-        val minTime = now - pastMillis
-        val maxTime = now + futureMillis
-        return Pair(minTime, maxTime)
-    }
-
     private suspend fun fetchSavedArtists() = withContext(Dispatchers.IO) {
-        val sharedPreferences = applicationContext.getSharedPreferences(
-            "AppPreferences",
-            MODE_PRIVATE
-        )
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
 
         if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)) {
@@ -206,10 +167,7 @@ class FetchReleasesWorker(
     }
 
     private suspend fun checkForNewRelease(artist: SavedArtist) {
-        val sharedPreferences = applicationContext.getSharedPreferences(
-            "AppPreferences",
-            MODE_PRIVATE
-        )
+        val sharedPreferences = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkPrefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkType = networkPrefs.getString("networkType", "Any") ?: "Any"
 
@@ -218,7 +176,8 @@ class FetchReleasesWorker(
             return
         }
 
-        val (minTime, maxTime) = getReleaseTimeWindow()
+        val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
+        val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()
 
         val isItunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
@@ -235,9 +194,9 @@ class FetchReleasesWorker(
                 apiService.getArtistReleases(artist.deezerId ?: return, 0).execute()
             if (deezerResponse.isSuccessful) {
                 val deezerAlbums = deezerResponse.body()?.data ?: emptyList()
-                releases += deezerAlbums.map {
+                releases += deezerAlbums.mapNotNull {
                     val artistName =
-                        it.artist.name
+                        it.artist?.name ?: artist.name
 
                     UnifiedAlbum(
                         id = "${artist.deezerId}_${it.id}",
@@ -273,6 +232,7 @@ class FetchReleasesWorker(
                             rawTitle = it.collectionName,
                             rawReleaseType = it.collectionType
                         )
+
                     }
                 }
             }
@@ -285,12 +245,7 @@ class FetchReleasesWorker(
             val releaseDateMillis = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .parse(latest.releaseDate)?.time ?: return
 
-            if (releaseDateMillis < minTime || releaseDateMillis > maxTime) {
-                Log.d(TAG, "Release ${latest.title} is outside the considered window.")
-                return
-            }
-
-            if (currentTime - releaseDateMillis > loadMaxPastMillis()) {
+            if (currentTime - releaseDateMillis > maxReleaseAgeInMillis) {
                 Log.d(TAG, "Release ${latest.title} is too old.")
                 return
             }
@@ -312,18 +267,19 @@ class FetchReleasesWorker(
                 releaseDateMillis,
                 releaseTypeEnum
             )
+
+            sendUnifiedReleaseNotification(
+                artist,
+                latest,
+                releaseHash,
+                releaseDateMillis,
+                releaseTypeEnum
+            )
+
+
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for new release: ${e.message}", e)
         }
-    }
-
-    private fun loadMaxPastMillis(): Long {
-        val sharedPreferences = applicationContext.getSharedPreferences(
-            "AppPreferences",
-            MODE_PRIVATE
-        )
-        val weeksBack = sharedPreferences.getInt("releaseAgeWeeks", 4)
-        return weeksBack * 7L * 24 * 60 * 60 * 1000
     }
 
     private fun sendUnifiedReleaseNotification(
@@ -345,10 +301,7 @@ class FetchReleasesWorker(
                             transition: Transition<in Bitmap>?
                         ) {
                             if (!hasNotificationPermission()) {
-                                Log.w(
-                                    TAG,
-                                    "Notification permission not granted. Skipping notification."
-                                )
+                                Log.w(TAG, "Notification permission not granted. Skipping notification.")
                                 return
                             }
 
@@ -379,10 +332,7 @@ class FetchReleasesWorker(
 
                         override fun onLoadFailed(errorDrawable: Drawable?) {
                             if (!hasNotificationPermission()) {
-                                Log.w(
-                                    TAG,
-                                    "Notification permission not granted. Skipping fallback notification."
-                                )
+                                Log.w(TAG, "Notification permission not granted. Skipping fallback notification.")
                                 return
                             }
 
@@ -398,11 +348,7 @@ class FetchReleasesWorker(
                                 NotificationManagerCompat.from(applicationContext)
                                     .notify(releaseHash, fallback)
                             } catch (e: SecurityException) {
-                                Log.e(
-                                    TAG,
-                                    "SecurityException while sending fallback notification",
-                                    e
-                                )
+                                Log.e(TAG, "SecurityException while sending fallback notification", e)
                             }
                         }
                     })
@@ -432,19 +378,16 @@ class FetchReleasesWorker(
                 artist.name,
                 releaseTypeString
             )
-
             ReleaseType.SINGLE -> applicationContext.getString(
                 R.string.notification_new_release_title_single,
                 artist.name,
                 releaseTypeString
             )
-
             ReleaseType.EP -> applicationContext.getString(
                 R.string.notification_new_release_title_ep,
                 artist.name,
                 releaseTypeString
             )
-
             ReleaseType.DEFAULT -> applicationContext.getString(
                 R.string.notification_new_release_title_default,
                 artist.name,
@@ -509,7 +452,7 @@ class FetchReleasesWorker(
 
     private fun cleanTitle(title: String): String {
         return title
-            .replace(Regex("\\s*-\\s*(Single|EP|Album)$", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s*-\\s*(Single|EP|Album)\$", RegexOption.IGNORE_CASE), "")
             .trim()
     }
 
