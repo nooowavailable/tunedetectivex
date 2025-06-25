@@ -6,6 +6,16 @@
 
 TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this app to get notified for new music releases of your fav. artists.
 
+### Disclaimer on Code Generation
+
+This app was developed primarily with the help of AI tools such as ChatGPT.  
+Most of the code was generated through iterative prompting, testing, and refinement of AI-generated suggestions.
+
+However, the **core idea, concept, and vision behind this app are 100% my own**.  
+It's a personal project that genuinely matters to me, and I’ve put real thought and care into shaping it.
+
+While AI assisted with the technical implementation, every design choice, feature decision, and direction was guided by me.
+
 This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API and combines them* , to obtain in some cases more accurate and more up-to-date music information.
 
 *work in progress
