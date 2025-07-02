@@ -9,7 +9,7 @@ TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this 
 ### Disclaimer on Code Generation
 
 This app was developed primarily with the help of AI tools such as ChatGPT.  
-Most of the code was generated through iterative prompting, testing, and refinement of AI-generated suggestions.
+Most of the code was generated through iterative prompting, testing, and refinement of AI-generated suggestions. It's open source so everybody can audit it.
 
 However, the **core idea, concept, and vision behind this app are 100% my own**.  
 It's a personal project that genuinely matters to me, and I’ve put real thought and care into shaping it.
