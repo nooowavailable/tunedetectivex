@@ -245,10 +245,10 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun normalizeTitle(title: String): String {
-        return title
-            .lowercase(Locale.getDefault())
-            .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("[^a-z0-9]+"), " ")
+        return title.lowercase(Locale.getDefault())
+            .replace(Regex("\\((feat\\.?|featuring)[^)]*\\)", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s*-\\s*(single|ep|album)"), "")
+            .replace(Regex("\\s*\\((single|ep|album)\\)"), "")
             .trim()
     }
 

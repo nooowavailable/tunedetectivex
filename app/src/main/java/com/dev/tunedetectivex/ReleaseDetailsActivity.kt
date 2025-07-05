@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.AttrRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -135,9 +136,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             sharedPreferences.edit { putBoolean("isFirstRunReleaseDetails", false) }
         }
 
-        if (releaseId == -1L && (releaseId > 0L || (itunesId > 0L && isItunesSupportEnabled()))) {
-            loadTracklist()
-        }
+        Log.d("ReleaseDetailsActivity", "Calling loadTracklist() in onCreate()")
+        loadTracklist()
     }
 
     private fun isItunesSupportEnabled(): Boolean {
@@ -145,8 +145,15 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         return prefs.getBoolean("itunesSupportEnabled", false)
     }
 
+    private fun getThemeColor(@AttrRes attrRes: Int): Int {
+        val typedValue = TypedValue()
+        val theme = theme
+        theme.resolveAttribute(attrRes, typedValue, true)
+        return ContextCompat.getColor(this, typedValue.resourceId)
+    }
 
-    private fun checkNetworkAndProceed(action: () -> Unit) {
+
+        private fun checkNetworkAndProceed(action: () -> Unit) {
         checkNetworkTypeAndSetFlag()
         if (isNetworkRequestsAllowed) {
             action()
@@ -333,8 +340,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                 return@withContext
                             }
 
-                            val rawTitle = collection.collectionName
-                                ?: getString(R.string.unknown_title_fallback)
+                            val rawTitle = collection.collectionName ?: getString(R.string.unknown_title_fallback)
                             val releaseType = extractReleaseType(rawTitle)
                             val cleanedTitle = rawTitle
                                 .replace(" - Single", "", ignoreCase = true)
@@ -342,54 +348,24 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                 .replace(" - Album", "", ignoreCase = true)
                                 .trim()
 
-                            val primaryColor = ContextCompat.getColor(
-                                this@ReleaseDetailsActivity,
-                                TypedValue().let {
-                                    theme.resolveAttribute(
-                                        android.R.attr.textColorPrimary,
-                                        it,
-                                        true
-                                    )
-                                    it.resourceId
-                                })
-                            val secondaryColor = ContextCompat.getColor(
-                                this@ReleaseDetailsActivity,
-                                TypedValue().let {
-                                    theme.resolveAttribute(
-                                        android.R.attr.textColorSecondary,
-                                        it,
-                                        true
-                                    )
-                                    it.resourceId
-                                })
+                            val primaryColor = getThemeColor(android.R.attr.textColorPrimary)
+                            val secondaryColor = getThemeColor(android.R.attr.textColorSecondary)
 
                             if (!releaseType.isNullOrEmpty()) {
                                 val combined = "$cleanedTitle ($releaseType)"
                                 val spannable = SpannableString(combined)
                                 val start = combined.indexOf("($releaseType)")
-                                spannable.setSpan(
-                                    ForegroundColorSpan(primaryColor),
-                                    0,
-                                    start,
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                                )
-                                spannable.setSpan(
-                                    ForegroundColorSpan(secondaryColor),
-                                    start,
-                                    combined.length,
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                                )
+                                spannable.setSpan(ForegroundColorSpan(primaryColor), 0, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                spannable.setSpan(ForegroundColorSpan(secondaryColor), start, combined.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                                 releaseTitle.text = spannable
                             } else {
                                 releaseTitle.text = cleanedTitle
                                 releaseTitle.setTextColor(primaryColor)
                             }
 
-                            artistName.text =
-                                collection.artistName ?: getString(R.string.unknown_artist_fallback)
+                            artistName.text = collection.artistName ?: getString(R.string.unknown_artist_fallback)
 
-                            val coverUrl = collection.artworkUrl100?.toHighResArtwork()
-                            if (!coverUrl.isNullOrBlank()) {
+                            collection.artworkUrl100?.toHighResArtwork()?.let { coverUrl ->
                                 Glide.with(this@ReleaseDetailsActivity)
                                     .load(coverUrl)
                                     .placeholder(R.drawable.ic_discography)
@@ -398,18 +374,31 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                     .into(albumCover)
                             }
 
-                            val tracks = results.filter {
+                            val trackItems = results.filter {
                                 it.wrapperType == "track" && it.kind == "song"
-                            }.map {
-                                Track(
-                                    title = it.trackName
-                                        ?: getString(R.string.unknown_title_fallback),
-                                    duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
+                            }
+
+                            val tracks = if (trackItems.isNotEmpty()) {
+                                trackItems.map {
+                                    Track(
+                                        title = it.trackName ?: getString(R.string.unknown_title_fallback),
+                                        duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
+                                    )
+                                }
+                            } else {
+                                listOf(
+                                    Track(
+                                        title = rawTitle
+                                            .replace(" - Single", "", ignoreCase = true)
+                                            .replace(" - EP", "", ignoreCase = true)
+                                            .replace(" - Album", "", ignoreCase = true)
+                                            .trim(),
+                                        duration = 0
+                                    )
                                 )
                             }
 
                             trackAdapter.submitList(tracks)
-
                         } else {
                             Log.e("ReleaseDetailsActivity", "iTunes: Faulty response")
                         }
@@ -441,7 +430,6 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             albumCover.setImageResource(R.drawable.error_image)
         }
 
-        loadTracklist()
     }
 
     private fun loadTracklist() {
@@ -476,6 +464,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
     private fun loadCombinedTracklists(deezerId: Long, itunesId: Long) {
         showLoading(true)
+
         val retrofit = Retrofit.Builder()
             .baseUrl("https://itunes.apple.com/")
             .addConverterFactory(GsonConverterFactory.create())
@@ -489,11 +478,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
                 val deezerTracks = deezerResponse.body()?.data ?: emptyList()
                 val itunesTracks = itunesResponse.body()?.results
-                    ?.filter { it.wrapperType == "track" }
+                    ?.filter { it.wrapperType == "track" && it.kind == "song" }
                     ?.map {
                         Track(
-                            title = it.trackName
-                                ?: this@ReleaseDetailsActivity.getString(R.string.unknown_title),
+                            title = it.trackName ?: getString(R.string.unknown_title),
                             duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
                         )
                     } ?: emptyList()
@@ -569,18 +557,14 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                 ?.filter { it.wrapperType == "track" && it.kind == "song" }
                                 ?.map {
                                     Track(
-                                        title = it.trackName
-                                            ?: getString(R.string.unknown_title),
+                                        title = it.trackName ?: getString(R.string.unknown_title),
                                         duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
                                     )
                                 } ?: emptyList()
 
                             trackAdapter.submitList(tracks)
                         } else {
-                            Log.e(
-                                "ReleaseDetailsActivity",
-                                "iTunes: Failed to load tracks: ${response.message()}"
-                            )
+                            Log.e("ReleaseDetailsActivity", "iTunes: Failed to load tracks: ${response.message()}")
                         }
                     }
                 } catch (e: Exception) {

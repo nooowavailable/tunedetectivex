@@ -339,10 +339,11 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    fun normalizeTitle(title: String): String {
+    private fun normalizeTitle(title: String): String {
         return title.lowercase(Locale.getDefault())
-            .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("[^a-z0-9]+"), " ")
+            .replace(Regex("\\((feat\\.?|featuring)[^)]*\\)", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s*-\\s*(single|ep|album)"), "")
+            .replace(Regex("\\s*\\((single|ep|album)\\)"), "")
             .trim()
     }
 
@@ -1380,6 +1381,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun releaseInfoScore(release: ReleaseItem): Int {
+        var score = 0
+        if (!release.albumArtUrl.isNullOrBlank()) score += 2
+        if (!release.releaseType.isNullOrBlank()) score += 2
+        if (!release.artistName.isNullOrBlank()) score += 1
+        if (!release.apiSource.isNullOrBlank()) score += 1
+        return score
+    }
+
     private fun loadSavedReleases() {
 
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
@@ -1395,7 +1405,6 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val savedArtists = db.savedArtistDao().getAll()
-
             if (savedArtists.isEmpty()) {
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
@@ -1414,11 +1423,13 @@ class MainActivity : ComponentActivity() {
                 }.awaitAll().flatten()
             }
 
-            val uniqueReleases = releaseItems.distinctBy {
+            val uniqueReleases = releaseItems.groupBy {
                 val normTitle = normalizeTitle(it.title)
                 val shortDate = it.releaseDate.take(10)
                 "$normTitle|$shortDate"
-            }
+            }.mapValues { (_, releases) ->
+                releases.maxByOrNull { releaseInfoScore(it) } ?: releases.first()
+            }.values.toList()
 
             val sortedReleaseItems = uniqueReleases
                 .map { release ->
