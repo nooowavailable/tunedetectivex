@@ -9,10 +9,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-class BackupManager(private val context: Context, private val savedArtistDao: SavedArtistDao, private val apiService: DeezerApiService) {
+class BackupManager(
+    private val context: Context,
+    private val savedArtistDao: SavedArtistDao,
+    private val apiService: DeezerApiService
+) {
 
     private val gson = Gson()
+
+    fun generateBackupFileName(): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
+        val dateTime = dateFormat.format(Date())
+        return "TDX_Backup_$dateTime.json"
+    }
 
     fun createBackup(uri: Uri) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -20,11 +33,12 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                 val artists = savedArtistDao.getAll()
                 val sharedPreferences =
                     context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-                val fetchInterval = sharedPreferences.getInt("fetchInterval", 90)
+                val fetchInterval = sharedPreferences.getInt("fetchInterval", 720)
                 val releaseAgeWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
                 val fetchDelay = sharedPreferences.getInt("fetchDelay", 1)
                 val autoLoadReleases = sharedPreferences.getBoolean("autoLoadReleases", true)
-                val itunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
+                val itunesSupportEnabled =
+                    sharedPreferences.getBoolean("itunesSupportEnabled", false)
                 val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
 
                 val backupData = BackupData(
@@ -44,7 +58,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                         outputStream.write(json.toByteArray(Charsets.UTF_8))
                         Toast.makeText(
                             context,
-                            "TDX backup successfully saved!",
+                            context.getString(R.string.backup_saved),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -53,17 +67,22 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "Error saving the backup: ${e.message}",
+                        context.getString(R.string.backup_save_error, e.message ?: "Unknown error"),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
         }
     }
+
     fun restoreBackup(uri: Uri) {
         CoroutineScope(Dispatchers.IO).launch {
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Importing backup...", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.backup_importing),
+                    Toast.LENGTH_LONG
+                ).show()
             }
 
             try {
@@ -108,13 +127,16 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                         launch {
                             try {
                                 val deezerId = artist.deezerId ?: return@launch
-                                val artistDetailsResponse = apiService.getArtistDetails(deezerId).execute()
+                                val artistDetailsResponse =
+                                    apiService.getArtistDetails(deezerId).execute()
                                 val artistDetails = artistDetailsResponse.body()
-                                val profileImageUrl = artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
+                                val profileImageUrl =
+                                    artistDetails?.picture_xl ?: artist.profileImageUrl ?: ""
 
                                 savedArtistDao.updateArtistDetails(artist.id, profileImageUrl)
 
-                                val releasesResponse = apiService.getArtistReleases(deezerId, 0).execute()
+                                val releasesResponse =
+                                    apiService.getArtistReleases(deezerId, 0).execute()
                                 val releases = releasesResponse.body()?.data ?: emptyList()
 
                                 releases.forEach { release ->
@@ -139,7 +161,7 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             context,
-                            "Backup successfully restored and updated!",
+                            context.getString(R.string.backup_restored_success),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -148,7 +170,10 @@ class BackupManager(private val context: Context, private val savedArtistDao: Sa
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "Error while restoring the backup: ${e.message}",
+                        context.getString(
+                            R.string.backup_restore_error,
+                            e.message ?: "unknown error"
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

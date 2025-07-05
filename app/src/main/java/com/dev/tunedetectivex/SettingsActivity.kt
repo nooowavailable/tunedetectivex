@@ -1,8 +1,10 @@
 package com.dev.tunedetectivex
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -79,6 +81,19 @@ class SettingsActivity : AppCompatActivity() {
                                 )
                             }
                         }
+
+                        val prefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
+                        val fetchIntervalMinutes = prefs.getInt("fetchInterval", 720)
+                        val now = System.currentTimeMillis()
+                        val nextFetchTimeMillis = now + fetchIntervalMinutes * 60_000L
+
+                        prefs.edit {
+                            putLong("lastWorkerRunTimestamp", now)
+                            putLong("nextFetchTimeMillis", nextFetchTimeMillis)
+                            putString("last_worker_status", "restored")
+                        }
+
+                        WorkManagerUtil.reEnqueueIfMissing(applicationContext)
                     }
                 }
             } else {
@@ -89,6 +104,7 @@ class SettingsActivity : AppCompatActivity() {
                 ).show()
             }
         }
+
 
 
     @SuppressLint("SetTextI18n")
@@ -104,21 +120,6 @@ class SettingsActivity : AppCompatActivity() {
         releaseAgeSlider = findViewById(R.id.releaseAgeSlider)
         releaseAgeLabel = findViewById(R.id.releaseAgeLabel)
         delayInput = findViewById(R.id.delayInput)
-
-        val folderImportSwitch = findViewById<SwitchMaterial>(R.id.switch_folder_import)
-        val isFolderImportEnabled = sharedPreferences.getBoolean("isFolderImportEnabled", false)
-        folderImportSwitch.isChecked = isFolderImportEnabled
-
-        folderImportSwitch.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit { putBoolean("isFolderImportEnabled", isChecked) }
-
-            Toast.makeText(
-                this,
-                if (isChecked) getString(R.string.folder_import_feature_enabled_toast)
-                else getString(R.string.folder_import_feature_disabled_toast),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
 
         val itunesSwitch = findViewById<SwitchMaterial>(R.id.switch_itunes_support)
         itunesSwitch.isChecked = isItunesSupportEnabled()
@@ -175,7 +176,8 @@ class SettingsActivity : AppCompatActivity() {
         editor = sharedPreferences.edit()
 
         findViewById<MaterialButton>(R.id.button_backup).setOnClickListener {
-            createBackupLauncher.launch("TDX-backup.json")
+            val fileName = backupManager.generateBackupFileName()
+            createBackupLauncher.launch(fileName)
         }
 
         findViewById<MaterialButton>(R.id.button_restore).setOnClickListener {
@@ -190,17 +192,23 @@ class SettingsActivity : AppCompatActivity() {
             requestIgnoreBatteryOptimizations()
         }
 
-        findViewById<MaterialButton>(R.id.button_fetch_now).setOnClickListener {
-            runManualFetchNow()
-        }
-
         checkNetworkTypeAndSetFlag()
 
         val currentInterval = loadFetchInterval()
+        intervalInput.setText(intervalToLabel(currentInterval))
         val currentReleaseAge = loadReleaseAgePreference()
         val currentDelay = loadFetchDelay()
 
-        intervalInput.setText(currentInterval.toString())
+        intervalInput.apply {
+            isFocusable = false
+            isClickable = true
+            setOnClickListener {
+                showIntervalSelectionDialog()
+            }
+        }
+
+
+
         delayInput.setText(currentDelay.toString())
         releaseAgeSlider.value = currentReleaseAge.toFloat()
         updateReleaseAgeLabel(currentReleaseAge)
@@ -217,43 +225,12 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        intervalInput.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                Log.d(
-                    "SettingsActivity",
-                    "afterTextChanged (intervalInput) called with: ${s.toString()}"
-                )
-                delayedUpdate {
-                    val text = intervalInput.text.toString()
-                    val interval = text.toIntOrNull()
-                    Log.d("SettingsActivity", "delayedUpdate -> raw='$text', parsed=$interval")
-
-                    if (interval != null && interval >= 15) {
-                        Log.d("SettingsActivity", "Interval is valid, saving...")
-                        saveFetchInterval(interval)
-                        showToast(getString(R.string.fetch_interval_set, interval))
-                    } else {
-                        Log.d("SettingsActivity", "Invalid interval value (null or < 15)")
-                        Toast.makeText(
-                            this@SettingsActivity,
-                            getString(R.string.invalid_interval_value),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
-
         delayInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 delayedUpdate {
                     val delay = delayInput.text.toString().toIntOrNull()
                     if (delay != null && delay in 1..60) {
                         saveFetchDelay(delay)
-                        showToast(getString(R.string.fetch_delay_set, delay))
                     } else {
                         Toast.makeText(
                             this@SettingsActivity,
@@ -273,7 +250,112 @@ class SettingsActivity : AppCompatActivity() {
             showSettingsTutorial()
             editor.putBoolean("isFirstRunSettings", false).apply()
         }
+
+        findViewById<MaterialButton>(R.id.button_change_icon).setOnClickListener {
+            showIconChooserDialog()
+        }
+
+        val buttonNotificationSettings: MaterialButton = findViewById(R.id.buttonNotificationSettings)
+        buttonNotificationSettings.setOnClickListener {
+            openDebugNotificationSettings()
+        }
     }
+
+    private fun openDebugNotificationSettings() {
+        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            putExtra(Settings.EXTRA_CHANNEL_ID, "debug_channel")
+        }
+        startActivity(intent)
+    }
+
+    private fun showIntervalSelectionDialog() {
+        val intervals = arrayOf(15, 30, 60, 120, 240, 360, 720, 1440)
+        val labels = arrayOf(
+            getString(R.string.interval_15_min),
+            getString(R.string.interval_30_min),
+            getString(R.string.interval_1_h),
+            getString(R.string.interval_2_h),
+            getString(R.string.interval_4_h),
+            getString(R.string.interval_6_h),
+            getString(R.string.interval_12_h),
+            getString(R.string.interval_1_day),
+        )
+
+        val currentInterval = loadFetchInterval()
+        val currentIndex = intervals.indexOf(currentInterval).takeIf { it >= 0 } ?: 0
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.fetch_interval_title))
+            .setSingleChoiceItems(labels, currentIndex) { dialog, which ->
+                val selectedInterval = intervals[which]
+                saveFetchInterval(selectedInterval)
+                intervalInput.setText(labels[which])
+                Toast.makeText(
+                    this,
+                    getString(R.string.interval_selected_toast, labels[which]),
+                    Toast.LENGTH_SHORT
+                ).show()
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun intervalToLabel(minutes: Int): String {
+        return when (minutes) {
+            15 -> getString(R.string.interval_15_min)
+            30 -> getString(R.string.interval_30_min)
+            60 -> getString(R.string.interval_1_h)
+            120 -> getString(R.string.interval_2_h)
+            240 -> getString(R.string.interval_4_h)
+            360 -> getString(R.string.interval_6_h)
+            720 -> getString(R.string.interval_12_h)
+            1440 -> getString(R.string.interval_1_day)
+            else -> getString(R.string.interval_fallback_minutes, minutes)
+        }
+    }
+
+
+    private fun showIconChooserDialog() {
+        val iconOptions = arrayOf("Standard", "Minimal")
+        val aliasNames = arrayOf(
+            "com.dev.tunedetectivex.AliasDefault",
+            "com.dev.tunedetectivex.AliasMin",
+        )
+
+        val currentEnabled = aliasNames.indexOfFirst { alias ->
+            packageManager.getComponentEnabledSetting(ComponentName(this, alias)) ==
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.select_app_icon))
+            .setSingleChoiceItems(iconOptions, currentEnabled) { dialog, which ->
+                setAppIcon(aliasNames, which)
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.select_app_icon), null)
+            .show()
+    }
+
+    private fun setAppIcon(aliasNames: Array<String>, selectedIndex: Int) {
+        val packageManager = packageManager
+
+        for ((i, alias) in aliasNames.withIndex()) {
+            val state = if (i == selectedIndex)
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            else
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+
+            packageManager.setComponentEnabledSetting(
+                ComponentName(this, alias),
+                state,
+                PackageManager.DONT_KILL_APP
+            )
+        }
+    }
+
 
     private fun enableItunesSupport(enabled: Boolean) {
         setItunesSupportEnabled(enabled)
@@ -315,9 +397,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun checkNetworkTypeAndSetFlag() {
-        val networkType = sharedPreferences.getString("networkType", "Any")
-        isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType!!)
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)
     }
 
     private fun showNetworkTypeDialog() {
@@ -339,7 +420,7 @@ class SettingsActivity : AppCompatActivity() {
             ) { dialog, which ->
                 val selectedType = networkTypes[which]
                 sharedPreferences.edit { putString("networkType", selectedType) }
-                setupFetchReleasesWorker(loadFetchInterval())
+                setupFetchReleasesWorker()
                 checkNetworkTypeAndSetFlag()
                 dialog.dismiss()
             }
@@ -377,9 +458,8 @@ class SettingsActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         sharedPreferences.edit { putInt("fetchInterval", minutes) }
         Log.d("SettingsActivity", "Fetch interval saved in SharedPreferences.")
-        setupFetchReleasesWorker(minutes)
+        setupFetchReleasesWorker()
     }
-
 
     private fun saveFetchDelay(seconds: Int) {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
@@ -398,7 +478,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadFetchInterval(): Int {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        return sharedPreferences.getInt("fetchInterval", 90)
+        return sharedPreferences.getInt("fetchInterval", 720)
     }
 
     private fun loadReleaseAgePreference(): Int {
@@ -406,12 +486,8 @@ class SettingsActivity : AppCompatActivity() {
         return sharedPreferences.getInt("releaseAgeWeeks", 4)
     }
 
-    private fun setupFetchReleasesWorker(intervalMinutes: Int) {
-        WorkManagerUtil.setupFetchReleasesWorker(this, intervalMinutes)
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun setupFetchReleasesWorker() {
+        WorkManagerUtil.reEnqueueIfMissing(this)
     }
 
     @SuppressLint("SetTextI18n")
@@ -506,16 +582,6 @@ class SettingsActivity : AppCompatActivity() {
         prefs.edit { putBoolean("itunesSupportEnabled", enabled) }
     }
 
-    private fun runManualFetchNow() {
-        val workRequest = androidx.work.OneTimeWorkRequestBuilder<FetchReleasesWorker>()
-            .setInputData(androidx.work.workDataOf("manual" to true))
-            .build()
-
-        androidx.work.WorkManager.getInstance(this).enqueue(workRequest)
-
-        Toast.makeText(this, getString(R.string.manual_fetch_started), Toast.LENGTH_SHORT).show()
-    }
-
     private fun isAutoLoadReleasesEnabled(): Boolean {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return prefs.getBoolean("autoLoadReleases", true)
@@ -525,4 +591,5 @@ class SettingsActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         prefs.edit { putBoolean("autoLoadReleases", enabled) }
     }
+
 }

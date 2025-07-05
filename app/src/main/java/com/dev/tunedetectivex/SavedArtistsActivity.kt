@@ -131,19 +131,9 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
         isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
-
-        if (!isNetworkRequestsAllowed) {
-            Toast.makeText(
-                this,
-                getString(R.string.network_type_not_available),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkPreference)
     }
 
     private fun setupSpinner() {
@@ -169,6 +159,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                         loadSavedArtists()
                         recyclerView.adapter = artistAdapter
                     }
+
                     1 -> {
                         loadSavedReleases()
                         recyclerView.adapter = releaseAdapter
@@ -183,7 +174,8 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun setupSearchView() {
-        searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+        searchView.setOnQueryTextListener(object :
+            androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 filterArtists(query)
                 return true
@@ -212,7 +204,6 @@ class SavedArtistsActivity : AppCompatActivity() {
         val filteredArtists = artists.filter { it.name.isNotBlank() }
         adapter.submitList(filteredArtists)
     }
-
 
 
     private fun setupRecyclerView() {
@@ -331,7 +322,8 @@ class SavedArtistsActivity : AppCompatActivity() {
 
 
     private fun enableSwipeToDelete() {
-        val swipeHandler = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+        val swipeHandler = object :
+            ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
             override fun onMove(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder,
@@ -477,10 +469,8 @@ class SavedArtistsActivity : AppCompatActivity() {
         val searchName = artist.name
         val context = applicationContext
 
-        val isNetworkOk = WorkManagerUtil.isSelectedNetworkTypeAvailable(
-            context,
-            prefs.getString("networkType", "Any") ?: "Any"
-        )
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(context)
+        val isNetworkOk = WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkPreference)
         if (!isNetworkOk) return artist
 
         return try {
@@ -583,10 +573,8 @@ class SavedArtistsActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val itunesSupportEnabled = !prefs.getBoolean("itunesSupportEnabled", false)
 
-        val isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(
-            applicationContext,
-            prefs.getString("networkType", "Any") ?: "Any"
-        )
+        checkNetworkTypeAndSetFlag()
+
         if (!isNetworkRequestsAllowed) return artist
 
         if (itunesSupportEnabled) {
@@ -712,8 +700,16 @@ class SavedArtistsActivity : AppCompatActivity() {
 
             val deduplicated = grouped.mapNotNull { (_, group) ->
                 group.maxWithOrNull { a, b ->
-                    val dateA = try { format.parse(a.releaseDate) } catch (e: Exception) { null }
-                    val dateB = try { format.parse(b.releaseDate) } catch (e: Exception) { null }
+                    val dateA = try {
+                        format.parse(a.releaseDate)
+                    } catch (e: Exception) {
+                        null
+                    }
+                    val dateB = try {
+                        format.parse(b.releaseDate)
+                    } catch (e: Exception) {
+                        null
+                    }
 
                     val cmpDate = when {
                         dateA == null && dateB == null -> 0
@@ -723,8 +719,10 @@ class SavedArtistsActivity : AppCompatActivity() {
                     }
 
                     if (cmpDate != 0) cmpDate * -1 else {
-                        val scoreA = (if (a.albumArtUrl.isNotBlank()) 1 else 0) + (if (!a.artistImageUrl.isNullOrBlank()) 1 else 0)
-                        val scoreB = (if (b.albumArtUrl.isNotBlank()) 1 else 0) + (if (!b.artistImageUrl.isNullOrBlank()) 1 else 0)
+                        val scoreA =
+                            (if (a.albumArtUrl.isNotBlank()) 1 else 0) + (if (!a.artistImageUrl.isNullOrBlank()) 1 else 0)
+                        val scoreB =
+                            (if (b.albumArtUrl.isNotBlank()) 1 else 0) + (if (!b.artistImageUrl.isNullOrBlank()) 1 else 0)
 
                         scoreA.compareTo(scoreB)
                     }
@@ -732,12 +730,19 @@ class SavedArtistsActivity : AppCompatActivity() {
             }
 
             val sorted = deduplicated.sortedByDescending {
-                try { format.parse(it.releaseDate)?.time } catch (e: Exception) { null }
+                try {
+                    format.parse(it.releaseDate)?.time
+                } catch (e: Exception) {
+                    null
+                }
             }
 
             withContext(Dispatchers.Main) {
                 val adapter = ReleaseAdapter { release ->
-                    val intent = Intent(this@SavedArtistsActivity, ReleaseDetailsActivity::class.java).apply {
+                    val intent = Intent(
+                        this@SavedArtistsActivity,
+                        ReleaseDetailsActivity::class.java
+                    ).apply {
                         putExtra("releaseId", release.id)
                         putExtra("releaseTitle", release.title)
                         putExtra("artistName", release.artistName)
@@ -751,7 +756,12 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 val prettifiedList = sorted.map { release ->
                     val rawTitle = release.title
-                    val cleanedTitle = rawTitle.replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "").trim()
+                    val cleanedTitle = rawTitle.replace(
+                        Regex(
+                            "\\s*-\\s*(Single|EP|Album)",
+                            RegexOption.IGNORE_CASE
+                        ), ""
+                    ).trim()
                     val typeMatch = Regex("(?i)\\b(Single|EP|Album)\\b").find(rawTitle)
                     val type = typeMatch?.value?.replaceFirstChar { it.uppercaseChar() }
 
@@ -760,7 +770,8 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 recyclerView.adapter = adapter
                 adapter.submitList(prettifiedList)
-                recyclerView.visibility = if (prettifiedList.isNotEmpty()) View.VISIBLE else View.GONE
+                recyclerView.visibility =
+                    if (prettifiedList.isNotEmpty()) View.VISIBLE else View.GONE
                 recyclerView.scrollToPosition(0)
 
                 val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
@@ -778,9 +789,12 @@ class SavedArtistsActivity : AppCompatActivity() {
 
     private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        val isNetworkAvailable =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
+        val isNetworkAvailable = WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkPreference)
+
+
+        if (!isNetworkAvailable) return emptyList()
+
 
         if (!isNetworkAvailable) {
             Log.w("SavedArtistsActivity", "🚫 Network not available – skipping ${artist.name}")
@@ -887,13 +901,15 @@ class SavedArtistsActivity : AppCompatActivity() {
 
     private fun deleteArtist(artistItem: SavedArtistItem) {
         lifecycleScope.launch(Dispatchers.IO) {
-            db.savedArtistDao().delete(SavedArtist(
-                id = artistItem.id,
-                name = artistItem.name,
-                lastReleaseTitle = artistItem.lastReleaseTitle,
-                lastReleaseDate = artistItem.lastReleaseDate,
-                profileImageUrl = artistItem.picture
-            ))
+            db.savedArtistDao().delete(
+                SavedArtist(
+                    id = artistItem.id,
+                    name = artistItem.name,
+                    lastReleaseTitle = artistItem.lastReleaseTitle,
+                    lastReleaseDate = artistItem.lastReleaseDate,
+                    profileImageUrl = artistItem.picture
+                )
+            )
         }
     }
 

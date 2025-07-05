@@ -49,9 +49,8 @@ class SearchHistoryAdapter(
     }
 
     private fun isNetworkTypeAllowed(): Boolean {
-        val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        return WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkType)
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(context)
+        return WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkPreference)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

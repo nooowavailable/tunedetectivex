@@ -1,5 +1,4 @@
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -241,26 +240,12 @@
             android:importantForAccessibility="no"
             app:srcCompat="@drawable/ic_network" />
 
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-            android:id="@+id/fabSelectFolder"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:layout_above="@id/fabSettings"
-            android:importantForAccessibility="no"
-            android:translationZ="10dp"
-            android:layout_alignParentEnd="true"
-            app:elevation="4dp"
-            app:srcCompat="@drawable/ic_folder" />
-
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabAbout"
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@id/fabSelectFolder"
+            android:layout_above="@id/fabSettings"
             android:layout_alignParentEnd="true"
             android:layout_margin="16dp"
             android:importantForAccessibility="no"
@@ -274,6 +259,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="16dp"
+            android:importantForAccessibility="no"
             android:visibility="gone"
             app:srcCompat="@drawable/ic_arrow_upward" />
 

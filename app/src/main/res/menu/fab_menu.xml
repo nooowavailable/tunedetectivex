@@ -14,12 +14,6 @@
         tools:ignore="HardcodedText" />
 
     <item
-        android:id="@+id/fabSelectFolder"
-        android:title="Import by Files"
-        android:icon="@drawable/ic_folder"
-        tools:ignore="HardcodedText" />
-
-    <item
         android:id="@+id/menu_about"
         android:icon="@drawable/ic_about"
         android:title="About"

@@ -25,7 +25,11 @@ interface SavedArtistDao {
     suspend fun delete(artist: SavedArtist)
 
     @Query("UPDATE saved_artist SET lastReleaseDate = :lastReleaseDate, lastReleaseTitle = :lastReleaseTitle WHERE id = :artistId")
-    suspend fun updateReleaseDetails(artistId: Long, lastReleaseDate: String, lastReleaseTitle: String)
+    suspend fun updateReleaseDetails(
+        artistId: Long,
+        lastReleaseDate: String,
+        lastReleaseTitle: String
+    )
 
     @Query("UPDATE saved_artist SET profileImageUrl = :profileImageUrl WHERE id = :artistId")
     suspend fun updateArtistDetails(artistId: Long, profileImageUrl: String)
@@ -53,4 +57,7 @@ interface SavedArtistDao {
 
     @Query("UPDATE saved_artist SET notifyOnNewRelease = :notify WHERE id = :artistId")
     suspend fun setNotifyOnNewRelease(artistId: Long, notify: Boolean)
+
+    @Query("SELECT COUNT(*) FROM saved_artist")
+    suspend fun getCount(): Int
 }

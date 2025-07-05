@@ -7,6 +7,11 @@ plugins {
 }
 
 android {
+
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
+
     namespace = "com.dev.tunedetectivex"
     compileSdk = 35
     flavorDimensions += "default"

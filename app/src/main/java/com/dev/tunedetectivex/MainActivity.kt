@@ -98,14 +98,15 @@ class MainActivity : ComponentActivity() {
 
         pushNotificationPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
+        ) { isGranted ->
             if (isGranted) {
                 Log.d(TAG, "Notification permission granted.")
+                WorkManagerUtil.reEnqueueIfMissing(this)
             } else {
                 Log.w(TAG, "Notification permission denied.")
                 Toast.makeText(
                     this,
-                    "Notification permission is required for progress updates.",
+                    getString(R.string.toast_notification_permission_required),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -134,7 +135,6 @@ class MainActivity : ComponentActivity() {
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
-        val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         val fabCheckStatus: FloatingActionButton = findViewById(R.id.fabCheckStatus)
 
         fabAbout = findViewById(R.id.fabAbout)
@@ -142,7 +142,7 @@ class MainActivity : ComponentActivity() {
         isFabMenuOpen = false
 
         val allFabs =
-            listOf(fabSavedArtists, fabSettings, fabSelectFolder, fabAbout, fabCheckStatus)
+            listOf(fabSavedArtists, fabSettings, fabAbout, fabCheckStatus)
         allFabs.forEach {
             it.visibility = View.GONE
             it.translationY = 0f
@@ -161,10 +161,6 @@ class MainActivity : ComponentActivity() {
             appPreferences.edit { putBoolean("isFirstRun", false) }
         }
 
-        val intervalInMinutes = getSharedPreferences("TaskLog", MODE_PRIVATE)
-            .getInt("fetchInterval", 90)
-        WorkManagerUtil.setupFetchReleasesWorker(this, intervalInMinutes)
-
         requestNotificationPermission()
 
         updateSaveButton()
@@ -175,7 +171,6 @@ class MainActivity : ComponentActivity() {
         searchLayout.startIconContentDescription = null
 
         searchLayout.setStartIconOnClickListener {
-            //  nothing //
         }
 
         searchLayout.setEndIconOnClickListener {
@@ -226,16 +221,15 @@ class MainActivity : ComponentActivity() {
             toggleFabMenu()
         }
 
-        fabSelectFolder.setOnClickListener {
-            startActivity(Intent(this, FolderImportActivity::class.java))
-        }
-
         fabAbout.setOnClickListener {
             startActivity(Intent(this, AboutActivity::class.java))
             toggleFabMenu()
         }
 
         fabCheckStatus.setOnClickListener {
+            if (isItunesSupportEnabled()) {
+                checkItunesStatus()
+            }
             checkDeezerStatus()
         }
 
@@ -326,6 +320,17 @@ class MainActivity : ComponentActivity() {
                     }
             }
         })
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pushNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
     }
 
     private fun isAutoLoadReleasesEnabled(): Boolean {
@@ -349,9 +354,8 @@ class MainActivity : ComponentActivity() {
 
     private fun displayArtists(artists: List<DeezerArtist>) {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -488,12 +492,12 @@ class MainActivity : ComponentActivity() {
 
     private fun displayReleaseInfo(unifiedAlbum: UnifiedAlbum) {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
+
 
         artistInfoContainer.visibility = View.VISIBLE
         textViewname.text = unifiedAlbum.artistName
@@ -641,9 +645,8 @@ class MainActivity : ComponentActivity() {
 
     private fun triggerArtistSearch() {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -671,9 +674,8 @@ class MainActivity : ComponentActivity() {
 
     private fun fetchSimilarArtistsFromDeezer(artist: String) {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -719,9 +721,8 @@ class MainActivity : ComponentActivity() {
 
     private fun checkDeezerStatus() {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -753,6 +754,28 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    private fun checkItunesStatus() {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://itunes.apple.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val iTunesService = retrofit.create(ITunesApiService::class.java)
+
+        iTunesService.ping().enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                if (response.isSuccessful) {
+                    Toast.makeText(this@MainActivity, "iTunes API is reachable", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@MainActivity, "iTunes API error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Toast.makeText(this@MainActivity, "iTunes API not reachable: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     private fun setupBackGesture() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -777,9 +800,8 @@ class MainActivity : ComponentActivity() {
 
     private fun saveSearchHistory(artist: DeezerArtist) {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -813,9 +835,8 @@ class MainActivity : ComponentActivity() {
 
     private fun showSearchHistory() {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -922,14 +943,8 @@ class MainActivity : ComponentActivity() {
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
-        val fabSelectFolder: FloatingActionButton = findViewById(R.id.fabSelectFolder)
         val fabAbout: FloatingActionButton = findViewById(R.id.fabAbout)
         val fabCheckStatus: FloatingActionButton = findViewById(R.id.fabCheckStatus)
-
-        val appPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFolderImportEnabled = appPreferences.getBoolean("isFolderImportEnabled", false)
-
-        fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
 
         val translationDistance = -0f
 
@@ -937,7 +952,6 @@ class MainActivity : ComponentActivity() {
             fabSavedArtists.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabSettings.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabCheckStatus.animate().translationY(0f).alpha(0f).setDuration(200).start()
-            fabSelectFolder.animate().translationY(0f).alpha(0f).setDuration(200).start()
             fabAbout.animate().translationY(0f).alpha(0f).setDuration(200).start()
 
             fabMenu.setImageResource(R.drawable.ic_menu)
@@ -946,14 +960,12 @@ class MainActivity : ComponentActivity() {
                 fabSavedArtists.visibility = View.GONE
                 fabSettings.visibility = View.GONE
                 fabCheckStatus.visibility = View.GONE
-                fabSelectFolder.visibility = View.GONE
                 fabAbout.visibility = View.GONE
             }, 200)
         } else {
             fabSavedArtists.visibility = View.VISIBLE
             fabSettings.visibility = View.VISIBLE
             fabCheckStatus.visibility = View.VISIBLE
-            fabSelectFolder.visibility = if (isFolderImportEnabled) View.VISIBLE else View.GONE
             fabAbout.visibility = View.VISIBLE
 
             fabSavedArtists.animate().translationY(translationDistance * 1).alpha(1f)
@@ -961,8 +973,6 @@ class MainActivity : ComponentActivity() {
             fabSettings.animate().translationY(translationDistance * 2).alpha(1f).setDuration(200)
                 .start()
             fabCheckStatus.animate().translationY(translationDistance * 3).alpha(1f)
-                .setDuration(200).start()
-            fabSelectFolder.animate().translationY(translationDistance * 4).alpha(1f)
                 .setDuration(200).start()
             fabAbout.animate().translationY(translationDistance * 5).alpha(1f).setDuration(200)
                 .start()
@@ -1074,9 +1084,8 @@ class MainActivity : ComponentActivity() {
 
     private fun setupApiService() {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -1095,21 +1104,24 @@ class MainActivity : ComponentActivity() {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
+                Log.d(TAG, "Requesting notification permission.")
                 pushNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else {
                 Log.d(TAG, "Notification permission already granted.")
+                WorkManagerUtil.reEnqueueIfMissing(this)
             }
         } else {
             Log.d(TAG, "Notification permission not required for this Android version.")
+            WorkManagerUtil.reEnqueueIfMissing(this)
         }
     }
 
 
+
     private fun openArtistDiscography(artist: DeezerArtist) {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -1155,9 +1167,8 @@ class MainActivity : ComponentActivity() {
 
     private fun saveArtist() {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -1276,9 +1287,8 @@ class MainActivity : ComponentActivity() {
         onFailure: () -> Unit
     ) {
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -1371,14 +1381,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun loadSavedReleases() {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        val isNetworkAvailable = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)
 
-        if (!isNetworkAvailable) {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
-            progressBar.visibility = View.GONE
-            recyclerViewReleases.visibility = View.GONE
             return
         }
 
@@ -1422,12 +1428,16 @@ class MainActivity : ComponentActivity() {
                         .trim()
 
                     val type = release.releaseType?.replaceFirstChar { it.uppercaseChar() }
-                    val displayTitle = if (!type.isNullOrBlank()) "$cleanedTitle ($type)" else cleanedTitle
+                    val displayTitle =
+                        if (!type.isNullOrBlank()) "$cleanedTitle ($type)" else cleanedTitle
                     release.copy(title = displayTitle)
                 }
                 .sortedByDescending {
                     try {
-                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
+                        SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).parse(it.releaseDate)?.time
                     } catch (_: Exception) {
                         null
                     }
@@ -1445,15 +1455,16 @@ class MainActivity : ComponentActivity() {
                 recyclerViewReleases.visibility = View.VISIBLE
 
                 val adapter = ReleaseAdapter { release ->
-                    val intent = Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
-                        putExtra("releaseId", release.id)
-                        putExtra("releaseTitle", release.title)
-                        putExtra("artistName", release.artistName)
-                        putExtra("albumArtUrl", release.albumArtUrl)
-                        putExtra("deezerId", release.deezerId ?: -1L)
-                        putExtra("itunesId", release.itunesId ?: -1L)
-                        putExtra("apiSource", release.apiSource)
-                    }
+                    val intent =
+                        Intent(this@MainActivity, ReleaseDetailsActivity::class.java).apply {
+                            putExtra("releaseId", release.id)
+                            putExtra("releaseTitle", release.title)
+                            putExtra("artistName", release.artistName)
+                            putExtra("albumArtUrl", release.albumArtUrl)
+                            putExtra("deezerId", release.deezerId ?: -1L)
+                            putExtra("itunesId", release.itunesId ?: -1L)
+                            putExtra("apiSource", release.apiSource)
+                        }
                     startActivity(intent)
                 }
 
@@ -1464,18 +1475,10 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(
-                    this@MainActivity,
-                    getString(R.string.network_type_not_available),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+    private fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
+            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return emptyList()
         }
 
@@ -1518,16 +1521,20 @@ class MainActivity : ComponentActivity() {
                     val iTunesReleases = response.body()?.results.orEmpty()
                         .filter { it.collectionType in listOf("Album", "EP", "Single") }
                         .map { album ->
-                            val extractedType = Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE)
-                                .find(album.collectionName ?: "")
-                                ?.groupValues?.get(1)
-                                ?.replaceFirstChar { it.uppercaseChar() }
+                            val extractedType =
+                                Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE)
+                                    .find(album.collectionName ?: "")
+                                    ?.groupValues?.get(1)
+                                    ?.replaceFirstChar { it.uppercaseChar() }
 
                             ReleaseItem(
                                 id = album.collectionId ?: -1L,
                                 title = album.collectionName ?: "Unknown",
                                 artistName = album.artistName ?: artist.name,
-                                albumArtUrl = album.artworkUrl100?.replace("100x100bb", "1200x1200bb") ?: "",
+                                albumArtUrl = album.artworkUrl100?.replace(
+                                    "100x100bb",
+                                    "1200x1200bb"
+                                ) ?: "",
                                 releaseDate = album.releaseDate ?: "Unknown",
                                 apiSource = "iTunes",
                                 itunesId = album.collectionId,

@@ -87,8 +87,10 @@ class ReleaseAdapter(
 
             val rawTitle = item.title
 
-            val parenMatch = Regex("\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE).find(rawTitle)
-            val dashMatch = Regex("-(\\s*)(Single|EP|Album)", RegexOption.IGNORE_CASE).find(rawTitle)
+            val parenMatch =
+                Regex("\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE).find(rawTitle)
+            val dashMatch =
+                Regex("-(\\s*)(Single|EP|Album)", RegexOption.IGNORE_CASE).find(rawTitle)
 
             val type = when {
                 parenMatch != null -> parenMatch.groupValues[1]

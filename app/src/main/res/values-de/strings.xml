@@ -16,7 +16,7 @@
     <string name="textViewrelease_date">Erscheinungsdatum</string>
     <string name="searchViewArtists">Suche nach einem Künstler…</string>
     <string name="general_settings">Allgemeine Einstellungen</string>
-    <string name="intervalInput">Abrufintervall (in Minuten)</string>
+    <string name="intervalInput">Aktualisierungsfrequenz</string>
     <string name="releaseAgeLabel">Benachrichtigungen für Veröffentlichungen innerhalb der letzten 4 Wochen</string>
     <string name="futureReleaseMonthsLabel">Benachrichtigungen für Veröffentlichungen innerhalb der nächsten 4 Monate</string>
     <string name="fetchSettings">Intervall für automatische Updates</string>
@@ -48,8 +48,7 @@
     <string name="unknown_artist">Unbekannter Künstler</string>
     <string name="artist_saved">%1$s gespeichert!</string>
     <string name="artist_removed">%1$s von gespeicherten Künstlern entfernt!</string>
-    <string name="fetch_interval_title">Abrufintervall</string>
-    <string name="fetch_interval_description">Hier kannst du einstellen, wie oft neue Veröffentlichungen abgerufen werden sollen (in Minuten).</string>
+    <string name="fetch_interval_description">Hier kannst du einstellen, wie oft neue Veröffentlichungen abgerufen werden sollen.</string>
     <string name="release_age_title">Veröffentlichungsalter</string>
     <string name="release_age_description">Mit diesem Regler kannst du festlegen, wie alt Veröffentlichungen sein dürfen, um Benachrichtigungen zu erhalten (in Wochen).</string>
     <string name="delayed_fetching_title">Verzögerter Abruf</string>
@@ -166,17 +165,15 @@
     <string name="deezer_api_error">Deezer API antwortet, aber mit Fehler: %1$d</string>
     <string name="deezer_api_not_reachable">Deezer API nicht erreichbar: %1$s</string>
     <string name="tutorial_check_status_title">Status prüfen</string>
-    <string name="tutorial_check_status_message">Hier kannst du den Deezer-Status überprüfen.</string>
+    <string name="tutorial_check_status_message">Hier kannst du die API(s) Status überprüfen.</string>
     <string name="FetchDelay">Verzögerung (in Sekunden)</string>
     <string name="itunes_support_title">iTunes-Support (Experimentell)</string>
     <string name="itunes_support_message">
-⚠️ Der iTunes-Support ist derzeit experimentell.\n\n
-Er kann jedoch für einige Künstler bessere oder vollständigere Daten liefern –
-insbesondere wenn auf Deezer Veröffentlichungen fehlen.\n\n
-Wenn aktiviert, vergleicht die App automatisch die Discographien von Deezer und iTunes.
-Bei mindestens 3 gemeinsamen Releases wird der Künstler kombiniert dargestellt –
-inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
-ℹ️ Das Aktivieren oder Deaktivieren dieser Option löscht deinen gesamten Suchverlauf.
+Die iTunes-Unterstützung ist derzeit experimentell.\n\n
+Sie kann für einige Künstler bessere oder vollständigere Daten liefern – besonders wenn Releases auf Deezer fehlen.\n\n
+Wenn aktiviert, vergleicht die App die Diskografien von Deezer und iTunes.\n\n
+Das Aktivieren oder Deaktivieren dieser Option löscht deinen gesamten Suchverlauf.\n\n
+Speichere deine Künstler anschließend manuell erneut, da sie keine iTunes-Verknüpfungen haben.
 </string>
     <string name="dialog_button_understood">Verstanden</string>
     <string name="dialog_button_cancel">Abbrechen</string>
@@ -253,6 +250,34 @@ inklusive Anzeige des neuesten Releases aus beiden Plattformen.\n\n
     <string name="auto_load_releases_title">Releases automatisch anzeigen</string>
     <string name="auto_load_releases_description">Wenn aktiviert, werden deine gespeicherten Künstler-Releases direkt beim Start geladen.</string>
     <string name="restart_required_note">* Manueller Neustart der App erforderlich, um Änderungen zu übernehmen.</string>
+    <string name="select_app_icon">App-Icon auswählen</string>
+    <string name="backup_saved">Backup erfolgreich gespeichert!</string>
+    <string name="backup_save_error">Fehler beim Speichern des Backups: %1$s</string>
+    <string name="backup_importing">Backup wird importiert…</string>
+    <string name="backup_restored_success">Backup erfolgreich wiederhergestellt und aktualisiert!</string>
+    <string name="backup_restore_error">Fehler beim Wiederherstellen des Backups: %1$s</string>
+    <string name="error_network_type_unavailable">Der ausgewählte Netzwerktyp ist nicht verfügbar.</string>
+    <string name="error_fetching_releases">Fehler beim Laden der Releases</string>
+    <string name="error_notification_title">Etwas ist schiefgelaufen</string>
+    <string name="error_notification_content_text">Zum Erweitern antippen</string>
+    <string name="error_notification_big_text">Beim Überprüfen neuer Releases gab es ein Problem:\n\n%s</string>
+    <string name="error_failed_artists_message">Folgende Künstler konnten nach allen Versuchen nicht geladen werden:\n%s</string>
+    <string name="toast_notification_permission_required">Benachrichtigungsberechtigung wird für Fortschrittsupdates benötigt.</string>
+    <string name="button_change_icon">App-Icon ändern</string>
+    <string name="tweaks">Anpassungen &amp; Extras</string>
+    <string name="button_check_work_status">Hintergrundaufträge prüfen</string>
+    <string name="fetch_interval_title">Aktualisierungsintervall auswählen</string>
+    <string name="interval_15_min">15 Minuten</string>
+    <string name="interval_30_min">30 Minuten</string>
+    <string name="interval_1_h">1 Stunde</string>
+    <string name="interval_2_h">2 Stunden</string>
+    <string name="interval_4_h">4 Stunden</string>
+    <string name="interval_6_h">6 Stunden</string>
+    <string name="interval_12_h">12 Stunden</string>
+    <string name="interval_1_day">1 Tag</string>
+    <string name="interval_fallback_minutes">%1$d Minuten</string>
+    <string name="interval_selected_toast">Abrufintervall auf %1$s gesetzt</string>
+    <string name="button_notification_settings">Status-Benachrichtigungen anpassen</string>
     <string-array name="view_type_options">
         <item>Künstler</item>
         <item>Veröffentlichungen</item>

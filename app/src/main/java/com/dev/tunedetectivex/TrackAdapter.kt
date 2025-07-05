@@ -61,16 +61,15 @@ class TrackAdapter : RecyclerView.Adapter<TrackAdapter.TrackViewHolder>() {
         }
 
         private fun checkNetworkTypeAndSetFlag() {
-            val sharedPreferences =
-                itemView.context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-            val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+            val context = itemView.context
+            val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(context)
             val isNetworkRequestsAllowed =
-                WorkManagerUtil.isSelectedNetworkTypeAvailable(itemView.context, networkType)
+                WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkPreference)
 
             if (!isNetworkRequestsAllowed) {
                 Toast.makeText(
-                    itemView.context,
-                    itemView.context.getString(R.string.network_type_not_available),
+                    context,
+                    context.getString(R.string.network_type_not_available),
                     Toast.LENGTH_SHORT
                 ).show()
             }

@@ -10,7 +10,8 @@ import androidx.room.RoomDatabase
         SavedArtist::class,
         SentNotification::class,
         ReleaseItem::class,
-        SearchHistory::class
+        SearchHistory::class,
+        DnsEntry::class
     ],
     version = 4,
     exportSchema = true
@@ -18,6 +19,7 @@ import androidx.room.RoomDatabase
 abstract class AppDatabase : RoomDatabase() {
     abstract fun savedArtistDao(): SavedArtistDao
     abstract fun searchHistoryDao(): SearchHistoryDao
+    abstract fun dnsCacheDao(): DnsCacheDao
 
     companion object {
         @Volatile

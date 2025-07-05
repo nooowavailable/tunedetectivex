@@ -2,6 +2,7 @@ package com.dev.tunedetectivex.api
 
 import com.dev.tunedetectivex.models.ITunesAlbumSearchResponse
 import com.dev.tunedetectivex.models.ITunesArtistSearchResponse
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -24,4 +25,7 @@ interface ITunesApiService {
         @Query("id") albumId: Long,
         @Query("entity") entity: String = "song"
     ): Call<ITunesAlbumSearchResponse>
+
+    @GET("/")
+    fun ping(): Call<ResponseBody>
 }

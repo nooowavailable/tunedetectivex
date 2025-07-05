@@ -104,7 +104,6 @@ class SavedArtistAdapter(
     fun isInSelectionMode(): Boolean = selectionMode
 
 
-
     override fun onViewRecycled(holder: SavedArtistViewHolder) {
         super.onViewRecycled(holder)
         Glide.with(holder.itemView.context)

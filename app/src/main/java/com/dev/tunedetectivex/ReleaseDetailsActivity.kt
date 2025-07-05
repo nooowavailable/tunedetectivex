@@ -128,7 +128,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
 
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFirstRunReleaseDetails = sharedPreferences.getBoolean("isFirstRunReleaseDetails", true)
+        val isFirstRunReleaseDetails =
+            sharedPreferences.getBoolean("isFirstRunReleaseDetails", true)
         if (isFirstRunReleaseDetails) {
             showReleaseDetailsTutorial()
             sharedPreferences.edit { putBoolean("isFirstRunReleaseDetails", false) }
@@ -156,11 +157,9 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences =
-            applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
         isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkType)
+            WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkPreference)
     }
 
     private fun extractReleaseType(title: String): String? {
@@ -578,7 +577,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
                             trackAdapter.submitList(tracks)
                         } else {
-                            Log.e("ReleaseDetailsActivity", "iTunes: Failed to load tracks: ${response.message()}")
+                            Log.e(
+                                "ReleaseDetailsActivity",
+                                "iTunes: Failed to load tracks: ${response.message()}"
+                            )
                         }
                     }
                 } catch (e: Exception) {

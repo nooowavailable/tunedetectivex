@@ -8,7 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 class PlaceholderAdapter : RecyclerView.Adapter<PlaceholderAdapter.PlaceholderViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceholderViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.placeholder_item, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.placeholder_item, parent, false)
         return PlaceholderViewHolder(view)
     }
 

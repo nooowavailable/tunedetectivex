@@ -33,7 +33,6 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     private lateinit var artistName: String
     private lateinit var artistImageUrl: String
     private lateinit var progressBar: ProgressBar
-    private var isNetworkRequestsAllowed = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,10 +76,10 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
+        getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -108,7 +107,11 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                 }
 
                 val sorted = uniqueAlbums.sortedByDescending {
-                    try { format.parse(it.releaseDate)?.time } catch (e: Exception) { null }
+                    try {
+                        format.parse(it.releaseDate)?.time
+                    } catch (_: Exception) {
+                        null
+                    }
                 }
 
                 recyclerView.adapter = UnifiedDiscographyAdapter(sorted) { album ->
@@ -116,9 +119,11 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     album.itunesId?.let { selectedArtist?.itunesId = it }
 
                     val isFromDeezer = album.deezerId != null
-                    val releaseId = if (isFromDeezer) album.deezerId!!.toLong() else album.itunesId!!.toLong()
+                    val releaseId =
+                        if (isFromDeezer) album.deezerId!!.toLong() else album.itunesId!!.toLong()
 
-                    val validCoverUrl = album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
+                    val validCoverUrl =
+                        album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
 
                     Intent(this, ReleaseDetailsActivity::class.java).apply {
                         putExtra("releaseId", releaseId)
@@ -252,10 +257,9 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     }
 
     private fun setupApiService() {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
 
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkType)) {
+        if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
             return
         }
@@ -273,6 +277,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                 finish()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

@@ -79,19 +79,9 @@ class SimilarArtistsAdapter(
         }
     }
 
-    private fun checkNetworkTypeAndSetFlag() {
-        val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        val networkType = sharedPreferences.getString("networkType", "Any") ?: "Any"
-        val isNetworkRequestsAllowed =
-            WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkType)
-
-        if (!isNetworkRequestsAllowed) {
-            Toast.makeText(
-                context,
-                context.getString(R.string.network_type_not_available),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+    private fun checkNetworkTypeAndSetFlag(): Boolean {
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(context)
+        return WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkPreference)
     }
 
     class ArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {

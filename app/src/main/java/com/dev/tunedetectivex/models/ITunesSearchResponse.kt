@@ -16,11 +16,7 @@ data class ITunesArtistItem(
     val primaryGenreName: String?,
     val artworkUrl100: String?,
     val albums: List<ITunesAlbumItem>? = null
-) {
-    fun getHighResArtwork(): String? {
-        return artworkUrl100?.toHighResArtwork()
-    }
-}
+)
 
 data class ITunesAlbumItem(
     val collectionId: Long?,
