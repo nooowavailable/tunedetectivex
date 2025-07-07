@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId = "com.tunedetectivex.nooowavailable"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 8
         versionName = "1.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
