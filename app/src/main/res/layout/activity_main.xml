@@ -40,8 +40,7 @@
                     android:hint="@string/editTextArtist"
                     android:imeOptions="actionSearch"
                     android:inputType="text"
-                    android:singleLine="true"
-                    tools:ignore="VisualLintTextFieldSize" />
+                    android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout
@@ -53,8 +52,7 @@
                 android:gravity="start"
                 android:clickable="true"
                 android:minHeight="250dp"
-                android:visibility="invisible"
-                tools:ignore="RtlSymmetry">
+                android:visibility="invisible" >
 
                 <ImageView
                     android:id="@+id/imageViewAlbumArt"
@@ -65,8 +63,7 @@
                     android:maxHeight="400dp"
                     android:scaleType="centerCrop"
                     android:importantForAccessibility="no"
-                    android:background="@android:color/transparent"
-                    tools:ignore="ObsoleteLayoutParam" />
+                    android:background="@android:color/transparent" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -199,8 +196,7 @@
             android:alpha="0.9"
             android:translationZ="10dp"
             android:contentDescription="@string/fabMenu"
-            app:srcCompat="@drawable/ic_menu"
-            tools:ignore="RelativeOverlap" />
+            app:srcCompat="@drawable/ic_menu" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"

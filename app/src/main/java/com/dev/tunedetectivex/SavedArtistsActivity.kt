@@ -25,7 +25,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Cache
@@ -37,7 +36,6 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
-@Suppress("DEPRECATION")
 class SavedArtistsActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
@@ -75,31 +73,6 @@ class SavedArtistsActivity : AppCompatActivity() {
         if (isFirstRunSavedArtists) {
             showSavedArtistsTutorial()
             sharedPreferences.edit { putBoolean("isFirstRunSavedArtists", false) }
-        }
-
-        lifecycleScope.launch {
-            val selectedPosition = spinnerViewType.selectedItemPosition
-            if (selectedPosition == 0) {
-                val prefs =
-                    applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
-                val isItunesEnabled =
-                    prefs.getBoolean("itunesSupportEnabled", false)
-                getItunesAttemptCount()
-
-                if (isItunesEnabled) {
-                    val jobs = allArtists.map { artist ->
-                        launch {
-                            fetchArtistDetails(artist)
-                        }
-                    }
-                    jobs.joinAll()
-                } else {
-                    Log.d(
-                        "SavedArtistsActivity",
-                        "🔕 iTunes matching disabled - Details update skipped."
-                    )
-                }
-            }
         }
 
         onBackPressedDispatcher.addCallback(
@@ -373,22 +346,8 @@ class SavedArtistsActivity : AppCompatActivity() {
         isLoading = true
         showLoading(true)
 
-        checkNetworkTypeAndSetFlag()
-
-        if (!isNetworkRequestsAllowed) {
-            Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT)
-                .show()
-            showLoading(false)
-            isLoading = false
-            return
-        }
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-                val itunesSupportEnabled =
-                    sharedPreferences.getBoolean("itunesSupportEnabled", false)
-                val attemptCount = getItunesAttemptCount()
                 val savedArtists = db.savedArtistDao().getAll().sortedBy { it.name.lowercase() }
 
                 if (savedArtists.isEmpty()) {
@@ -404,43 +363,15 @@ class SavedArtistsActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val updatedList = mutableListOf<SavedArtistItem>()
-                var deezerUpdated = 0
-                var itunesUpdated = 0
-
-                for (artist in savedArtists) {
-                    val updated = if (itunesSupportEnabled && attemptCount < 3) {
-                        fetchArtistDetailsByDiscography(artist) ?: artist
-                    } else {
-                        Log.d("SavedArtistsActivity", "⏭️ iTunes matching disabled - skip $artist")
-                        artist
-                    }
-
-                    if (artist.deezerId == null && updated.deezerId != null) deezerUpdated++
-                    if (artist.itunesId == null && updated.itunesId != null) itunesUpdated++
-
-                    updatedList.add(updated.toItem())
-                }
-
-                if (itunesSupportEnabled && attemptCount >= 3) {
-                    sharedPreferences.edit { putBoolean("itunesSupportEnabled", true) }
-                }
-
-                if (itunesSupportEnabled && attemptCount < 3) {
-                    incrementItunesAttemptCount()
-                }
-
-                val notMatched = updatedList.filter { it.itunesId == null }
+                val currentArtists = savedArtists.map { it.toItem() }
 
                 withContext(Dispatchers.Main) {
-                    allArtists = updatedList
+                    allArtists = currentArtists
 
                     if (recyclerView.adapter != artistAdapter) {
                         recyclerView.adapter = artistAdapter
                     }
-
                     artistAdapter.submitList(allArtists)
-
                 }
             } catch (e: Exception) {
                 Log.e("SavedArtistsActivity", "Error with loadSavedArtists: ${e.message}", e)
@@ -450,104 +381,6 @@ class SavedArtistsActivity : AppCompatActivity() {
                     isLoading = false
                 }
             }
-        }
-    }
-
-    private suspend fun fetchArtistDetailsByDiscography(artist: SavedArtist): SavedArtist? {
-        val prefs = applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val itunesSupportEnabled = prefs.getBoolean("itunesSupportEnabled", false)
-
-        if (itunesSupportEnabled) {
-            Log.d(
-                "SavedArtistsActivity",
-                "🚫 iTunes matching deactivated - iTunes is skipped completely."
-            )
-            return artist
-        }
-
-
-        val searchName = artist.name
-        val context = applicationContext
-
-        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(context)
-        val isNetworkOk = WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkPreference)
-        if (!isNetworkOk) return artist
-
-        return try {
-            var updated = artist
-
-            val deezerSearchResults =
-                apiService.searchArtist(searchName).execute().body()?.data.orEmpty()
-            val deezerMatch = deezerSearchResults.firstOrNull { it.name == searchName }
-            val deezerId = deezerMatch?.id ?: -1L
-
-            val deezerTitles = if (deezerId > 0) {
-                val releases =
-                    apiService.getArtistReleases(deezerId, 0).execute().body()?.data.orEmpty()
-                releases.map { normalizeTitle(it.title) }.toSet()
-            } else emptySet()
-
-            var iTunesId: Long? = null
-            var itunesTitles: Set<String> = emptySet()
-
-            if (itunesSupportEnabled) {
-                Log.d("SavedArtistsActivity", "🔍 Start iTunes matching for $searchName")
-                val retrofit = Retrofit.Builder()
-                    .baseUrl("https://itunes.apple.com/")
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build()
-                val iTunesService = retrofit.create(ITunesApiService::class.java)
-
-                val iTunesSearchResults =
-                    iTunesService.searchArtist(term = searchName, entity = "musicArtist")
-                        .execute().body()?.results.orEmpty()
-                val iTunesMatch = iTunesSearchResults.firstOrNull { it.artistName == searchName }
-                iTunesId = iTunesMatch?.artistId
-
-                itunesTitles = if (iTunesId != null) {
-                    val releases = iTunesService.lookupArtistWithAlbums(iTunesId).execute()
-                        .body()?.results.orEmpty()
-                    releases.filter { it.collectionName != null }
-                        .map { normalizeTitle(it.collectionName!!) }
-                        .toSet()
-                } else emptySet()
-            } else {
-                Log.d(
-                    "SavedArtistsActivity",
-                    "🚫 iTunes matching deactivated - iTunes is skipped completely."
-                )
-            }
-
-            val common = deezerTitles.intersect(itunesTitles)
-
-            Log.d(
-                "SavedArtistsActivity",
-                "📀 Deezer-Title: ${deezerTitles.size}, iTunes-Title: ${itunesTitles.size}, Combined: ${common.size}"
-            )
-
-            if (deezerId > 0 && updated.deezerId == null) {
-                db.savedArtistDao().updateDeezerId(updated.id, deezerId)
-                updated = updated.copy(deezerId = deezerId)
-                Log.d("SavedArtistsActivity", "✅ Deezer-ID saved: $deezerId")
-            }
-
-            if (iTunesId != null && common.size >= 3 && updated.itunesId == null) {
-                db.savedArtistDao().updateItunesId(updated.id, iTunesId)
-                updated = updated.copy(itunesId = iTunesId)
-                Log.d(
-                    "SavedArtistsActivity",
-                    "✅ iTunes-ID saved: $iTunesId (⟶ ${common.size} unified Releases)"
-                )
-            }
-
-            return updated
-        } catch (e: Exception) {
-            Log.e(
-                "SavedArtistsActivity",
-                "❌ Error with fetchArtistDetailsByDiscography: ${e.message}",
-                e
-            )
-            artist
         }
     }
 
@@ -563,85 +396,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             itunesId = itunesId,
             notifyOnNewRelease = notifyOnNewRelease
         )
-    }
-
-
-    private suspend fun fetchArtistDetails(
-        artist: SavedArtistItem,
-        customName: String? = null
-    ): SavedArtistItem? {
-        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val itunesSupportEnabled = !prefs.getBoolean("itunesSupportEnabled", false)
-
-        checkNetworkTypeAndSetFlag()
-
-        if (!isNetworkRequestsAllowed) return artist
-
-        if (itunesSupportEnabled) {
-            Log.d(
-                "SavedArtistsActivity",
-                "🚫 iTunes matching disabled - fetchArtistDetails() skips iTunes completely."
-            )
-            return artist
-        }
-
-        return try {
-            var updated = artist
-            val searchName = customName ?: artist.name
-
-            val deezerId = artist.deezerId ?: run {
-                val deezerResults =
-                    apiService.searchArtist(searchName).execute().body()?.data.orEmpty()
-                val deezerMatch = deezerResults.firstOrNull { it.name == searchName }
-                deezerMatch?.id?.also {
-                    db.savedArtistDao().updateDeezerId(artist.id, it)
-                    updated = updated.copy(deezerId = it)
-                }
-            } ?: return artist
-
-            val deezerTitles = apiService.getArtistReleases(deezerId, 0)
-                .execute().body()?.data.orEmpty().map { normalizeTitle(it.title) }.toSet()
-
-            val retrofit = Retrofit.Builder()
-                .baseUrl("https://itunes.apple.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            val iTunesService = retrofit.create(ITunesApiService::class.java)
-
-            val iTunesResults = iTunesService
-                .searchArtist(term = searchName, entity = "musicArtist")
-                .execute().body()?.results.orEmpty()
-            val exactMatch = iTunesResults.firstOrNull { it.artistName == searchName }
-            val iTunesId = exactMatch?.artistId
-
-            val iTunesTitles = if (iTunesId != null) {
-                iTunesService.lookupArtistWithAlbums(iTunesId).execute().body()?.results
-                    ?.filter { it.collectionName != null }
-                    ?.map { normalizeTitle(it.collectionName!!) }
-                    ?.toSet()
-            } else emptySet()
-
-            val common = deezerTitles.intersect(iTunesTitles ?: emptySet())
-
-            if (common.size >= 3 && iTunesId != null) {
-                db.savedArtistDao().updateItunesId(artist.id, iTunesId)
-                updated = updated.copy(itunesId = iTunesId)
-                Log.d(
-                    "SavedArtistsActivity",
-                    "🎯 iTunes-ID for '${artist.name}' set: $iTunesId (${common.size} Matches)"
-                )
-            } else {
-                Log.d(
-                    "SavedArtistsActivity",
-                    "❌ No iTunes match for '${artist.name}' (${common.size} combined titles)"
-                )
-            }
-
-            return updated
-        } catch (e: Exception) {
-            Log.e("SavedArtistsActivity", "Error with fetchArtistDetails(): ${e.message}", e)
-            artist
-        }
     }
 
 
@@ -788,13 +542,8 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
     private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
-        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
         val isNetworkAvailable = WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkPreference)
-
-
-        if (!isNetworkAvailable) return emptyList()
-
 
         if (!isNetworkAvailable) {
             Log.w("SavedArtistsActivity", "🚫 Network not available – skipping ${artist.name}")
@@ -805,74 +554,72 @@ class SavedArtistsActivity : AppCompatActivity() {
         val artistImage = artist.profileImageUrl ?: ""
 
         try {
-            val deezerResponse =
-                apiService.getArtistReleases(artist.deezerId ?: artist.id, 0).execute()
-            if (deezerResponse.isSuccessful) {
-                val deezerReleases = deezerResponse.body()?.data.orEmpty().map { release ->
-                    ReleaseItem(
-                        id = release.id,
-                        title = release.title,
-                        artistName = artist.name,
-                        albumArtUrl = release.getBestCoverUrl()?.takeIf { it.isNotBlank() } ?: "",
-                        releaseDate = release.release_date,
-                        apiSource = "Deezer",
-                        deezerId = release.id,
-                        artistImageUrl = artistImage,
-                        releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
-                    )
+            if (artist.deezerId != null) {
+                val deezerResponse =
+                    apiService.getArtistReleases(artist.deezerId, 0).execute()
+                if (deezerResponse.isSuccessful) {
+                    val deezerReleases = deezerResponse.body()?.data.orEmpty().map { release ->
+                        val uniqueId = "Deezer_${release.id}".hashCode().toLong()
+                        ReleaseItem(
+                            id = uniqueId,
+                            title = release.title,
+                            artistName = artist.name,
+                            albumArtUrl = release.getBestCoverUrl()?.takeIf { it.isNotBlank() } ?: "",
+                            releaseDate = release.release_date,
+                            apiSource = "Deezer",
+                            deezerId = release.id,
+                            artistImageUrl = artistImage,
+                            releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
+                        )
+                    }
+                    releases.addAll(deezerReleases)
+                } else {
+                    Log.e("SavedArtistsActivity", "❌ Deezer API error for ${artist.name}: ${deezerResponse.code()} - ${deezerResponse.message()}")
                 }
-                releases.addAll(deezerReleases)
+            } else {
+                Log.d("SavedArtistsActivity", "⏩ Skipping Deezer release fetch for ${artist.name} - Deezer ID is null.")
             }
-        } catch (e: Exception) {
-            Log.e(
-                "SavedArtistsActivity",
-                "❌ Deezer fetch failed for ${artist.name}: ${e.message}",
-                e
-            )
-        }
 
-        val itunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
 
-        if (itunesSupportEnabled && artist.itunesId != null) {
-            try {
+            if (artist.itunesId != null) {
                 val retrofit = Retrofit.Builder()
                     .baseUrl("https://itunes.apple.com/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
                 val iTunesService = retrofit.create(ITunesApiService::class.java)
 
-                val response = iTunesService.lookupArtistWithAlbums(artist.itunesId).execute()
-                if (response.isSuccessful) {
-                    val iTunesReleases = response.body()?.results.orEmpty()
-                        .filter { it.collectionType in listOf("Album", "EP", "Single") }
-                        .map { album ->
-                            ReleaseItem(
-                                id = album.collectionId ?: -1L,
-                                title = album.collectionName ?: "Unknown",
-                                artistName = album.artistName ?: artist.name,
-                                albumArtUrl = album.artworkUrl100
-                                    ?.replace("100x100bb", "1200x1200bb")
-                                    ?.takeIf { it.isNotBlank() } ?: "",
-                                releaseDate = album.releaseDate ?: "Unknown",
-                                apiSource = "iTunes",
-                                itunesId = album.collectionId,
-                                artistImageUrl = artistImage,
-                            )
-                        }
+                val iTunesResponse = iTunesService.lookupArtistWithAlbums(artist.itunesId).execute()
+                if (iTunesResponse.isSuccessful) {
+                    val iTunesReleases = iTunesResponse.body()?.results?.filter { it.collectionName != null }?.map { release ->
+                        val uniqueId = "iTunes_${release.collectionId}".hashCode().toLong()
+                        ReleaseItem(
+                            id = uniqueId,
+                            title = release.collectionName ?: "",
+                            artistName = release.artistName ?: artist.name,
+                            albumArtUrl = release.artworkUrl100?.replace("100x100bb.jpg", "600x600bb.jpg") ?: "",
+                            releaseDate = release.releaseDate ?: "",
+                            apiSource = "iTunes",
+                            itunesId = release.collectionId,
+                            artistImageUrl = artistImage,
+                            releaseType = null
+                        )
+                    }.orEmpty()
                     releases.addAll(iTunesReleases)
+                } else {
+                    Log.e("SavedArtistsActivity", "❌ iTunes API error for ${artist.name}: ${iTunesResponse.code()} - ${iTunesResponse.message()}")
                 }
-            } catch (e: Exception) {
-                Log.e(
-                    "SavedArtistsActivity",
-                    "❌ iTunes fetch failed for ${artist.name}: ${e.message}",
-                    e
-                )
+            } else {
+                Log.d("SavedArtistsActivity", "⏩ Skipping iTunes release fetch for ${artist.name} - iTunes ID is null.")
             }
+        } catch (e: Exception) {
+            Log.e(
+                "SavedArtistsActivity",
+                "❌ Error fetching releases for ${artist.name}: ${e.message}",
+                e
+            )
         }
-
         return releases
     }
-
 
     private fun setupApiService() {
         val cacheSize = (5 * 1024 * 1024).toLong()

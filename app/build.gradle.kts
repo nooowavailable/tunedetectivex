@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.tunedetectivex.nooowavailable"
-        minSdk = 31
+        minSdk = 33
         targetSdk = 36
         versionCode = 8
         versionName = "1.4"
