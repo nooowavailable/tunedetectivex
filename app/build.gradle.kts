@@ -13,7 +13,7 @@ android {
     }
 
     namespace = "com.dev.tunedetectivex"
-    compileSdk = 35
+    compileSdk = 36
     flavorDimensions += "default"
     dependenciesInfo {
         includeInApk = false
