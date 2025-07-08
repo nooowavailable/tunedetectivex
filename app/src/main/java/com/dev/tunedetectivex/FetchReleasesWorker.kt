@@ -156,11 +156,9 @@ class FetchReleasesWorker(
     }
 
     private fun showWorkerStatusNotification(context: Context, status: String, lastRunMillis: Long, nextFetchMillis: Long) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "No notification permission, status notification not displayed.")
-                return
-            }
+        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "No notification permission, status notification not displayed.")
+            return
         }
 
         val formattedLastRun = android.text.format.DateFormat.format("dd.MM.yyyy HH:mm", lastRunMillis)
@@ -604,12 +602,10 @@ class FetchReleasesWorker(
     }
 
     private fun hasNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                applicationContext,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else true
+        return ContextCompat.checkSelfPermission(
+            applicationContext,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun determineAccurateReleaseType(album: UnifiedAlbum): ReleaseType {

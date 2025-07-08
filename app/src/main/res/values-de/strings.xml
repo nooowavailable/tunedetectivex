@@ -6,7 +6,6 @@
     <string name="textViewProgress">Fortschritt: 0/0</string>
     <string name="imageViewArtistCoverDesc">Bild des Künstlers</string>
     <string name="fabSelectFolder">Ordner importieren (Metadaten)</string>
-    <string name="statusTextView">Drücke auf den Ordner, um den Import von Metadaten zu starten.</string>
     <string name="buttonSaveArtist">Künstler speichern</string>
     <string name="fabMenu">Menü</string>
     <string name="button_open_discography">Diskographie</string>

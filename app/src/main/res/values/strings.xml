@@ -88,16 +88,6 @@
     <string name="latest_releases_description">Here you can see the latest releases of all saved artists. Tap on a release to view details such as the track list.</string>
     <string name="tutorial_completed_releases">Tutorial completed! Have fun discovering the releases.</string>
     <string name="tutorial_aborted_releases">Tutorial aborted.</string>
-    <string name="press_folder_icon">Press folder icon to start import</string>
-    <string name="important_warning_title">⚠️ Important Warning ⚠️</string>
-    <string name="importing_feature_message">
-        You are about to enter the music importing feature of the application! 🎶✨\n\n
-        This feature will scan your selected folder for audio files, extracting relevant details such as artist names and album titles, and saving them to your library. 📚💾\n\n
-        Please be aware that this feature is currently in beta. To avoid the risk of being temporarily blocked by Deezer, use a VPN while accessing this feature. Alternatively, you can add artists manually if you prefer not to take that risk.\n\n
-        Are you ready to proceed? 🚀
-    </string>
-    <string name="proceed_with_caution">Proceed with Caution! 🎉</string>
-    <string name="cancelE">Cancel 😱</string>
     <string name="selected_folder">Selected folder: %1$s</string>
     <string name="no_folder_selected">No folder selected</string>
     <string name="preparing_import">Preparing import…</string>
@@ -114,9 +104,7 @@
     <string name="import_warning_message">You are about to import a folder. Please note that you use this function at your own risk. 😬\n\n• This feature is an Experimental Feature and may result in your IP address being blocked by Deezer. 🤡\n• It is recommended to use a VPN. 🕵️‍♂️</string>
     <string name="proceed_button">Proceed</string>
     <string name="cancel_button">Cancel</string>
-    <string name="import_progress_title">Import Progress</string>
     <string name="selected_folder_message">Selected Folder: %1$s</string>
-    <string name="import_progress_description">Progress notifications for importing artists</string>
     <string name="progress_message">Progress: %1$d%% (%2$d/%3$d)</string>
     <string name="progress_artist_message">Progress: %1$d%% - %2$s</string>
     <string name="import_completed_message">Import completed!</string>
