@@ -49,6 +49,7 @@ class SavedArtistsActivity : AppCompatActivity() {
     private var isNetworkRequestsAllowed = true
     private var isLoading = false
     private lateinit var loadingIndicator: ProgressBar
+    private lateinit var selectionBackCallback: OnBackPressedCallback
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,33 +76,16 @@ class SavedArtistsActivity : AppCompatActivity() {
             sharedPreferences.edit { putBoolean("isFirstRunSavedArtists", false) }
         }
 
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (::artistAdapter.isInitialized && artistAdapter.isInSelectionMode()) {
-                        artistAdapter.clearSelection()
-                    } else {
-                        finish()
-                    }
-                }
+        selectionBackCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                artistAdapter.clearSelection()
+                isEnabled = false
             }
-        )
+        }
+        onBackPressedDispatcher.addCallback(this, selectionBackCallback)
 
 
     }
-
-    private fun getItunesAttemptCount(): Int {
-        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        return prefs.getInt("itunesMatchingAttempts", 0)
-    }
-
-    private fun incrementItunesAttemptCount() {
-        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val current = prefs.getInt("itunesMatchingAttempts", 0)
-        prefs.edit { putInt("itunesMatchingAttempts", current + 1) }
-    }
-
 
     private fun checkNetworkTypeAndSetFlag() {
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
@@ -196,6 +180,7 @@ class SavedArtistsActivity : AppCompatActivity() {
             onSelectionChanged = { selectedItems ->
                 val visible = selectedItems.isNotEmpty()
                 actionButtonsContainer.visibility = if (visible) View.VISIBLE else View.GONE
+                selectionBackCallback.isEnabled = visible
             }
         }
 
@@ -310,12 +295,14 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 if (selectedPosition == 0) {
                     val adapter = recyclerView.adapter as SavedArtistAdapter
-                    val position = viewHolder.adapterPosition
-                    val artist = adapter.currentList[position]
-                    adapter.deleteItem(position)
-                    deleteArtist(artist)
+                    val position = viewHolder.bindingAdapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        val artist = adapter.currentList[position]
+                        adapter.deleteItem(position)
+                        deleteArtist(artist)
+                    }
                 } else {
-                    recyclerView.adapter?.notifyItemChanged(viewHolder.adapterPosition)
+                    recyclerView.adapter?.notifyItemChanged(viewHolder.bindingAdapterPosition)
                     Toast.makeText(
                         this@SavedArtistsActivity,
                         getString(R.string.deletion_only_in_artist_view),
@@ -456,12 +443,12 @@ class SavedArtistsActivity : AppCompatActivity() {
                 group.maxWithOrNull { a, b ->
                     val dateA = try {
                         format.parse(a.releaseDate)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                     val dateB = try {
                         format.parse(b.releaseDate)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
 
@@ -486,7 +473,7 @@ class SavedArtistsActivity : AppCompatActivity() {
             val sorted = deduplicated.sortedByDescending {
                 try {
                     format.parse(it.releaseDate)?.time
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }
@@ -541,7 +528,7 @@ class SavedArtistsActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
+    private fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
         val isNetworkAvailable = WorkManagerUtil.isSelectedNetworkTypeAvailable(applicationContext, networkPreference)
 
@@ -564,12 +551,12 @@ class SavedArtistsActivity : AppCompatActivity() {
                             id = uniqueId,
                             title = release.title,
                             artistName = artist.name,
-                            albumArtUrl = release.getBestCoverUrl()?.takeIf { it.isNotBlank() } ?: "",
+                            albumArtUrl = release.getBestCoverUrl().takeIf { it.isNotBlank() } ?: "",
                             releaseDate = release.release_date,
                             apiSource = "Deezer",
                             deezerId = release.id,
                             artistImageUrl = artistImage,
-                            releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
+                            releaseType = release.record_type.replaceFirstChar { it.uppercaseChar() }
                         )
                     }
                     releases.addAll(deezerReleases)

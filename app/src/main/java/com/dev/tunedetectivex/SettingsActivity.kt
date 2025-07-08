@@ -1,7 +1,7 @@
 package com.dev.tunedetectivex
 
-import android.annotation.SuppressLint
 import android.content.ComponentName
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.PowerManager
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
@@ -22,7 +21,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
 import androidx.lifecycle.lifecycleScope
 import com.getkeepsafe.taptargetview.TapTarget
@@ -48,7 +46,8 @@ class SettingsActivity : AppCompatActivity() {
     private var updateRunnable: Runnable? = null
     private var isNetworkRequestsAllowed = true
     private var ignoreNextToggleChange = false
-
+    private lateinit var futureReleaseMonthsSlider: Slider
+    private lateinit var futureReleaseMonthsLabel: TextView
     private val backupManager by lazy {
         val apiService = DeezerApiService.create()
         val savedArtistDao = AppDatabase.getDatabase(this).savedArtistDao()
@@ -107,7 +106,6 @@ class SettingsActivity : AppCompatActivity() {
 
 
 
-    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -120,6 +118,14 @@ class SettingsActivity : AppCompatActivity() {
         releaseAgeSlider = findViewById(R.id.releaseAgeSlider)
         releaseAgeLabel = findViewById(R.id.releaseAgeLabel)
         delayInput = findViewById(R.id.delayInput)
+
+        futureReleaseMonthsSlider = findViewById(R.id.futureReleaseMonthsSlider)
+        futureReleaseMonthsLabel = findViewById(R.id.futureReleaseMonthsLabel)
+        futureReleaseMonthsSlider.isEnabled = true
+
+        if (!sharedPreferences.contains("futureReleaseMonths")) {
+            saveFutureReleaseMonthsPreference(0)
+        }
 
         val itunesSwitch = findViewById<SwitchMaterial>(R.id.switch_itunes_support)
         itunesSwitch.isChecked = isItunesSupportEnabled()
@@ -171,6 +177,8 @@ class SettingsActivity : AppCompatActivity() {
             ).show()
         }
 
+        setupFetchReleasesWorker()
+
 
         sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         editor = sharedPreferences.edit()
@@ -188,16 +196,14 @@ class SettingsActivity : AppCompatActivity() {
             showNetworkTypeDialog()
         }
 
-        findViewById<MaterialButton>(R.id.button_request_battery_optimization).setOnClickListener {
-            requestIgnoreBatteryOptimizations()
-        }
-
         checkNetworkTypeAndSetFlag()
 
         val currentInterval = loadFetchInterval()
         intervalInput.setText(intervalToLabel(currentInterval))
         val currentReleaseAge = loadReleaseAgePreference()
         val currentDelay = loadFetchDelay()
+
+        val currentFutureReleaseMonths = loadFutureReleaseMonthsPreference()
 
         intervalInput.apply {
             isFocusable = false
@@ -207,12 +213,24 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-
-
         delayInput.setText(currentDelay.toString())
         releaseAgeSlider.value = currentReleaseAge.toFloat()
         updateReleaseAgeLabel(currentReleaseAge)
 
+        futureReleaseMonthsSlider.value = currentFutureReleaseMonths.toFloat()
+        updateFutureReleaseMonthsLabel(currentFutureReleaseMonths)
+
+        futureReleaseMonthsSlider.addOnChangeListener { _, value, _ ->
+            val futureReleaseMonths = value.toInt()
+            Log.d(TAG, "Future Release Months Slider changed: $futureReleaseMonths")
+
+            delayedUpdate {
+                Log.d(TAG, "Saving future release months slider value: $futureReleaseMonths")
+                updateFutureReleaseMonthsLabel(futureReleaseMonths)
+                saveFutureReleaseMonthsPreference(futureReleaseMonths)
+                setupFetchReleasesWorker()
+            }
+        }
 
         releaseAgeSlider.addOnChangeListener { _, value, _ ->
             val releaseAgeInWeeks = value.toInt()
@@ -379,23 +397,6 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-
-    @SuppressLint("BatteryLife")
-    private fun requestIgnoreBatteryOptimizations() {
-        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                .setData("package:$packageName".toUri())
-            startActivity(intent)
-        } else {
-            Toast.makeText(
-                this,
-                getString(R.string.battery_optimization_ignored),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     private fun checkNetworkTypeAndSetFlag() {
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
         isNetworkRequestsAllowed = WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)
@@ -448,7 +449,6 @@ class SettingsActivity : AppCompatActivity() {
     }
 
 
-    @SuppressLint("SetTextI18n")
     private fun updateReleaseAgeLabel(weeks: Int) {
         releaseAgeLabel.text = getString(R.string.notify_releases_within_weeks, weeks)
     }
@@ -466,9 +466,23 @@ class SettingsActivity : AppCompatActivity() {
         sharedPreferences.edit { putInt("fetchDelay", seconds) }
     }
 
+    private fun saveFutureReleaseMonthsPreference(months: Int) {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        sharedPreferences.edit { putInt("futureReleaseMonths", months) }
+    }
+
     private fun loadFetchDelay(): Int {
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return sharedPreferences.getInt("fetchDelay", 1)
+    }
+
+    private fun updateFutureReleaseMonthsLabel(months: Int) {
+        futureReleaseMonthsLabel.text = getString(R.string.notify_future_releases_months, months)
+    }
+
+    private fun loadFutureReleaseMonthsPreference(): Int {
+        val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        return sharedPreferences.getInt("futureReleaseMonths", 0)
     }
 
     private fun saveReleaseAgePreference(weeks: Int) {
@@ -490,12 +504,13 @@ class SettingsActivity : AppCompatActivity() {
         WorkManagerUtil.reEnqueueIfMissing(this)
     }
 
-    @SuppressLint("SetTextI18n")
     fun refreshSettingsUI() {
         intervalInput.setText(loadFetchInterval().toString())
         delayInput.setText(loadFetchDelay().toString())
         releaseAgeSlider.value = loadReleaseAgePreference().toFloat()
         updateReleaseAgeLabel(loadReleaseAgePreference())
+        futureReleaseMonthsSlider.value = loadFutureReleaseMonthsPreference().toFloat()
+        updateFutureReleaseMonthsLabel(loadFutureReleaseMonthsPreference())
     }
 
     private fun showSettingsTutorial() {
@@ -524,12 +539,6 @@ class SettingsActivity : AppCompatActivity() {
                     delayInput,
                     getString(R.string.fetch_delay_title),
                     getString(R.string.fetch_delay_description)
-                ).transparentTarget(true).cancelable(false),
-
-                TapTarget.forView(
-                    findViewById<MaterialButton>(R.id.button_request_battery_optimization),
-                    getString(R.string.request_battery_optimization_title),
-                    getString(R.string.request_battery_optimization_description)
                 ).transparentTarget(true).cancelable(false),
 
                 TapTarget.forView(

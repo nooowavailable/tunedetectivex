@@ -6,7 +6,6 @@
     <string name="textViewProgress">Progress: 0/0</string>
     <string name="imageViewArtistCoverDesc">Image of artist</string>
     <string name="fabSelectFolder">Import Folder (Metadata)</string>
-    <string name="statusTextView">Press the folder icon to start import</string>
     <string name="buttonSaveArtist">Save Artist</string>
     <string name="fabMenu">Menu</string>
     <string name="button_open_discography">Discography</string>
@@ -20,7 +19,7 @@
     <string name="releaseAgeLabel">Notifications for releases within the last 4 weeks</string>
     <string name="futureReleaseMonthsLabel">Notifications for releases within the next 4 months</string>
     <string name="fetchSettings">Update interval settings</string>
-    <string name="BatteryNetwork">Battery and Network</string>
+    <string name="Network">Network</string>
     <string name="BatteryRestrictions">Battery Restrictions</string>
     <string name="SelectNetworkType">Select Network Type</string>
     <string name="BackupandRestore">Backup and Restore</string>
@@ -89,7 +88,6 @@
     <string name="latest_releases_description">Here you can see the latest releases of all saved artists. Tap on a release to view details such as the track list.</string>
     <string name="tutorial_completed_releases">Tutorial completed! Have fun discovering the releases.</string>
     <string name="tutorial_aborted_releases">Tutorial aborted.</string>
-    <string name="importing_status">Importing… Please wait.</string>
     <string name="press_folder_icon">Press folder icon to start import</string>
     <string name="important_warning_title">⚠️ Important Warning ⚠️</string>
     <string name="importing_feature_message">
@@ -107,7 +105,6 @@
     <string name="import_completed">Import completed</string>
     <string name="import_artists">Import artists</string>
     <string name="all_artists_imported">All artists successfully imported.</string>
-    <string name="progress_status">Progress: %1$d%% - %2$s</string>
     <string name="select_network_type_description">Choose your preferred network type for fetching updates.</string>
     <string name="request_battery_optimization_title">Battery Optimization</string>
     <string name="request_battery_optimization_description">Request to ignore battery optimizations for better performance.</string>
@@ -265,7 +262,6 @@ Make sure to resave your artists manually, since they don’t have any iTunes re
     <string name="toast_notification_permission_required">Notification permission is required for progress updates.</string>
     <string name="button_change_icon">Change App Icon</string>
     <string name="tweaks">Customizations &amp; Extras</string>
-    <string name="button_check_work_status">Check Background Work</string>
     <string name="fetch_interval_title">Select Update Interval</string>
     <string name="interval_15_min">15 minutes</string>
     <string name="interval_30_min">30 minutes</string>
@@ -277,7 +273,11 @@ Make sure to resave your artists manually, since they don’t have any iTunes re
     <string name="interval_1_day">1 day</string>
     <string name="interval_fallback_minutes">%1$d minutes</string>
     <string name="interval_selected_toast">Fetch interval set to %1$s</string>
-    <string name="button_notification_settings">Hide Work-Status</string>
+    <string name="button_notification_settings">Work-Status</string>
+    <string name="notify_future_releases_title">Upcoming new releases</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="notify_future_releases_months">Notify for releases within the next %1$d month(s)</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

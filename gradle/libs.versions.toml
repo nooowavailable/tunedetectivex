@@ -13,14 +13,14 @@ kotlinxCoroutinesCore = "1.7.3"
 lifecycleRuntimeKtx = "2.9.1"
 material = "1.12.0"
 constraintlayout = "2.2.1"
-navigationFragmentKtx = "2.9.0"
-navigationUiKtx = "2.9.0"
+navigationFragmentKtx = "2.9.1"
+navigationUiKtx = "2.9.1"
 okhttp3Integration = "4.15.1"
 retrofit = "2.9.0"
 recyclerview = "1.4.0"
-roomRuntime = "2.7.1"
+roomRuntime = "2.7.2"
 taptargetview = "1.13.3"
-workRuntimeKtx = "2.10.1"
+workRuntimeKtx = "2.10.2"
 
 [libraries]
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }

@@ -37,6 +37,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -50,6 +51,9 @@ class FetchReleasesWorker(
         private const val TAG = "FetchReleasesWorker"
         const val DEBUG_CHANNEL_ID = "debug_channel"
         const val DEBUG_CHANNEL_NAME = "Worker Debug Status"
+
+        private const val NOTIFY_FUTURE_RELEASES_KEY = "notifyFutureReleases"
+        private const val FUTURE_RELEASE_MONTHS_KEY = "futureReleaseMonths"
     }
 
     private val db = AppDatabase.getDatabase(context)
@@ -136,7 +140,6 @@ class FetchReleasesWorker(
             }
         }
     }
-
 
     private fun updateWorkerPrefs(prefs: SharedPreferences, timestamp: Long, intervalMinutes: Int, status: String) {
         val nextFetchTimeMillis = timestamp + intervalMinutes * 60_000L
@@ -280,7 +283,6 @@ class FetchReleasesWorker(
         }
     }
 
-
     private suspend fun checkForNewRelease(artist: SavedArtist) {
         val sharedPreferences =
             applicationContext.getSharedPreferences("AppPreferences", MODE_PRIVATE)
@@ -295,6 +297,10 @@ class FetchReleasesWorker(
         val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
         val currentTime = System.currentTimeMillis()
         val isItunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
+
+        val notifyFutureReleases = sharedPreferences.getBoolean(NOTIFY_FUTURE_RELEASES_KEY, false)
+        val futureReleaseMonths = sharedPreferences.getInt(FUTURE_RELEASE_MONTHS_KEY, 0)
+
 
         if (!hasNotificationPermission()) {
             Log.w(TAG, "Notification permission not granted.")
@@ -357,8 +363,26 @@ class FetchReleasesWorker(
             val releaseDateMillis = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .parse(latest.releaseDate)?.time ?: return
 
-            if (currentTime - releaseDateMillis > maxReleaseAgeInMillis) {
-                Log.d(TAG, "Skipping '${latest.title}': too old.")
+            val diffMillis = releaseDateMillis - currentTime
+
+
+            val shouldNotify: Boolean = if (diffMillis <= 0) {
+                currentTime - releaseDateMillis <= maxReleaseAgeInMillis
+            } else {
+                if (notifyFutureReleases && futureReleaseMonths > 0) {
+                    val calendar = Calendar.getInstance()
+                    calendar.timeInMillis = currentTime
+                    calendar.add(Calendar.MONTH, futureReleaseMonths)
+                    val targetMillis = calendar.timeInMillis
+
+                    releaseDateMillis <= targetMillis
+                } else {
+                    false
+                }
+            }
+
+            if (!shouldNotify) {
+                Log.d(TAG, "Skipping '${latest.title}': Does not meet notification criteria (too old or not within future notification window).")
                 return
             }
 

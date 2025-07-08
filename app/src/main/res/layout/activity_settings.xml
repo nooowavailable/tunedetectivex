@@ -74,6 +74,24 @@
             android:stepSize="1"
             android:layout_marginBottom="16dp" />
 
+        <TextView
+            android:id="@+id/futureReleaseMonthsLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/notify_future_releases_months"
+            android:textAppearance="?attr/textAppearanceSubtitle1" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/futureReleaseMonthsSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0.0"
+            android:valueTo="12.0"
+            android:stepSize="1.0"
+            app:labelBehavior="gone"
+            android:layout_marginBottom="16dp" />
+
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
@@ -95,15 +113,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number"
+                android:layout_marginBottom="12dp"
                 tools:ignore="TouchTargetSizeCheck" />
         </com.google.android.material.textfield.TextInputLayout>
-
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="@string/BatteryNetwork"
+            android:text="@string/Network"
             android:textColor="@color/md_theme_onBackground"
             android:textSize="16sp" />
 
@@ -111,37 +129,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:orientation="horizontal"
-            android:weightSum="2">
+            android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_request_battery_optimization"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:padding="8dp"
-                android:text="@string/BatteryRestrictions"
-                app:icon="@drawable/ic_battery"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                tools:ignore="TextContrastCheck" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_select_network_type"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:padding="8dp"
-                android:text="@string/SelectNetworkType"
-                app:icon="@drawable/ic_network"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                tools:ignore="TextContrastCheck" />
-        </LinearLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_select_network_type"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="@string/SelectNetworkType"
+        app:icon="@drawable/ic_network"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        tools:ignore="TextContrastCheck" />
+    </LinearLayout>
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
@@ -228,7 +229,6 @@
                 app:iconPadding="8dp"
                 tools:ignore="TextContrastCheck" />
         </LinearLayout>
-
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
