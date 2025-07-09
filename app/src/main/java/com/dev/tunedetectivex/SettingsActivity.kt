@@ -229,6 +229,13 @@ class SettingsActivity : AppCompatActivity() {
                 updateFutureReleaseMonthsLabel(futureReleaseMonths)
                 saveFutureReleaseMonthsPreference(futureReleaseMonths)
                 setupFetchReleasesWorker()
+
+                val messageResId = if (futureReleaseMonths > 0) {
+                    R.string.future_notifications_enabled_with_months
+                } else {
+                    R.string.disabled
+                }
+                Toast.makeText(this, getString(messageResId, futureReleaseMonths), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -278,7 +285,6 @@ class SettingsActivity : AppCompatActivity() {
             openDebugNotificationSettings()
         }
     }
-
     private fun openDebugNotificationSettings() {
         val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
             putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
@@ -477,7 +483,11 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateFutureReleaseMonthsLabel(months: Int) {
-        futureReleaseMonthsLabel.text = getString(R.string.notify_future_releases_months, months)
+        if (months == 0) {
+            futureReleaseMonthsLabel.text = getString(R.string.notify_future_releases_off)
+        } else {
+            futureReleaseMonthsLabel.text = getString(R.string.notify_future_releases_months, months)
+        }
     }
 
     private fun loadFutureReleaseMonthsPreference(): Int {

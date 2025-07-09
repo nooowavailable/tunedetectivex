@@ -266,6 +266,12 @@ Make sure to resave your artists manually, since they don’t have any iTunes re
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>
     <string name="notify_future_releases_months">Notify for releases within the next %1$d month(s)</string>
+    <string name="notify_future_releases_off">Future Release Notifications: Off</string>
+    <string name="future_notifications_enabled_with_months">Future release notifications enabled for next %1$d months.</string>
+    <string name="notification_upcoming_release_title_album">%1$s - Upcoming %2$s</string>
+    <string name="notification_upcoming_release_title_single">%1$s - Upcoming %2$s</string>
+    <string name="notification_upcoming_release_title_ep">%1$s - Upcoming %2$s</string>
+    <string name="notification_upcoming_release_title_default">%1$s - Upcoming %2$s</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

@@ -139,7 +139,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     .load(artistImageUrl)
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.error_image)
-                    .transform(RoundedCorners(50))
+                    .transform(RoundedCorners(30))
                     .into(findViewById(R.id.imageViewArtist))
 
                 recyclerView.visibility = View.VISIBLE

@@ -119,7 +119,7 @@ class ReleaseAdapter(
                     .load(item.albumArtUrl)
                     .error(R.drawable.error_image)
                     .transition(DrawableTransitionOptions.withCrossFade())
-                    .transform(RoundedCorners(50))
+                    .transform(RoundedCorners(30))
                     .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                         override fun onLoadFailed(
                             e: GlideException?,

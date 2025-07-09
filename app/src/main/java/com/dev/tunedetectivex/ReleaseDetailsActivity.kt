@@ -189,7 +189,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 .load(url.toSafeArtwork())
                 .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .error(R.drawable.error_image)
-                .transform(RoundedCorners(20))
+                .transform(RoundedCorners(30))
                 .into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
                         resource: Drawable,

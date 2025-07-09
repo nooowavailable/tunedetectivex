@@ -572,7 +572,7 @@ class MainActivity : ComponentActivity() {
             .into(imageViewArtistProfile)
 
         progressBar.visibility = View.VISIBLE
-        val cornerRadius = 50f
+        val cornerRadius = 30f
         val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
 
         Glide.with(imageViewAlbumArt)

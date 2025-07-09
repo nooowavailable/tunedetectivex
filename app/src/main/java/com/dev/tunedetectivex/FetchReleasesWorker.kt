@@ -11,7 +11,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -20,6 +19,9 @@ import androidx.core.content.edit
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.dev.tunedetectivex.api.ITunesApiService
@@ -39,6 +41,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 
 class FetchReleasesWorker(
@@ -52,7 +56,6 @@ class FetchReleasesWorker(
         const val DEBUG_CHANNEL_ID = "debug_channel"
         const val DEBUG_CHANNEL_NAME = "Worker Debug Status"
 
-        private const val NOTIFY_FUTURE_RELEASES_KEY = "notifyFutureReleases"
         private const val FUTURE_RELEASE_MONTHS_KEY = "futureReleaseMonths"
     }
 
@@ -292,11 +295,20 @@ class FetchReleasesWorker(
         }
 
         val maxReleaseAgeInWeeks = sharedPreferences.getInt("releaseAgeWeeks", 4)
-        val maxReleaseAgeInMillis = maxReleaseAgeInWeeks * 7 * 24 * 60 * 60 * 1000L
+        val maxReleaseAgeInMillis = TimeUnit.DAYS.toMillis(maxReleaseAgeInWeeks.toLong() * 7)
         val currentTime = System.currentTimeMillis()
+
+        val currentCalendar = Calendar.getInstance(TimeZone.getDefault()).apply {
+            timeInMillis = currentTime
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val currentTimeStartOfDayMillis = currentCalendar.timeInMillis
+
         val isItunesSupportEnabled = sharedPreferences.getBoolean("itunesSupportEnabled", false)
 
-        val notifyFutureReleases = sharedPreferences.getBoolean(NOTIFY_FUTURE_RELEASES_KEY, false)
         val futureReleaseMonths = sharedPreferences.getInt(FUTURE_RELEASE_MONTHS_KEY, 0)
 
 
@@ -358,24 +370,48 @@ class FetchReleasesWorker(
                     ?: 0L
             } ?: return
 
-            val releaseDateMillis = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                .parse(latest.releaseDate)?.time ?: return
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            dateFormat.timeZone = TimeZone.getDefault()
 
-            val diffMillis = releaseDateMillis - currentTime
+            val releaseDateMillis = dateFormat.parse(latest.releaseDate)?.time ?: run {
+                Log.e(TAG, "Failed to parse release date: ${latest.releaseDate} for ${latest.title}")
+                return
+            }
 
+            val releaseCalendar = Calendar.getInstance(TimeZone.getDefault()).apply {
+                timeInMillis = releaseDateMillis
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val releaseDateStartOfDayMillis = releaseCalendar.timeInMillis
 
-            val shouldNotify: Boolean = if (diffMillis <= 0) {
-                currentTime - releaseDateMillis <= maxReleaseAgeInMillis
+            val shouldNotify: Boolean
+
+            val isFutureRelease = releaseDateStartOfDayMillis > currentTimeStartOfDayMillis
+
+            if (!isFutureRelease) {
+                shouldNotify = (currentTime - releaseDateMillis) <= maxReleaseAgeInMillis
+                Log.d(TAG, "Release '${latest.title}' is in the past/present. Condition: (current_actual_time - release_actual_time) <= maxReleaseAgeInMillis -> $shouldNotify. " +
+                        "Diff: ${(currentTime - releaseDateMillis) / (1000 * 60 * 60 * 24)} days. Max Age: ${maxReleaseAgeInWeeks * 7} days.")
             } else {
-                if (notifyFutureReleases && futureReleaseMonths > 0) {
-                    val calendar = Calendar.getInstance()
-                    calendar.timeInMillis = currentTime
-                    calendar.add(Calendar.MONTH, futureReleaseMonths)
-                    val targetMillis = calendar.timeInMillis
+                if (futureReleaseMonths > 0) {
+                    val futureNotificationCutoff = Calendar.getInstance(TimeZone.getDefault()).apply {
+                        timeInMillis = currentTime
+                        add(Calendar.MONTH, futureReleaseMonths)
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }
 
-                    releaseDateMillis <= targetMillis
+                    shouldNotify = releaseDateStartOfDayMillis <= futureNotificationCutoff.timeInMillis
+                    Log.d(TAG, "Release '${latest.title}' is in the future. Condition: releaseDateStartOfDayMillis <= futureNotificationCutoff.timeInMillis -> $shouldNotify. " +
+                            "Release Date: ${latest.releaseDate}, Notification Cutoff: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(futureNotificationCutoff.timeInMillis)}")
                 } else {
-                    false
+                    shouldNotify = false
+                    Log.d(TAG, "Release '${latest.title}' is in the future, but futureReleaseMonths is 0 (future notifications disabled).")
                 }
             }
 
@@ -388,7 +424,7 @@ class FetchReleasesWorker(
                 latest.title.trim().lowercase()
             }_${latest.releaseDate}".hashCode()
             if (db.savedArtistDao().isNotificationSent(releaseHash)) {
-                Log.d(TAG, "Already notified for '${latest.title}'")
+                Log.d(TAG, "Already notified for '${latest.title}' (Hash: $releaseHash)")
                 return
             }
 
@@ -399,7 +435,8 @@ class FetchReleasesWorker(
                 latest,
                 releaseHash,
                 releaseDateMillis,
-                releaseTypeEnum
+                releaseTypeEnum,
+                isFutureRelease
             )
 
         } catch (e: Exception) {
@@ -413,19 +450,26 @@ class FetchReleasesWorker(
         album: UnifiedAlbum,
         releaseHash: Int,
         releaseDate: Long,
-        releaseTypeEnum: ReleaseType
+        releaseTypeEnum: ReleaseType,
+        isFutureRelease: Boolean
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                val requestOptions = RequestOptions()
+                    .override(1024, 1024)
+                    .transform(CenterCrop())
+
                 Glide.with(applicationContext)
                     .asBitmap()
                     .load(album.coverUrl)
-                    .override(512, 512)
+                    .apply(requestOptions)
                     .into(object : CustomTarget<Bitmap>() {
                         override fun onResourceReady(
                             resource: Bitmap,
                             transition: Transition<in Bitmap>?
                         ) {
+                            Log.d(TAG, "Bitmap dimensions for ${album.title}: ${resource.width}x${resource.height}")
+
                             if (!hasNotificationPermission()) {
                                 Log.w(
                                     TAG,
@@ -439,7 +483,8 @@ class FetchReleasesWorker(
                                 album = album,
                                 albumArtBitmap = resource,
                                 releaseTypeEnum = releaseTypeEnum,
-                                channelId = RELEASE_CHANNEL_ID
+                                channelId = RELEASE_CHANNEL_ID,
+                                isFutureRelease = isFutureRelease
                             )
 
                             try {
@@ -473,7 +518,8 @@ class FetchReleasesWorker(
                                 album = album,
                                 albumArtBitmap = null,
                                 releaseTypeEnum = releaseTypeEnum,
-                                channelId = RELEASE_CHANNEL_ID
+                                channelId = RELEASE_CHANNEL_ID,
+                                isFutureRelease = isFutureRelease
                             )
 
                             try {
@@ -499,7 +545,8 @@ class FetchReleasesWorker(
         album: UnifiedAlbum,
         albumArtBitmap: Bitmap?,
         releaseTypeEnum: ReleaseType,
-        channelId: String
+        channelId: String,
+        isFutureRelease: Boolean
     ): Notification {
         val releaseTypeString = when (releaseTypeEnum) {
             ReleaseType.ALBUM -> applicationContext.getString(R.string.release_type_album)
@@ -508,30 +555,55 @@ class FetchReleasesWorker(
             ReleaseType.DEFAULT -> applicationContext.getString(R.string.release_type_default)
         }
 
-        val notificationTitle = when (releaseTypeEnum) {
-            ReleaseType.ALBUM -> applicationContext.getString(
-                R.string.notification_new_release_title_album,
-                artist.name,
-                releaseTypeString
-            )
+        val notificationTitle = if (isFutureRelease) {
+            when (releaseTypeEnum) {
+                ReleaseType.ALBUM -> applicationContext.getString(
+                    R.string.notification_upcoming_release_title_album,
+                    artist.name,
+                    releaseTypeString
+                )
+                ReleaseType.SINGLE -> applicationContext.getString(
+                    R.string.notification_upcoming_release_title_single,
+                    artist.name,
+                    releaseTypeString
+                )
+                ReleaseType.EP -> applicationContext.getString(
+                    R.string.notification_upcoming_release_title_ep,
+                    artist.name,
+                    releaseTypeString
+                )
+                ReleaseType.DEFAULT -> applicationContext.getString(
+                    R.string.notification_upcoming_release_title_default,
+                    artist.name,
+                    releaseTypeString
+                )
+            }
+        } else {
+            when (releaseTypeEnum) {
+                ReleaseType.ALBUM -> applicationContext.getString(
+                    R.string.notification_new_release_title_album,
+                    artist.name,
+                    releaseTypeString
+                )
 
-            ReleaseType.SINGLE -> applicationContext.getString(
-                R.string.notification_new_release_title_single,
-                artist.name,
-                releaseTypeString
-            )
+                ReleaseType.SINGLE -> applicationContext.getString(
+                    R.string.notification_new_release_title_single,
+                    artist.name,
+                    releaseTypeString
+                )
 
-            ReleaseType.EP -> applicationContext.getString(
-                R.string.notification_new_release_title_ep,
-                artist.name,
-                releaseTypeString
-            )
+                ReleaseType.EP -> applicationContext.getString(
+                    R.string.notification_new_release_title_ep,
+                    artist.name,
+                    releaseTypeString
+                )
 
-            ReleaseType.DEFAULT -> applicationContext.getString(
-                R.string.notification_new_release_title_default,
-                artist.name,
-                releaseTypeString
-            )
+                ReleaseType.DEFAULT -> applicationContext.getString(
+                    R.string.notification_new_release_title_default,
+                    artist.name,
+                    releaseTypeString
+                )
+            }
         }
 
         val notificationText = applicationContext.getString(

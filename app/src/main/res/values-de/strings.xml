@@ -88,8 +88,6 @@
     <string name="latest_releases_description">Hier kannst du die neuesten Veröffentlichungen aller gespeicherten Künstler sehen. Tippen Sie auf eine Veröffentlichung, um Details wie die Titelliste anzuzeigen.</string>
     <string name="tutorial_completed_releases">Tutorial abgeschlossen! Viel Spaß mit der App.</string>
     <string name="tutorial_aborted_releases">Tutorial abgebrochen.</string>
-    <string name="proceed_with_caution">Mit Vorsicht vorgehen!🎉</string>
-    <string name="cancelE">Abbrechen 😱</string>
     <string name="selected_folder">Ausgewählter Ordner: %1$s</string>
     <string name="no_folder_selected">Kein Ordner ausgewählt</string>
     <string name="preparing_import">Vorbereitung des Imports…</string>
@@ -265,7 +263,13 @@ Speichere deine Künstler anschließend manuell erneut, da sie keine iTunes-Verk
     <string name="interval_selected_toast">Abrufintervall auf %1$s gesetzt</string>
     <string name="button_notification_settings">Work-Status</string>
     <string name="notify_future_releases_title">Zukünftige Veröffentlichungen</string>
+    <string name="notify_future_releases_off">Zukünftige Veröffentlichungen: Aus</string>
+    <string name="future_notifications_enabled_with_months">Zukünftige Benachrichtigungen für %1$d Monate aktiviert.</string>
     <string name="notify_future_releases_months">Benachrichtige für %1$d Monate im Voraus</string>
+    <string name="notification_upcoming_release_title_album">%1$s – Bevorstehendes %2$s</string>
+    <string name="notification_upcoming_release_title_single">%1$s – Bevorstehende %2$s</string>
+    <string name="notification_upcoming_release_title_ep">%1$s – Bevorstehende %2$s</string>
+    <string name="notification_upcoming_release_title_default">%1$s – Bevorstehende %2$s</string>
     <string name="enabled">Aktiviert</string>
     <string name="disabled">Deaktiviert</string>
     <string-array name="view_type_options">

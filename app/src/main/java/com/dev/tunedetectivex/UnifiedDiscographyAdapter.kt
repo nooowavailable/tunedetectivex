@@ -105,7 +105,7 @@ class UnifiedDiscographyAdapter(
                 .load(album.coverUrl)
                 .error(R.drawable.ic_discography)
                 .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
-                .transform(RoundedCorners(50))
+                .transform(RoundedCorners(30))
                 .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                     override fun onLoadFailed(
                         e: com.bumptech.glide.load.engine.GlideException?,
