@@ -170,7 +170,7 @@ class FetchReleasesWorker(
         val contentText = "status: $status, last: $formattedLastRun, next fetch: $formattedNextFetch"
 
         val notification = NotificationCompat.Builder(context, DEBUG_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_work)
             .setContentTitle("FetchReleasesWorker Status")
             .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_LOW)

@@ -58,27 +58,36 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         recyclerView.adapter = trackAdapter
         apiService = DeezerApiService.create()
 
-        val itunesId = intent.getLongExtra("itunesId", -1L)
-        val rawTitle =
-            intent.getStringExtra("releaseTitle") ?: getString(R.string.unknown_title_fallback)
-        val artistNameText =
-            intent.getStringExtra("artistName") ?: getString(R.string.unknown_artist_fallback)
+        val albumReleaseId = intent.getLongExtra("releaseId", -1L)
+        val source = intent.getStringExtra("source")
+        val rawTitle = intent.getStringExtra("releaseTitle") ?: getString(R.string.unknown_title_fallback)
+        val artistNameText = intent.getStringExtra("artistName") ?: getString(R.string.unknown_artist_fallback)
         val albumArtUrl = intent.getStringExtra("albumArtUrl") ?: ""
-        val releaseId = intent.getLongExtra("releaseId", -1L)
         val releaseType = extractReleaseType(rawTitle)
 
-        val apiSource: String? = when {
-            itunesId > 0L && isItunesSupportEnabled() -> "iTunes"
-            releaseId > 0L -> "Deezer"
-            else -> null
-        }
-
-        when (apiSource) {
-            "Deezer" -> fetchReleaseDetails(releaseId)
-            "iTunes" -> fetchITunesReleaseDetails(releaseId)
+        when (source) {
+            "Deezer" -> {
+                if (albumReleaseId > 0L) {
+                    fetchReleaseDetails(albumReleaseId)
+                } else {
+                    Log.e("ReleaseDetailsActivity", "Invalid Deezer album ID received.")
+                    Toast.makeText(this, "Error: Invalid Deezer album ID.", Toast.LENGTH_SHORT).show()
+                    finish()
+                    return
+                }
+            }
+            "iTunes" -> {
+                if (isItunesSupportEnabled() && albumReleaseId > 0L) {
+                    fetchITunesReleaseDetails(albumReleaseId)
+                } else {
+                    Log.e("ReleaseDetailsActivity", "iTunes support disabled or invalid iTunes collection ID received.")
+                    Toast.makeText(this, "Error: iTunes support disabled or invalid iTunes ID.", Toast.LENGTH_SHORT).show()
+                    finish()
+                    return
+                }
+            }
             else -> {
-                Toast.makeText(this, "No valid API source available.", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(this, "No valid API source available.", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
@@ -127,10 +136,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
 
         artistName.text = artistNameText
 
-
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isFirstRunReleaseDetails =
-            sharedPreferences.getBoolean("isFirstRunReleaseDetails", true)
+        val isFirstRunReleaseDetails = sharedPreferences.getBoolean("isFirstRunReleaseDetails", true)
         if (isFirstRunReleaseDetails) {
             showReleaseDetailsTutorial()
             sharedPreferences.edit { putBoolean("isFirstRunReleaseDetails", false) }
@@ -433,71 +440,31 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadTracklist() {
-        val deezerId = intent.getLongExtra("deezerId", -1L)
-        val itunesId = intent.getLongExtra("itunesId", -1L)
-        val isItunesEnabled = isItunesSupportEnabled()
+        val albumId = intent.getLongExtra("releaseId", -1L)
+        val source = intent.getStringExtra("source")
 
-        when {
-            deezerId > 0L && (!isItunesEnabled || itunesId <= 0L) -> {
-                loadTracklistFromDeezer(deezerId)
+        when (source) {
+            "Deezer" -> {
+                if (albumId > 0L) {
+                    Log.d("ReleaseDetailsActivity", "Loading Deezer tracklist for album ID: $albumId")
+                    loadTracklistFromDeezer(albumId)
+                } else {
+                    Log.w("ReleaseDetailsActivity", "No valid Deezer album ID to load tracklist.")
+                    Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
+                }
             }
-
-            deezerId > 0L && itunesId > 0L && isItunesEnabled -> {
-                loadCombinedTracklists(deezerId, itunesId)
+            "iTunes" -> {
+                if (albumId > 0L) {
+                    Log.d("ReleaseDetailsActivity", "Loading iTunes tracklist for collection ID: $albumId")
+                    loadTracklistFromITunes(albumId)
+                } else {
+                    Log.w("ReleaseDetailsActivity", "No valid iTunes collection ID to load tracklist.")
+                    Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
+                }
             }
-
-            deezerId <= 0L && itunesId > 0L && isItunesEnabled -> {
-                loadTracklistFromITunes(itunesId)
-            }
-
             else -> {
-                Log.w("ReleaseDetailsActivity", "No valid ID for tracklist")
-                Toast.makeText(
-                    this,
-                    getString(R.string.no_tracklist_id_available),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-
-    private fun loadCombinedTracklists(deezerId: Long, itunesId: Long) {
-        showLoading(true)
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://itunes.apple.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        val iTunesService = retrofit.create(ITunesApiService::class.java)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val deezerResponse = apiService.getTracklist(deezerId).execute()
-                val itunesResponse = iTunesService.lookupAlbumWithTracks(itunesId).execute()
-
-                val deezerTracks = deezerResponse.body()?.data ?: emptyList()
-                val itunesTracks = itunesResponse.body()?.results
-                    ?.filter { it.wrapperType == "track" && it.kind == "song" }
-                    ?.map {
-                        Track(
-                            title = it.trackName ?: getString(R.string.unknown_title),
-                            duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
-                        )
-                    } ?: emptyList()
-
-                val combined = (deezerTracks + itunesTracks)
-                    .distinctBy { it.title.trim().lowercase() }
-
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    trackAdapter.submitList(combined)
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    Log.e("ReleaseDetailsActivity", "Error when combining tracklists", e)
-                }
+                Log.w("ReleaseDetailsActivity", "Unknown source or no valid ID for tracklist.")
+                Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
             }
         }
     }

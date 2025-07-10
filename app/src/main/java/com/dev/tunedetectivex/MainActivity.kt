@@ -5,7 +5,6 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -326,9 +325,7 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                pushNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+            pushNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
     }
@@ -615,21 +612,36 @@ class MainActivity : ComponentActivity() {
         updateSaveButton()
 
         artistInfoContainer.setOnClickListener {
-            val deezerId = unifiedAlbum.deezerId
-            val itunesId = unifiedAlbum.itunesId
+            val albumId = unifiedAlbum.id.toLongOrNull() ?: -1L
+            val artistDeezerId = unifiedAlbum.deezerId
+            val artistItunesId = unifiedAlbum.itunesId
 
-            if (deezerId == null && itunesId != null && !isItunesSupportEnabled()) {
-                Toast.makeText(this, "No valid API source available", Toast.LENGTH_SHORT).show()
+            val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
+            if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
+                Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
+            if (albumId == -1L && artistDeezerId == null && (artistItunesId == null || !isItunesSupportEnabled())) {
+                Toast.makeText(this, "No valid API source available for this release.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val source = when {
+                unifiedAlbum.deezerId != null && unifiedAlbum.deezerId > 0 -> "Deezer"
+                unifiedAlbum.itunesId != null && unifiedAlbum.itunesId > 0 && isItunesSupportEnabled() -> "iTunes"
+                else -> null
+            }
+
             val intent = Intent(this, ReleaseDetailsActivity::class.java).apply {
-                putExtra("releaseId", unifiedAlbum.id.toLongOrNull() ?: -1L)
+                putExtra("releaseId", albumId)
                 putExtra("releaseTitle", unifiedAlbum.title)
                 putExtra("artistName", unifiedAlbum.artistName)
                 putExtra("albumArtUrl", unifiedAlbum.coverUrl)
-                unifiedAlbum.deezerId?.let { putExtra("deezerId", it) }
-                unifiedAlbum.itunesId?.let { putExtra("itunesId", it) }
+                putExtra("source", source)
+
+                artistDeezerId?.let { putExtra("artistDeezerId", it) }
+                artistItunesId?.let { putExtra("artistItunesId", it) }
             }
 
             startActivity(intent)
@@ -1099,20 +1111,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.d(TAG, "Requesting notification permission.")
-                pushNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                Log.d(TAG, "Notification permission already granted.")
-                WorkManagerUtil.reEnqueueIfMissing(this)
-            }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.d(TAG, "Requesting notification permission.")
+            pushNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            Log.d(TAG, "Notification permission not required for this Android version.")
+            Log.d(TAG, "Notification permission already granted.")
             WorkManagerUtil.reEnqueueIfMissing(this)
         }
     }
