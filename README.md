@@ -8,24 +8,29 @@ TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this 
 
 ### Disclaimer on Code Generation
 
-This app was developed primarily with the help of AI tools such as ChatGPT.  
-Most of the code was generated through iterative prompting, testing, and refinement of AI-generated suggestions. It's open source so everybody can audit it.
+This app was developed primarily using AI tools such as ChatGPT, similar to the original TuneDetective project.
+Most of the code was generated through iterative prompting, testing, and refinement.
 
-However, the **core idea, concept, and vision behind this app are 100% my own**.  
-It's a personal project that genuinely matters to me, and I’ve put real thought and care into shaping it.
+After looking for an open-source app like TuneDetective that respects user privacy, I set out to create my own version. While I initially intended to code the app independently, I faced personal challenges related to substance use, which eventually resulted in a lack of oxygen and a brain injury. This injury caused cognitive impairments that made independent coding difficult, so I relied on AI assistance to complete the technical implementation.
 
-While AI assisted with the technical implementation, every design choice, feature decision, and direction was guided by me.
+The core concept, design, and direction of the app are entirely my own.
+The project is open source and available for review.
 
-This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API and combines them* , to obtain in some cases more accurate and more up-to-date music information.
+While AI generated much of the code, all decisions regarding features, structure, and functionality were made by me.
 
-*work in progress
+I hope you still find the core idea valuable and don’t mind the use of AI in the development process. If it’s not your thing, that’s completely fine too — the project is open source, and you’re welcome to audit or contribute to the code yourself.
+
+
+
+This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API to obtain in some cases more accurate and more up-to-date music information.
+
+*work in progress, not enabled by default.
 
 
 ## 🌟 Features
 
 - **🔍 Search for Artists**: Easily search for artists and view their latest releases.
 - **💾 Save Artists**: Save your favorite artists to quickly access their information and releases.
-- **📥 Import Artists**: Import music-artists from your device using metadata + filenames and check for matching artists and releases. **experimental (opt-in)
 - **🔔 Notifications**: Get notified about new releases from your saved artists.
 - **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
 
