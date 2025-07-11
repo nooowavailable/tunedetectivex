@@ -1,5 +1,6 @@
 package com.dev.tunedetectivex
 
+import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.SpannableString
@@ -20,9 +21,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.dev.tunedetectivex.api.ITunesApiService
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
@@ -43,6 +46,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private var isNetworkRequestsAllowed = true
 
+    private var albumArtLoadedFromNetwork = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,42 +62,52 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         recyclerView.adapter = trackAdapter
         apiService = DeezerApiService.create()
 
-        val albumReleaseId = intent.getLongExtra("releaseId", -1L)
-        val source = intent.getStringExtra("source")
+        val genericReleaseId = intent.getLongExtra("releaseId", -1L)
+        val deezerId = intent.getLongExtra("deezerId", -1L)
+        val itunesId = intent.getLongExtra("itunesId", -1L)
+        val apiSource = intent.getStringExtra("apiSource")
+
         val rawTitle = intent.getStringExtra("releaseTitle") ?: getString(R.string.unknown_title_fallback)
         val artistNameText = intent.getStringExtra("artistName") ?: getString(R.string.unknown_artist_fallback)
         val albumArtUrl = intent.getStringExtra("albumArtUrl") ?: ""
         val releaseType = extractReleaseType(rawTitle)
 
-        when (source) {
+        Log.d("ReleaseDetailsActivity", "Received IDs and Source: " +
+                "Generic Release ID = $genericReleaseId, " +
+                "Deezer ID = $deezerId, " +
+                "iTunes ID = $itunesId, " +
+                "API Source = $apiSource")
+
+        loadImageWithGlide(albumArtUrl, albumCover, isInitialLoad = true)
+
+
+        when (apiSource) {
             "Deezer" -> {
-                if (albumReleaseId > 0L) {
-                    fetchReleaseDetails(albumReleaseId)
+                if (deezerId > 0L) {
+                    fetchReleaseDetails(deezerId)
                 } else {
-                    Log.e("ReleaseDetailsActivity", "Invalid Deezer album ID received.")
+                    Log.e("ReleaseDetailsActivity", "Invalid Deezer album ID received ($deezerId).")
                     Toast.makeText(this, "Error: Invalid Deezer album ID.", Toast.LENGTH_SHORT).show()
                     finish()
                     return
                 }
             }
             "iTunes" -> {
-                if (isItunesSupportEnabled() && albumReleaseId > 0L) {
-                    fetchITunesReleaseDetails(albumReleaseId)
+                if (isItunesSupportEnabled() && itunesId > 0L) {
+                    fetchITunesReleaseDetails(itunesId)
                 } else {
-                    Log.e("ReleaseDetailsActivity", "iTunes support disabled or invalid iTunes collection ID received.")
+                    Log.e("ReleaseDetailsActivity", "iTunes support disabled or invalid iTunes collection ID received ($itunesId).")
                     Toast.makeText(this, "Error: iTunes support disabled or invalid iTunes ID.", Toast.LENGTH_SHORT).show()
                     finish()
                     return
                 }
             }
             else -> {
-                Toast.makeText(this, "No valid API source available.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "No valid API source available for this release.", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
         }
-
-        loadInitialAlbumArt(albumArtUrl)
 
         val cleanedTitle = rawTitle
             .replace(" - Single", "")
@@ -144,7 +158,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
 
         Log.d("ReleaseDetailsActivity", "Calling loadTracklist() in onCreate()")
-        loadTracklist()
+        loadTracklist(deezerId, itunesId, apiSource)
     }
 
     private fun isItunesSupportEnabled(): Boolean {
@@ -160,7 +174,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
     }
 
 
-        private fun checkNetworkAndProceed(action: () -> Unit) {
+    private fun checkNetworkAndProceed(action: () -> Unit) {
         checkNetworkTypeAndSetFlag()
         if (isNetworkRequestsAllowed) {
             action()
@@ -185,42 +199,60 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadInitialAlbumArt(url: String) {
-        Glide.with(this).clear(albumCover)
-        albumCover.setImageDrawable(null)
+    @SuppressLint("CheckResult")
+    private fun loadImageWithGlide(url: String, imageView: ImageView, isInitialLoad: Boolean = false) {
+        if (isInitialLoad) {
+            Glide.with(this).clear(imageView)
+            imageView.setImageDrawable(null)
+        }
 
         if (url.isNotBlank()) {
-            progressBar.visibility = View.VISIBLE
+            if (!albumArtLoadedFromNetwork || isInitialLoad) {
+                progressBar.visibility = View.VISIBLE
+            }
 
-            Glide.with(this)
+            val requestBuilder = Glide.with(this)
                 .load(url.toSafeArtwork())
-                .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .error(R.drawable.error_image)
                 .transform(RoundedCorners(30))
-                .into(object : CustomTarget<Drawable>() {
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        progressBar.visibility = View.GONE
+                        imageView.setImageResource(R.drawable.error_image)
+                        Log.e("Glide", "Image load failed: $url", e)
+                        return false
+                    }
+
                     override fun onResourceReady(
-                        resource: Drawable,
-                        transition: Transition<in Drawable>?
-                    ) {
-                        albumCover.setImageDrawable(resource)
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
                         progressBar.visibility = View.GONE
-                    }
-
-                    override fun onLoadCleared(placeholder: Drawable?) {
-                        progressBar.visibility = View.GONE
-                    }
-
-                    override fun onLoadFailed(errorDrawable: Drawable?) {
-                        albumCover.setImageResource(R.drawable.error_image)
-                        progressBar.visibility = View.GONE
+                        if (dataSource != DataSource.MEMORY_CACHE && dataSource != DataSource.RESOURCE_DISK_CACHE) {
+                            albumArtLoadedFromNetwork = true
+                        }
+                        return false
                     }
                 })
+
+            if (!albumArtLoadedFromNetwork || isInitialLoad) {
+                requestBuilder.transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
+            }
+
+            requestBuilder.into(imageView)
         } else {
-            albumCover.setImageResource(R.drawable.error_image)
+            imageView.setImageResource(R.drawable.error_image)
             progressBar.visibility = View.GONE
         }
     }
-
     private fun showReleaseDetailsTutorial() {
         TapTargetSequence(this)
             .targets(
@@ -373,12 +405,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                             artistName.text = collection.artistName ?: getString(R.string.unknown_artist_fallback)
 
                             collection.artworkUrl100?.toHighResArtwork()?.let { coverUrl ->
-                                Glide.with(this@ReleaseDetailsActivity)
-                                    .load(coverUrl)
-                                    .placeholder(R.drawable.ic_discography)
-                                    .error(R.drawable.error_image)
-                                    .transform(RoundedCorners(30))
-                                    .into(albumCover)
+                                loadImageWithGlide(coverUrl, albumCover)
                             }
 
                             val trackItems = results.filter {
@@ -426,44 +453,32 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         artistName.text = album.artist?.name
         val coverUrl = album.getBestCoverUrl()
 
-        if (coverUrl.isNotEmpty()) {
-            Glide.with(this)
-                .load(coverUrl)
-                .placeholder(R.drawable.ic_discography)
-                .error(R.drawable.ic_discography)
-                .transform(RoundedCorners(30))
-                .into(albumCover)
-        } else {
-            albumCover.setImageResource(R.drawable.error_image)
-        }
-
+        loadImageWithGlide(coverUrl, albumCover)
     }
 
-    private fun loadTracklist() {
-        val albumId = intent.getLongExtra("releaseId", -1L)
-        val source = intent.getStringExtra("source")
 
-        when (source) {
-            "Deezer" -> {
-                if (albumId > 0L) {
-                    Log.d("ReleaseDetailsActivity", "Loading Deezer tracklist for album ID: $albumId")
-                    loadTracklistFromDeezer(albumId)
+    private fun loadTracklist(deezerId: Long, itunesId: Long, source: String?) {
+        when (source?.lowercase()) {
+            "deezer" -> {
+                if (deezerId > 0L) {
+                    Log.d("ReleaseDetailsActivity", "Loading Deezer tracklist for album ID: $deezerId")
+                    loadTracklistFromDeezer(deezerId)
                 } else {
-                    Log.w("ReleaseDetailsActivity", "No valid Deezer album ID to load tracklist.")
+                    Log.w("ReleaseDetailsActivity", "No valid Deezer album ID to load tracklist ($deezerId).")
                     Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
                 }
             }
-            "iTunes" -> {
-                if (albumId > 0L) {
-                    Log.d("ReleaseDetailsActivity", "Loading iTunes tracklist for collection ID: $albumId")
-                    loadTracklistFromITunes(albumId)
+            "itunes" -> {
+                if (itunesId > 0L) {
+                    Log.d("ReleaseDetailsActivity", "Loading iTunes tracklist for collection ID: $itunesId")
+                    loadTracklistFromITunes(itunesId)
                 } else {
-                    Log.w("ReleaseDetailsActivity", "No valid iTunes collection ID to load tracklist.")
+                    Log.w("ReleaseDetailsActivity", "No valid iTunes collection ID to load tracklist ($itunesId).")
                     Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
                 }
             }
             else -> {
-                Log.w("ReleaseDetailsActivity", "Unknown source or no valid ID for tracklist.")
+                Log.w("ReleaseDetailsActivity", "Unknown source ($source) or no valid ID for tracklist.")
                 Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
             }
         }
@@ -544,9 +559,13 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
     }
 
-
     private fun showLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+    }
+
+    fun String.toSafeArtwork(): String {
+        return this.replace("100x100bb.jpg", "600x600bb.jpg")
+            .replace("100x100bb", "600x600bb")
     }
 
     fun String.toHighResArtwork(): String {

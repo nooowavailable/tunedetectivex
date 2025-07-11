@@ -394,6 +394,11 @@ class SavedArtistsActivity : AppCompatActivity() {
             .trim()
     }
 
+    private fun isItunesSupportEnabled(): Boolean {
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        return prefs.getBoolean("itunesSupportEnabled", false)
+    }
+
     private fun loadSavedReleases() {
         if (isLoading) return
         isLoading = true
@@ -480,17 +485,38 @@ class SavedArtistsActivity : AppCompatActivity() {
 
             withContext(Dispatchers.Main) {
                 val adapter = ReleaseAdapter { release ->
+                    val actualApiSource = when {
+                        release.deezerId != null && release.deezerId > 0 -> "Deezer"
+                        release.itunesId != null && release.itunesId > 0 && isItunesSupportEnabled() -> "iTunes"
+                        else -> {
+                            Log.e("SavedArtistsActivity", "No valid Deezer/iTunes ID or iTunes support for release: ${release.title}. Cannot determine API source.")
+                            "Unknown"
+                        }
+                    }
+
+                    Log.d("SavedArtistsActivity", "Tapped Release: " +
+                            "ID=${release.id}, " +
+                            "Title=${release.title}, " +
+                            "DeezerID=${release.deezerId}, " +
+                            "iTunesID=${release.itunesId}, " +
+                            "API_Source_from_ReleaseObject=${release.apiSource}, " +
+                            "Determined_API_Source=${actualApiSource}")
+
                     val intent = Intent(
                         this@SavedArtistsActivity,
                         ReleaseDetailsActivity::class.java
                     ).apply {
-                        putExtra("releaseId", release.id)
+                        putExtra("releaseId", when(actualApiSource) {
+                            "Deezer" -> release.deezerId ?: -1L
+                            "iTunes" -> release.itunesId ?: -1L
+                            else -> -1L
+                        })
                         putExtra("releaseTitle", release.title)
                         putExtra("artistName", release.artistName)
                         putExtra("albumArtUrl", release.albumArtUrl)
+                        putExtra("apiSource", actualApiSource)
                         putExtra("deezerId", release.deezerId ?: -1L)
                         putExtra("itunesId", release.itunesId ?: -1L)
-                        putExtra("apiSource", release.apiSource)
                     }
                     startActivity(intent)
                 }

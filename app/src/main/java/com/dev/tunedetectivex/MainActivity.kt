@@ -605,16 +605,14 @@ class MainActivity : ComponentActivity() {
                     progressBar.visibility = View.GONE
                 }
             })
-
         unifiedAlbum.deezerId?.let { selectedArtist?.id = it }
         unifiedAlbum.itunesId?.let { selectedArtist?.itunesId = it }
 
         updateSaveButton()
 
         artistInfoContainer.setOnClickListener {
-            val albumId = unifiedAlbum.id.toLongOrNull() ?: -1L
-            val artistDeezerId = unifiedAlbum.deezerId
-            val artistItunesId = unifiedAlbum.itunesId
+            val deezerId = unifiedAlbum.deezerId ?: -1L
+            val itunesId = unifiedAlbum.itunesId ?: -1L
 
             val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
             if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
@@ -622,27 +620,43 @@ class MainActivity : ComponentActivity() {
                 return@setOnClickListener
             }
 
-            if (albumId == -1L && artistDeezerId == null && (artistItunesId == null || !isItunesSupportEnabled())) {
-                Toast.makeText(this, "No valid API source available for this release.", Toast.LENGTH_SHORT).show()
+            if (deezerId == -1L && (itunesId == -1L || !isItunesSupportEnabled())) {
+                Toast.makeText(this, "No valid API source ID available for this release.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val source = when {
-                unifiedAlbum.deezerId != null && unifiedAlbum.deezerId > 0 -> "Deezer"
-                unifiedAlbum.itunesId != null && unifiedAlbum.itunesId > 0 && isItunesSupportEnabled() -> "iTunes"
+                deezerId > 0 -> "Deezer"
+                itunesId > 0 && isItunesSupportEnabled() -> "iTunes"
                 else -> null
             }
 
+            if (source == null) {
+                Toast.makeText(this, "No valid API source determined.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val intent = Intent(this, ReleaseDetailsActivity::class.java).apply {
-                putExtra("releaseId", albumId)
+                putExtra("releaseId", when(source) {
+                    "Deezer" -> deezerId
+                    "iTunes" -> itunesId
+                    else -> -1L
+                })
+
                 putExtra("releaseTitle", unifiedAlbum.title)
                 putExtra("artistName", unifiedAlbum.artistName)
                 putExtra("albumArtUrl", unifiedAlbum.coverUrl)
-                putExtra("source", source)
-
-                artistDeezerId?.let { putExtra("artistDeezerId", it) }
-                artistItunesId?.let { putExtra("artistItunesId", it) }
+                putExtra("apiSource", source)
+                putExtra("deezerId", deezerId)
+                putExtra("itunesId", itunesId)
             }
+
+            Log.d("MainActivity", "Sending to ReleaseDetails: " +
+                    "releaseId=${intent.getLongExtra("releaseId", -1L)}, " +
+                    "deezerId=${intent.getLongExtra("deezerId", -1L)}, " +
+                    "itunesId=${intent.getLongExtra("itunesId", -1L)}, " +
+                    "apiSource=${intent.getStringExtra("apiSource")}")
+
 
             startActivity(intent)
         }

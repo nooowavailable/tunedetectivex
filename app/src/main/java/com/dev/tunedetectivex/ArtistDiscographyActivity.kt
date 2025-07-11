@@ -118,20 +118,40 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     album.deezerId?.let { selectedArtist?.id = it }
                     album.itunesId?.let { selectedArtist?.itunesId = it }
 
-                    val isFromDeezer = album.deezerId != null
-                    val releaseId =
-                        if (isFromDeezer) album.deezerId!!.toLong() else album.itunesId!!.toLong()
+                    val determinedApiSource = when {
+                        album.deezerId != null && album.deezerId > 0 -> "Deezer"
+                        album.itunesId != null && album.itunesId > 0 -> "iTunes"
+                        else -> {
+                            Log.e("ArtistDiscographyActivity", "Cannot determine API source for album: ${album.title}. DeezerID=${album.deezerId}, iTunesID=${album.itunesId}")
+                            null
+                        }
+                    }
+
+                    val releaseIdForDetails = when (determinedApiSource) {
+                        "Deezer" -> album.deezerId ?: -1L
+                        "iTunes" -> album.itunesId ?: -1L
+                        else -> -1L
+                    }
 
                     val validCoverUrl =
                         album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
 
                     Intent(this, ReleaseDetailsActivity::class.java).apply {
-                        putExtra("releaseId", releaseId)
+                        putExtra("releaseId", releaseIdForDetails)
                         putExtra("releaseTitle", album.title)
                         putExtra("artistName", album.artistName)
                         putExtra("albumArtUrl", validCoverUrl)
                         putExtra("deezerId", album.deezerId ?: -1L)
                         putExtra("itunesId", album.itunesId ?: -1L)
+                        putExtra("apiSource", determinedApiSource)
+
+                        Log.d("ArtistDiscographyActivity", "Sending to ReleaseDetails: " +
+                                "releaseId=${releaseIdForDetails}, " +
+                                "releaseTitle=${album.title}, " +
+                                "deezerId=${album.deezerId}, " +
+                                "itunesId=${album.itunesId}, " +
+                                "apiSource=${determinedApiSource}")
+
                     }.also { startActivity(it) }
                 }
 
