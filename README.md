@@ -35,6 +35,7 @@ This app uses by default the Deezer API (and via in-app settings (opt-in) the iT
 - **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
 
 ## 📸 Screenshots
+(may be outdated)
 
 <div style="display: flex; justify-content: center; flex-wrap: wrap;">
     <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/latest_release.png?raw=true" alt="Latest Release" width="300" style="margin: 10px;" />
