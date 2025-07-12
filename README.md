@@ -8,19 +8,7 @@ TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this 
 
 ### Disclaimer on Code Generation
 
-This app was developed primarily using AI tools such as ChatGPT, similar to the original TuneDetective project.
-Most of the code was generated through iterative prompting, testing, and refinement.
-
-After looking for an open-source app like TuneDetective that respects user privacy, I set out to create my own version. While I initially intended to code the app independently, I faced personal challenges related to substance use, which eventually resulted in a lack of oxygen and a brain injury. This injury caused cognitive impairments that made independent coding difficult, so I relied on AI assistance to complete the technical implementation.
-
-The core concept, design, and direction of the app are entirely my own.
-The project is open source and available for review.
-
-While AI generated much of the code, all decisions regarding features, structure, and functionality were made by me.
-
-I hope you still find the core idea valuable and don’t mind the use of AI in the development process. If it’s not your thing, that’s completely fine too — the project is open source, and you’re welcome to audit or contribute to the code yourself.
-
-
+This app was developed primarily using AI tools such as ChatGPT.
 
 This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API to obtain in some cases more accurate and more up-to-date music information.
 
