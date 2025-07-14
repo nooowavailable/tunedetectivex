@@ -224,10 +224,10 @@ Make sure to resave your artists manually, since they don’t have any iTunes re
     <string name="enable_itunes_support">Enable iTunes support?</string>
     <string name="notify">Notify</string>
     <string name="no_saved_artists">No saved artists found.</string>
-    <string name="auto_load_releases_label">Show recent releases on startup</string>
-    <string name="auto_load_enabled_toast">Recent releases will be shown on startup</string>
-    <string name="auto_load_disabled_toast">Recent releases will no longer be shown on startup</string>
-    <string name="past_releases">Past Releases:</string>
+    <string name="auto_load_releases_label">Show releases on startup</string>
+    <string name="auto_load_enabled_toast"> Releases will be shown on startup</string>
+    <string name="auto_load_disabled_toast">Releases will no longer be shown on startup</string>
+    <string name="past_releases">Releases:</string>
     <string name="fetch_delay_title">Delay Before Fetch</string>
     <string name="fetch_delay_description">Waiting time (in seconds) before fetching new releases for each artist.</string>
     <string name="notifications_disabled">Notifications disabled</string>

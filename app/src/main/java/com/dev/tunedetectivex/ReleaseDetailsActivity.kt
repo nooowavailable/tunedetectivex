@@ -1,6 +1,5 @@
 package com.dev.tunedetectivex
 
-import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.SpannableString
@@ -199,7 +198,6 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("CheckResult")
     private fun loadImageWithGlide(url: String, imageView: ImageView, isInitialLoad: Boolean = false) {
         if (isInitialLoad) {
             Glide.with(this).clear(imageView)
@@ -219,7 +217,7 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                     override fun onLoadFailed(
                         e: GlideException?,
                         model: Any?,
-                        target: Target<Drawable>?,
+                        target: Target<Drawable>,
                         isFirstResource: Boolean
                     ): Boolean {
                         progressBar.visibility = View.GONE
@@ -229,10 +227,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                     }
 
                     override fun onResourceReady(
-                        resource: Drawable?,
-                        model: Any?,
-                        target: Target<Drawable>?,
-                        dataSource: DataSource?,
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>,
+                        dataSource: DataSource,
                         isFirstResource: Boolean
                     ): Boolean {
                         progressBar.visibility = View.GONE
@@ -242,10 +240,6 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                         return false
                     }
                 })
-
-            if (!albumArtLoadedFromNetwork || isInitialLoad) {
-                requestBuilder.transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
-            }
 
             requestBuilder.into(imageView)
         } else {

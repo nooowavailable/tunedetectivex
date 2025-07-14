@@ -87,7 +87,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var artistInfoContainer: LinearLayout
     private lateinit var recyclerViewReleases: RecyclerView
     private lateinit var fabScrollToTop: FloatingActionButton
-    private lateinit var textViewPastReleases: TextView
     private lateinit var textViewNoSavedArtists: TextView
     private lateinit var imageViewArtistProfile: ImageView
 
@@ -127,7 +126,6 @@ class MainActivity : ComponentActivity() {
         progressBar = findViewById(R.id.progressBarLoading)
         notificationManager = NotificationManagerCompat.from(this)
 
-        textViewPastReleases = findViewById(R.id.textViewPastReleases)
         textViewNoSavedArtists = findViewById(R.id.textViewNoSavedArtists)
         imageViewArtistProfile = findViewById(R.id.imageViewArtistProfile)
 
@@ -679,7 +677,6 @@ class MainActivity : ComponentActivity() {
         }
 
         recyclerViewReleases.visibility = View.GONE
-        textViewPastReleases.visibility = View.GONE
 
         val artistName = editTextArtist.text.toString().trim()
         if (artistName.isNotEmpty()) {
@@ -1300,7 +1297,6 @@ class MainActivity : ComponentActivity() {
         artistInfoContainer.visibility = View.GONE
         recyclerViewArtists.adapter = null
         recyclerViewArtists.visibility = View.GONE
-        textViewPastReleases.visibility = View.GONE
     }
 
     private fun processCombinedArtist(
@@ -1420,7 +1416,6 @@ class MainActivity : ComponentActivity() {
         }
 
         progressBar.visibility = View.VISIBLE
-        textViewPastReleases.visibility = View.GONE
         textViewNoSavedArtists.visibility = View.GONE
         recyclerViewReleases.visibility = View.GONE
 
@@ -1483,7 +1478,6 @@ class MainActivity : ComponentActivity() {
                     return@withContext
                 }
 
-                textViewPastReleases.visibility = View.VISIBLE
                 recyclerViewReleases.visibility = View.VISIBLE
 
                 val adapter = ReleaseAdapter { release ->

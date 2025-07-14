@@ -1,9 +1,9 @@
 plugins {
-    id("org.jetbrains.kotlin.android") version "2.2.0-RC"
-    id("com.android.application") version "8.10.1"
+    id("org.jetbrains.kotlin.android") version "2.2.0"
+    id("com.android.application") version "8.11.1"
     id("kotlin-android")
     id("kotlin-kapt")
-    id("com.google.devtools.ksp") version "2.2.0-RC-2.0.1"
+    id("com.google.devtools.ksp") version "2.2.0-2.0.2"
 }
 
 android {

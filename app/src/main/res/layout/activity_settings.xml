@@ -133,7 +133,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_select_network_type"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
             android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="8dp"
@@ -162,7 +162,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_backup"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
@@ -175,7 +175,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_restore"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -205,7 +205,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_change_icon"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
@@ -218,7 +218,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonNotificationSettings"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"

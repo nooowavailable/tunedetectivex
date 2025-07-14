@@ -23,7 +23,7 @@
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/buttonNotifyToggle"
-        style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+        style="@style/Widget.Material3.FloatingActionButton.Surface"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="0dp"

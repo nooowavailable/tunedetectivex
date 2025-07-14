@@ -122,9 +122,9 @@ class ReleaseAdapter(
                     .transform(RoundedCorners(30))
                     .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                         override fun onLoadFailed(
-                            e: GlideException?,
+                            e: com.bumptech.glide.load.engine.GlideException?,
                             model: Any?,
-                            target: com.bumptech.glide.request.target.Target<Drawable>?,
+                            target: com.bumptech.glide.request.target.Target<Drawable>,
                             isFirstResource: Boolean
                         ): Boolean {
                             progressBar.visibility = View.GONE
@@ -132,10 +132,10 @@ class ReleaseAdapter(
                         }
 
                         override fun onResourceReady(
-                            resource: Drawable?,
-                            model: Any?,
-                            target: com.bumptech.glide.request.target.Target<Drawable>?,
-                            dataSource: com.bumptech.glide.load.DataSource?,
+                            resource: Drawable,
+                            model: Any,
+                            target: com.bumptech.glide.request.target.Target<Drawable>,
+                            dataSource: com.bumptech.glide.load.DataSource,
                             isFirstResource: Boolean
                         ): Boolean {
                             progressBar.visibility = View.GONE

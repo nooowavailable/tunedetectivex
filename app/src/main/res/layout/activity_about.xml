@@ -53,7 +53,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonMatrixChat"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -64,7 +64,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonRepo"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/open_github_repository"

@@ -27,8 +27,8 @@
             android:ellipsize="end"
             android:textSize="18sp"
             android:maxLines="1"
-            android:textStyle="bold"
             android:textColor="?android:textColorPrimary"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
             tools:text="Antarctica" />
 
         <TextView
@@ -66,8 +66,8 @@
 
                 <ImageView
                     android:id="@+id/imageViewArtistThumb"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
                     android:layout_marginEnd="10dp"
                     android:clipToOutline="true"
                     android:scaleType="centerCrop"
@@ -79,7 +79,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     tools:text="$uicideboy$" />
             </LinearLayout>
         </LinearLayout>

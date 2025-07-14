@@ -132,7 +132,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_open_discography"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/Widget.Material3.Button.ElevatedButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="start"
@@ -146,22 +146,11 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/textViewPastReleases"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:paddingStart="16dp"
-                android:paddingTop="24dp"
-                android:text="@string/past_releases"
-                android:textAppearance="?attr/textAppearanceTitleLarge"
-                android:visibility="gone" />
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewArtists"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
+                android:layout_marginTop="15dp"
                 android:paddingHorizontal="8dp"
                 android:translationZ="0dp"
                 tools:listitem="@layout/artist_item" />
@@ -170,6 +159,7 @@
                 android:id="@+id/textViewNoSavedArtists"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 android:padding="24dp"
                 android:text="@string/no_saved_artists"
                 android:textAlignment="center"
@@ -180,6 +170,7 @@
                 android:id="@+id/recyclerViewReleases"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:paddingHorizontal="8dp"
                 android:visibility="gone" />
 

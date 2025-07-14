@@ -110,7 +110,7 @@ class UnifiedDiscographyAdapter(
                     override fun onLoadFailed(
                         e: com.bumptech.glide.load.engine.GlideException?,
                         model: Any?,
-                        target: com.bumptech.glide.request.target.Target<Drawable>?,
+                        target: com.bumptech.glide.request.target.Target<Drawable>,
                         isFirstResource: Boolean
                     ): Boolean {
                         progressBar.visibility = View.GONE
@@ -118,10 +118,10 @@ class UnifiedDiscographyAdapter(
                     }
 
                     override fun onResourceReady(
-                        resource: Drawable?,
-                        model: Any?,
-                        target: com.bumptech.glide.request.target.Target<Drawable>?,
-                        dataSource: com.bumptech.glide.load.DataSource?,
+                        resource: Drawable,
+                        model: Any,
+                        target: com.bumptech.glide.request.target.Target<Drawable>,
+                        dataSource: com.bumptech.glide.load.DataSource,
                         isFirstResource: Boolean
                     ): Boolean {
                         progressBar.visibility = View.GONE
