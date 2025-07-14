@@ -8,28 +8,22 @@ TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this 
 
 ### Disclaimer on Code Generation
 
-This app was developed primarily with the help of AI tools such as ChatGPT.  
-Most of the code was generated through iterative prompting, testing, and refinement of AI-generated suggestions. It's open source so everybody can audit it.
+This app was developed primarily using AI tools such as ChatGPT.
 
-However, the **core idea, concept, and vision behind this app are 100% my own**.  
-It's a personal project that genuinely matters to me, and I’ve put real thought and care into shaping it.
+This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API to obtain in some cases more accurate and more up-to-date music information.
 
-While AI assisted with the technical implementation, every design choice, feature decision, and direction was guided by me.
-
-This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API and combines them* , to obtain in some cases more accurate and more up-to-date music information.
-
-*work in progress
+*work in progress, not enabled by default.
 
 
 ## 🌟 Features
 
 - **🔍 Search for Artists**: Easily search for artists and view their latest releases.
 - **💾 Save Artists**: Save your favorite artists to quickly access their information and releases.
-- **📥 Import Artists**: Import music-artists from your device using metadata + filenames and check for matching artists and releases. **experimental (opt-in)
 - **🔔 Notifications**: Get notified about new releases from your saved artists.
 - **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
 
 ## 📸 Screenshots
+(may be outdated)
 
 <div style="display: flex; justify-content: center; flex-wrap: wrap;">
     <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/latest_release.png?raw=true" alt="Latest Release" width="300" style="margin: 10px;" />
