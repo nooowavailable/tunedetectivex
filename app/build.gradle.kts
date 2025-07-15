@@ -24,8 +24,8 @@ android {
         applicationId = "com.tunedetectivex.nooowavailable"
         minSdk = 33
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.4"
+        versionCode = 9
+        versionName = "1.5"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -44,12 +44,12 @@ android {
         create("github") {
             dimension = "default"
             applicationId = "com.dev.tunedetectivex"
-            versionName = "1.4-github"
+            versionName = "1.5-github"
         }
         create("accrescent") {
             dimension = "default"
             applicationId = "com.tunedetectivex.accrescent"
-            versionName = "1.4-accrescent"
+            versionName = "1.5-accrescent"
         }
     }
 
