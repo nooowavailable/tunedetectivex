@@ -1,52 +1,63 @@
 # TuneDetectiveX
 
-### TuneDetective is back! 🎉
+### TuneDetective is back!
 
-![Logo](https://github.com/nooowavailable/tunedetectivex/blob/master/app/src/main/ic_launcher-playstore.png?raw=true)
+<p style="display: flex; gap: 16px;">
+  <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/app/src/main/ic_launcher-playstore.png?raw=true" width="400" />
+  <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/app/src/main/ic_launcher_min-playstore.png?raw=true" width="400" />
+</p>
 
 TuneDetectiveX, the follow-up of the OG TuneDetective App for Android. Use this app to get notified for new music releases of your fav. artists.
+
+This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API to obtain in some cases more accurate and more up-to-date music information.
 
 ### Disclaimer on Code Generation
 
 This app was developed primarily using AI tools such as ChatGPT.
 
-This app uses by default the Deezer API (and via in-app settings (opt-in) the iTunes API to obtain in some cases more accurate and more up-to-date music information.
 
-*work in progress, not enabled by default.
-
-
-## 🌟 Features
+## Features
 
 - **🔍 Search for Artists**: Easily search for artists and view their latest releases.
 - **💾 Save Artists**: Save your favorite artists to quickly access their information and releases.
-- **🔔 Notifications**: Get notified about new releases from your saved artists.
-- **🖥️ User-Friendly Interface**: Intuitive design with a floating action button menu for easy navigation.
+- **🔔 Notifications**: Get notified about new releases from your saved artists. (enabled by default, when saving)
 
 ## 📸 Screenshots
+<div style="display: flex; justify-content: center; flex-wrap: wrap;">
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/1.jpg?raw=true" alt="Screenshot 1" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/2.jpg?raw=true" alt="Screenshot 2" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/3.jpg?raw=true" alt="Screenshot 3" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/4.jpg?raw=true" alt="Screenshot 4" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/5.jpg?raw=true" alt="Screenshot 5" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/6.jpg?raw=true" alt="Screenshot 6" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/7.jpg?raw=true" alt="Screenshot 7" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/8.jpg?raw=true" alt="Screenshot 8" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/9.jpg?raw=true" alt="Screenshot 9" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/10.jpg?raw=true" alt="Screenshot 10" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/11.jpg?raw=true" alt="Screenshot 11" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/12.jpg?raw=true" alt="Screenshot 12" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/13.jpg?raw=true" alt="Screenshot 13" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/14.jpg?raw=true" alt="Screenshot 14" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/15.jpg?raw=true" alt="Screenshot 15" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/16.png?raw=true" alt="Screenshot 16" width="300" style="margin: 10px;" />
+    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/17.png?raw=true" alt="Screenshot 17" width="300" style="margin: 10px;" />
+</div>
 (may be outdated)
 
-<div style="display: flex; justify-content: center; flex-wrap: wrap;">
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/latest_release.png?raw=true" alt="Latest Release" width="300" style="margin: 10px;" />
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/artist_search.png?raw=true" alt="Screenshot 1" width="300" style="margin: 10px;" />
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/discography.png?raw=true" alt="Screenshot 2" width="300" style="margin: 10px;" />
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/saved_artists.png?raw=true" alt="Screenshot 3" width="300" style="margin: 10px;" />
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/releases_saved_artists.png?raw=true" alt="Screenshot 4" width="300" style="margin: 10px;" />
-    <img src="https://github.com/nooowavailable/tunedetectivex/blob/master/appScreenshots/tut_main_screen.png?raw=true" alt="Screenshot 5" width="300" style="margin: 10px;" />
-</div>
 
 ## 🌐 Socials (for certificate hash, updates, etc)
 - [Matrix (Chat) Room](https://matrix.to/#/!HKIBPXETQFYecRxILT:matrix.org?via=matrix.org)
 
 ## 📋 Requirements
 
-- **Android 12 or higher**
+- **Android 13 and higher**
 - **Permissions**:
   - `INTERNET`
+  - `ACCESS_NETWORK_STATE`
   - `POST_NOTIFICATIONS`
+  - `FOREGROUND_SERVICE`
   - `FOREGROUND_SERVICE_DATA_SYNC`
-  - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (optionally)
   - `RECEIVE_BOOT_COMPLETED`
-  - `WAKE_LOCK`
 
 ## 📜 Certificate Fingerprints
 
