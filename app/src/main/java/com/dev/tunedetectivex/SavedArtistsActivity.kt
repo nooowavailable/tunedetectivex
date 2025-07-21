@@ -386,7 +386,7 @@ class SavedArtistsActivity : AppCompatActivity() {
     }
 
 
-    fun normalizeTitle(title: String): String {
+    private fun normalizeTitle(title: String): String {
         return title
             .lowercase(Locale.getDefault())
             .replace(Regex("\\s*-\\s*(single|ep|album)", RegexOption.IGNORE_CASE), "")
@@ -582,7 +582,7 @@ class SavedArtistsActivity : AppCompatActivity() {
                             apiSource = "Deezer",
                             deezerId = release.id,
                             artistImageUrl = artistImage,
-                            releaseType = release.record_type.replaceFirstChar { it.uppercaseChar() }
+                            releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
                         )
                     }
                     releases.addAll(deezerReleases)

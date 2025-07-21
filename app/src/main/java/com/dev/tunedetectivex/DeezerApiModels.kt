@@ -8,13 +8,13 @@ data class DeezerAlbum(
     val id: Long,
     val title: String,
     val release_date: String,
-    val cover: String,
-    val cover_xl: String,
-    val cover_big: String,
-    val cover_medium: String,
-    val cover_small: String,
-    val record_type: String,
-    val artist: DeezerArtist
+    val cover: String? = null,
+    val cover_xl: String? = null,
+    val cover_big: String? = null,
+    val cover_medium: String? = null,
+    val cover_small: String? = null,
+    val record_type: String? = null,
+    val artist: DeezerAlbumArtist?
 ) {
     fun getBestCoverUrl(): String {
         return when {
@@ -22,6 +22,7 @@ data class DeezerAlbum(
             !cover_big.isNullOrEmpty() -> cover_big
             !cover_medium.isNullOrEmpty() -> cover_medium
             !cover_small.isNullOrEmpty() -> cover_small
+            !cover.isNullOrEmpty() -> cover
             else -> ""
         }
     }
@@ -48,3 +49,11 @@ data class DeezerArtist(
         }
     }
 }
+
+data class DeezerAlbumArtist(
+    val id: Long,
+    val name: String,
+    val link: String? = null,
+    val picture: String? = null,
+    val tracklist: String? = null
+)

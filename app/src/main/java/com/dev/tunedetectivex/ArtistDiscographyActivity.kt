@@ -179,18 +179,19 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                             releaseDate = album.release_date,
                             coverUrl = album.getBestCoverUrl(),
                             artistName = artistName,
-                            releaseType = album.record_type.replaceFirstChar { it.uppercaseChar() },
+                            releaseType = album.record_type?.replaceFirstChar { it.uppercaseChar() },
                             deezerId = album.id,
                             itunesId = null
                         )
                     )
                 }
+
                 deezerLoaded = true
                 maybeDisplayCombined()
             }
 
             override fun onFailure(call: Call<DeezerAlbumsResponse>, t: Throwable) {
-                Log.e("Discography", "iTunes-Error", t)
+                Log.e("Discography", "Deezer-Error", t)
                 deezerLoaded = true
                 maybeDisplayCombined()
             }

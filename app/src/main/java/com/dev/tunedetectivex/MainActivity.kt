@@ -262,29 +262,6 @@ class MainActivity : ComponentActivity() {
             } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
         }
 
-        if (intent != null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) {
-            val releaseId = intent.getLongExtra("releaseId", -1L)
-            val releaseTitle = intent.getStringExtra("releaseTitle")
-            val artistName = intent.getStringExtra("artistName")
-            val albumArtUrl = intent.getStringExtra("albumArtUrl")
-            val deezerId = intent.getLongExtra("deezerId", -1L).takeIf { it > 0 }
-            val itunesId = intent.getLongExtra("itunesId", -1L).takeIf { it > 0 }
-
-            if (releaseId != -1L && releaseTitle != null && artistName != null) {
-                val album = UnifiedAlbum(
-                    id = releaseId.toString(),
-                    title = releaseTitle,
-                    artistName = artistName,
-                    releaseDate = "unknown",
-                    coverUrl = albumArtUrl ?: "",
-                    releaseType = null,
-                    deezerId = deezerId,
-                    itunesId = itunesId
-                )
-                displayReleaseInfo(album)
-            }
-        }
-
         recyclerViewReleases = findViewById(R.id.recyclerViewReleases)
         recyclerViewReleases.layoutManager = LinearLayoutManager(this)
 
@@ -388,8 +365,8 @@ class MainActivity : ComponentActivity() {
                             releaseDate = it.release_date,
                             coverUrl = it.getBestCoverUrl(),
                             artistName = artist.name,
-                            releaseType = it.record_type.replaceFirstChar { c -> c.uppercaseChar() },
-                            deezerId = deezerId
+                            releaseType = it.record_type?.replaceFirstChar { c -> c.uppercaseChar() },
+                            deezerId = it.id
                         )
                     }
 
@@ -448,7 +425,7 @@ class MainActivity : ComponentActivity() {
                                         ?: "",
                                     artistName = it.artistName ?: artist.name,
                                     releaseType = extractReleaseTypeFromTitle(it.collectionName),
-                                    itunesId = itunesArtistId
+                                    itunesId = it.collectionId
                                 )
                             }
                         } else null
@@ -485,7 +462,6 @@ class MainActivity : ComponentActivity() {
         }
         setMenuButtonEnabled(true)
     }
-
     private fun displayReleaseInfo(unifiedAlbum: UnifiedAlbum) {
 
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
@@ -1326,7 +1302,7 @@ class MainActivity : ComponentActivity() {
                     releaseDate = it.release_date,
                     coverUrl = it.getBestCoverUrl(),
                     artistName = artist.name,
-                    releaseType = it.record_type.replaceFirstChar { c -> c.uppercaseChar() },
+                    releaseType = it.record_type?.replaceFirstChar { c -> c.uppercaseChar() },
                     deezerId = artist.id
                 )
             }
@@ -1525,7 +1501,7 @@ class MainActivity : ComponentActivity() {
                         apiSource = "Deezer",
                         deezerId = release.id,
                         artistImageUrl = artistImage,
-                        releaseType = release.record_type.replaceFirstChar { it.uppercaseChar() }
+                        releaseType = release.record_type?.replaceFirstChar { it.uppercaseChar() }
                     )
                 } ?: emptyList()
                 releases.addAll(deezerReleases)

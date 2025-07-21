@@ -66,10 +66,9 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         val itunesId = intent.getLongExtra("itunesId", -1L)
         val apiSource = intent.getStringExtra("apiSource")
 
-        val rawTitle = intent.getStringExtra("releaseTitle") ?: getString(R.string.unknown_title_fallback)
-        val artistNameText = intent.getStringExtra("artistName") ?: getString(R.string.unknown_artist_fallback)
+        intent.getStringExtra("releaseTitle") ?: getString(R.string.unknown_title_fallback)
+        intent.getStringExtra("artistName") ?: getString(R.string.unknown_artist_fallback)
         val albumArtUrl = intent.getStringExtra("albumArtUrl") ?: ""
-        val releaseType = extractReleaseType(rawTitle)
 
         Log.d("ReleaseDetailsActivity", "Received IDs and Source: " +
                 "Generic Release ID = $genericReleaseId, " +
@@ -78,7 +77,6 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 "API Source = $apiSource")
 
         loadImageWithGlide(albumArtUrl, albumCover, isInitialLoad = true)
-
 
         when (apiSource) {
             "Deezer" -> {
@@ -108,58 +106,13 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             }
         }
 
-        val cleanedTitle = rawTitle
-            .replace(" - Single", "")
-            .replace(" - EP", "")
-            .replace(" - Album", "")
-            .trim()
-
-        val primaryColor = TypedValue().let {
-            theme.resolveAttribute(android.R.attr.textColorPrimary, it, true)
-            ContextCompat.getColor(this, it.resourceId)
-        }
-        val secondaryColor = TypedValue().let {
-            theme.resolveAttribute(android.R.attr.textColorSecondary, it, true)
-            ContextCompat.getColor(this, it.resourceId)
-        }
-
-        if (!releaseType.isNullOrEmpty()) {
-            val combined = "$cleanedTitle ($releaseType)"
-            val spannable = SpannableString(combined)
-            val start = combined.indexOf("($releaseType)")
-
-            spannable.setSpan(
-                ForegroundColorSpan(primaryColor),
-                0,
-                start,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            spannable.setSpan(
-                ForegroundColorSpan(secondaryColor),
-                start,
-                combined.length,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-
-            releaseTitle.text = spannable
-        } else {
-            releaseTitle.text = cleanedTitle
-            releaseTitle.setTextColor(primaryColor)
-        }
-
-        artistName.text = artistNameText
-
         val sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isFirstRunReleaseDetails = sharedPreferences.getBoolean("isFirstRunReleaseDetails", true)
         if (isFirstRunReleaseDetails) {
             showReleaseDetailsTutorial()
             sharedPreferences.edit { putBoolean("isFirstRunReleaseDetails", false) }
         }
-
-        Log.d("ReleaseDetailsActivity", "Calling loadTracklist() in onCreate()")
-        loadTracklist(deezerId, itunesId, apiSource)
     }
-
     private fun isItunesSupportEnabled(): Boolean {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return prefs.getBoolean("itunesSupportEnabled", false)
@@ -306,15 +259,17 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val albumDetails = response.body()
                         withContext(Dispatchers.Main) {
-                            showLoading(false)
                             if (albumDetails != null) {
                                 Log.d(
                                     "ReleaseDetailsActivity",
                                     "Album Details: ID=${albumDetails.id}, Title=${albumDetails.title}, Artist=${albumDetails.artist?.name}"
                                 )
                                 updateUI(albumDetails)
+                                loadTracklistFromDeezer(albumDetails.id)
                             } else {
                                 Log.e("ReleaseDetailsActivity", "Album details are null")
+                                Toast.makeText(this@ReleaseDetailsActivity, getString(R.string.release_details_not_found), Toast.LENGTH_SHORT).show()
+                                finish()
                             }
                         }
                     } else {
@@ -324,6 +279,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                                 "ReleaseDetailsActivity",
                                 "Failed to fetch album details: ${response.message()}"
                             )
+                            Toast.makeText(this@ReleaseDetailsActivity, "Error fetching Deezer release details.", Toast.LENGTH_SHORT).show()
+                            finish()
                         }
                     }
                 } catch (e: Exception) {
@@ -334,6 +291,8 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                             "Error fetching album details: ${e.message}",
                             e
                         )
+                        Toast.makeText(this@ReleaseDetailsActivity, "Network error fetching Deezer details.", Toast.LENGTH_SHORT).show()
+                        finish()
                     }
                 }
             }
@@ -356,126 +315,181 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                     val response = iTunesService.lookupAlbumWithTracks(albumId).execute()
                     withContext(Dispatchers.Main) {
                         showLoading(false)
-                        if (response.isSuccessful) {
-                            val results = response.body()?.results.orEmpty()
 
-                            val collection = results.firstOrNull {
-                                it.wrapperType == "collection" && !it.collectionName.isNullOrBlank()
-                            }
+                        Log.d(
+                            "ReleaseDetailsActivity",
+                            "iTunes API Response: isSuccessful = ${response.isSuccessful}"
+                        )
+                        if (!response.isSuccessful) {
+                            Log.e(
+                                "ReleaseDetailsActivity",
+                                "iTunes API Error Code: ${response.code()}, Message: ${response.message()}"
+                            )
+                            Toast.makeText(
+                                this@ReleaseDetailsActivity,
+                                "Error fetching iTunes release details: ${response.message()}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            finish()
+                            return@withContext
+                        }
 
-                            if (collection == null) {
-                                Toast.makeText(
-                                    this@ReleaseDetailsActivity,
-                                    getString(R.string.release_details_not_found),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                finish()
-                                return@withContext
-                            }
+                        val responseBody = response.body()
+                        if (responseBody == null) {
+                            Log.e("ReleaseDetailsActivity", "iTunes API Response Body is NULL.")
+                            Toast.makeText(
+                                this@ReleaseDetailsActivity,
+                                "iTunes API returned empty data.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            finish()
+                            return@withContext
+                        }
 
-                            val rawTitle = collection.collectionName ?: getString(R.string.unknown_title_fallback)
-                            val releaseType = extractReleaseType(rawTitle)
-                            val cleanedTitle = rawTitle
-                                .replace(" - Single", "", ignoreCase = true)
-                                .replace(" - EP", "", ignoreCase = true)
-                                .replace(" - Album", "", ignoreCase = true)
-                                .trim()
+                        val results = responseBody.results
+                        Log.d("ReleaseDetailsActivity", "iTunes API Results count: ${results.size}")
+                        results.forEachIndexed { index, item ->
+                            Log.d(
+                                "ReleaseDetailsActivity",
+                                "Result $index: wrapperType=${item.wrapperType}, collectionName=${item.collectionName}, trackName=${item.trackName}"
+                            )
+                        }
 
-                            val primaryColor = getThemeColor(android.R.attr.textColorPrimary)
-                            val secondaryColor = getThemeColor(android.R.attr.textColorSecondary)
 
-                            if (!releaseType.isNullOrEmpty()) {
-                                val combined = "$cleanedTitle ($releaseType)"
-                                val spannable = SpannableString(combined)
-                                val start = combined.indexOf("($releaseType)")
-                                spannable.setSpan(ForegroundColorSpan(primaryColor), 0, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                                spannable.setSpan(ForegroundColorSpan(secondaryColor), start, combined.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                                releaseTitle.text = spannable
-                            } else {
-                                releaseTitle.text = cleanedTitle
-                                releaseTitle.setTextColor(primaryColor)
-                            }
+                        val primaryCollection = results.firstOrNull {
+                            it.wrapperType == "collection" && !it.collectionName.isNullOrBlank()
+                        }
 
-                            artistName.text = collection.artistName ?: getString(R.string.unknown_artist_fallback)
+                        val firstTrackWithDetails = results.firstOrNull {
+                            it.wrapperType == "track" && it.kind == "song" && !it.collectionName.isNullOrBlank()
+                        }
 
-                            collection.artworkUrl100?.toHighResArtwork()?.let { coverUrl ->
-                                loadImageWithGlide(coverUrl, albumCover)
-                            }
+                        val displayTitle: String
+                        val displayArtist: String
+                        val displayArtworkUrl: String?
 
-                            val trackItems = results.filter {
-                                it.wrapperType == "track" && it.kind == "song"
-                            }
+                        if (primaryCollection != null) {
+                            Log.d("ReleaseDetailsActivity", "Found primary collection object.")
+                            displayTitle = primaryCollection.collectionName
+                                ?: getString(R.string.unknown_title_fallback)
+                            displayArtist = primaryCollection.artistName
+                                ?: getString(R.string.unknown_artist_fallback)
+                            displayArtworkUrl = primaryCollection.artworkUrl100?.toHighResArtwork()
+                        } else if (firstTrackWithDetails != null) {
+                            Log.d(
+                                "ReleaseDetailsActivity",
+                                "No primary collection, inferring from first track."
+                            )
+                            displayTitle = firstTrackWithDetails.collectionName
+                                ?: getString(R.string.unknown_title_fallback)
+                            displayArtist = firstTrackWithDetails.artistName
+                                ?: getString(R.string.unknown_artist_fallback)
+                            displayArtworkUrl =
+                                firstTrackWithDetails.artworkUrl100?.toHighResArtwork()
+                        } else {
+                            Log.e(
+                                "ReleaseDetailsActivity",
+                                "No collection or relevant track data found in iTunes API response for ID: $albumId"
+                            )
+                            Toast.makeText(
+                                this@ReleaseDetailsActivity,
+                                getString(R.string.release_details_not_found),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            finish()
+                            return@withContext
+                        }
 
-                            val tracks = if (trackItems.isNotEmpty()) {
-                                trackItems.map {
+                        val releaseType = extractReleaseType(displayTitle)
+                        val cleanedTitle = displayTitle
+                            .replace(" - Single", "", ignoreCase = true)
+                            .replace(" - EP", "", ignoreCase = true)
+                            .replace(" - Album", "", ignoreCase = true)
+                            .trim()
+
+                        val primaryColor = getThemeColor(android.R.attr.textColorPrimary)
+                        val secondaryColor = getThemeColor(android.R.attr.textColorSecondary)
+
+                        if (!releaseType.isNullOrEmpty()) {
+                            val combined = "$cleanedTitle ($releaseType)"
+                            val spannable = SpannableString(combined)
+                            val start = combined.indexOf("($releaseType)")
+                            spannable.setSpan(
+                                ForegroundColorSpan(primaryColor),
+                                0,
+                                start,
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                            )
+                            spannable.setSpan(
+                                ForegroundColorSpan(secondaryColor),
+                                start,
+                                combined.length,
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                            )
+                            releaseTitle.text = spannable
+                        } else {
+                            releaseTitle.text = cleanedTitle
+                            releaseTitle.setTextColor(primaryColor)
+                        }
+
+                        artistName.text = displayArtist
+
+                        displayArtworkUrl?.let { coverUrl ->
+                            loadImageWithGlide(coverUrl, albumCover)
+                        }
+
+
+                        val tracks =
+                            results.filter { it.wrapperType == "track" && it.kind == "song" }
+                                .map {
                                     Track(
-                                        title = it.trackName ?: getString(R.string.unknown_title_fallback),
+                                        title = it.trackName
+                                            ?: getString(R.string.unknown_title_fallback),
                                         duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
                                     )
                                 }
-                            } else {
+
+                        if (tracks.isEmpty() && displayTitle.isNotBlank()) {
+                            Log.w(
+                                "ReleaseDetailsActivity",
+                                "No individual track items found. Displaying inferred title as a single track."
+                            )
+                            trackAdapter.submitList(
                                 listOf(
                                     Track(
-                                        title = rawTitle
-                                            .replace(" - Single", "", ignoreCase = true)
-                                            .replace(" - EP", "", ignoreCase = true)
-                                            .replace(" - Album", "", ignoreCase = true)
-                                            .trim(),
+                                        title = displayTitle,
                                         duration = 0
                                     )
                                 )
-                            }
-
-                            trackAdapter.submitList(tracks)
+                            )
                         } else {
-                            Log.e("ReleaseDetailsActivity", "iTunes: Faulty response")
+                            trackAdapter.submitList(tracks)
                         }
+
+
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         showLoading(false)
                         Log.e("ReleaseDetailsActivity", "iTunes: Error during loading details", e)
+                        Toast.makeText(
+                            this@ReleaseDetailsActivity,
+                            "Network error fetching iTunes details.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
                     }
                 }
             }
         }
     }
 
-
-    private fun updateUI(album: DeezerAlbum) {
+        private fun updateUI(album: DeezerAlbum) {
         releaseTitle.text = album.title
         artistName.text = album.artist?.name
         val coverUrl = album.getBestCoverUrl()
 
         loadImageWithGlide(coverUrl, albumCover)
-    }
-
-
-    private fun loadTracklist(deezerId: Long, itunesId: Long, source: String?) {
-        when (source?.lowercase()) {
-            "deezer" -> {
-                if (deezerId > 0L) {
-                    Log.d("ReleaseDetailsActivity", "Loading Deezer tracklist for album ID: $deezerId")
-                    loadTracklistFromDeezer(deezerId)
-                } else {
-                    Log.w("ReleaseDetailsActivity", "No valid Deezer album ID to load tracklist ($deezerId).")
-                    Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
-                }
-            }
-            "itunes" -> {
-                if (itunesId > 0L) {
-                    Log.d("ReleaseDetailsActivity", "Loading iTunes tracklist for collection ID: $itunesId")
-                    loadTracklistFromITunes(itunesId)
-                } else {
-                    Log.w("ReleaseDetailsActivity", "No valid iTunes collection ID to load tracklist ($itunesId).")
-                    Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
-                }
-            }
-            else -> {
-                Log.w("ReleaseDetailsActivity", "Unknown source ($source) or no valid ID for tracklist.")
-                Toast.makeText(this, getString(R.string.no_tracklist_id_available), Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
 
@@ -511,58 +525,16 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         }
     }
 
-
-    private fun loadTracklistFromITunes(releaseId: Long) {
-        checkNetworkAndProceed {
-            showLoading(true)
-
-            val retrofit = Retrofit.Builder()
-                .baseUrl("https://itunes.apple.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-
-            val iTunesService = retrofit.create(ITunesApiService::class.java)
-
-            lifecycleScope.launch(Dispatchers.IO) {
-                try {
-                    val response = iTunesService.lookupAlbumWithTracks(releaseId).execute()
-                    withContext(Dispatchers.Main) {
-                        showLoading(false)
-                        if (response.isSuccessful) {
-                            val tracks = response.body()?.results
-                                ?.filter { it.wrapperType == "track" && it.kind == "song" }
-                                ?.map {
-                                    Track(
-                                        title = it.trackName ?: getString(R.string.unknown_title),
-                                        duration = ((it.trackTimeMillis ?: 0) / 1000).toInt()
-                                    )
-                                } ?: emptyList()
-
-                            trackAdapter.submitList(tracks)
-                        } else {
-                            Log.e("ReleaseDetailsActivity", "iTunes: Failed to load tracks: ${response.message()}")
-                        }
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        showLoading(false)
-                        Log.e("ReleaseDetailsActivity", "iTunes: Error loading tracks", e)
-                    }
-                }
-            }
-        }
-    }
-
     private fun showLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-    fun String.toSafeArtwork(): String {
+    private fun String.toSafeArtwork(): String {
         return this.replace("100x100bb.jpg", "600x600bb.jpg")
             .replace("100x100bb", "600x600bb")
     }
 
-    fun String.toHighResArtwork(): String {
+    private fun String.toHighResArtwork(): String {
         return this.replace("100x100bb", "1200x1200bb")
     }
 }
