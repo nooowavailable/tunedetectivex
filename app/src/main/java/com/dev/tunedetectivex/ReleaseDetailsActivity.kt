@@ -257,6 +257,9 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                 try {
                     val response = apiService.getAlbumDetails(albumId).execute()
                     if (response.isSuccessful) {
+                        val rawResponseBody = response.body()?.toString() ?: response.errorBody()?.string()
+                        Log.d("ReleaseDetailsActivity", "Raw Deezer API Response (Album ID: $albumId): $rawResponseBody")
+
                         val albumDetails = response.body()
                         withContext(Dispatchers.Main) {
                             if (albumDetails != null) {
@@ -275,9 +278,10 @@ class ReleaseDetailsActivity : AppCompatActivity() {
                     } else {
                         withContext(Dispatchers.Main) {
                             showLoading(false)
+                            val errorBody = response.errorBody()?.string()
                             Log.e(
                                 "ReleaseDetailsActivity",
-                                "Failed to fetch album details: ${response.message()}"
+                                "Failed to fetch album details: ${response.message()}. Error Body: $errorBody"
                             )
                             Toast.makeText(this@ReleaseDetailsActivity, "Error fetching Deezer release details.", Toast.LENGTH_SHORT).show()
                             finish()
@@ -298,7 +302,6 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             }
         }
     }
-
     private fun fetchITunesReleaseDetails(albumId: Long) {
         checkNetworkAndProceed {
             showLoading(true)

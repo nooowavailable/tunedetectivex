@@ -4,8 +4,10 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -319,12 +321,22 @@ class FetchReleasesWorker(
 
         val releases = mutableListOf<UnifiedAlbum>()
 
+        var apiSource: String? = null
+
         try {
             val deezerResponse =
                 apiService.getArtistReleases(artist.deezerId ?: return, 0).execute()
             if (deezerResponse.isSuccessful) {
                 val deezerAlbums = deezerResponse.body()?.data ?: emptyList()
-                releases += deezerAlbums.mapNotNull {
+
+                val validDeezerAlbums = deezerAlbums.filter { album ->
+                    album.id != 0L && !album.title.isNullOrBlank()
+                }
+                if (deezerAlbums.size != validDeezerAlbums.size) {
+                    Log.w(TAG, "Filtered out ${deezerAlbums.size - validDeezerAlbums.size} invalid Deezer albums for artist ${artist.name} (Deezer ID: ${artist.deezerId}).")
+                }
+
+                releases += validDeezerAlbums.mapNotNull {
                     val artistName = it.artist?.name ?: artist.name
                     UnifiedAlbum(
                         id = "${artist.deezerId}_${it.id}",
@@ -333,16 +345,19 @@ class FetchReleasesWorker(
                         releaseDate = it.release_date,
                         coverUrl = it.getBestCoverUrl(),
                         releaseType = it.record_type,
-                        deezerId = artist.deezerId,
+                        deezerId = it.id,
                         rawTitle = it.title,
                         rawReleaseType = it.record_type
                     )
                 }
+            } else {
+                val errorBody = deezerResponse.errorBody()?.string()
+                Log.e(TAG, "Deezer API Error for artist ${artist.name} (ID: ${artist.deezerId}): " +
+                        "Code=${deezerResponse.code()}, Message=${deezerResponse.message()}, ErrorBody: $errorBody")
             }
 
             if (isItunesSupportEnabled && artist.itunesId != null) {
-                val itunesResponse =
-                    iTunesApiService.lookupArtistWithAlbums(artist.itunesId).execute()
+                val itunesResponse = iTunesApiService.lookupArtistWithAlbums(artist.itunesId).execute()
                 if (itunesResponse.isSuccessful) {
                     val items = itunesResponse.body()?.results ?: emptyList()
                     val albums = items.filter {
@@ -353,15 +368,18 @@ class FetchReleasesWorker(
                             id = "${artist.itunesId}_${it.collectionId}",
                             title = cleanTitle(it.collectionName ?: return@mapNotNull null),
                             artistName = it.artistName ?: artist.name,
-                            releaseDate = it.releaseDate?.substring(0, 10)
-                                ?: return@mapNotNull null,
+                            releaseDate = it.releaseDate?.substring(0, 10) ?: return@mapNotNull null,
                             coverUrl = it.getHighResArtwork() ?: "",
                             releaseType = it.collectionType,
-                            itunesId = artist.itunesId,
+                            itunesId = it.collectionId,
                             rawTitle = it.collectionName,
                             rawReleaseType = it.collectionType
                         )
                     }
+                } else {
+                    val errorBody = itunesResponse.errorBody()?.string()
+                    Log.e(TAG, "iTunes API Error for artist ${artist.name} (ID: ${artist.itunesId}): " +
+                            "Code=${itunesResponse.code()}, Message=${itunesResponse.message()}, ErrorBody: $errorBody")
                 }
             }
 
@@ -369,6 +387,13 @@ class FetchReleasesWorker(
                 SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.releaseDate)?.time
                     ?: 0L
             } ?: return
+
+            apiSource = when {
+                latest.deezerId != null -> "Deezer"
+                latest.itunesId != null -> "iTunes"
+                else -> null
+            }
+
 
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             dateFormat.timeZone = TimeZone.getDefault()
@@ -408,7 +433,7 @@ class FetchReleasesWorker(
 
                     shouldNotify = releaseDateStartOfDayMillis <= futureNotificationCutoff.timeInMillis
                     Log.d(TAG, "Release '${latest.title}' is in the future. Condition: releaseDateStartOfDayMillis <= futureNotificationCutoff.timeInMillis -> $shouldNotify. " +
-                            "Release Date: ${latest.releaseDate}, Notification Cutoff: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(futureNotificationCutoff.timeInMillis)}")
+                            "Release Date: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(releaseDateStartOfDayMillis)}, Notification Cutoff: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(futureNotificationCutoff.timeInMillis)}")
                 } else {
                     shouldNotify = false
                     Log.d(TAG, "Release '${latest.title}' is in the future, but futureReleaseMonths is 0 (future notifications disabled).")
@@ -436,7 +461,8 @@ class FetchReleasesWorker(
                 releaseHash,
                 releaseDateMillis,
                 releaseTypeEnum,
-                isFutureRelease
+                isFutureRelease,
+                apiSource
             )
 
         } catch (e: Exception) {
@@ -444,14 +470,14 @@ class FetchReleasesWorker(
             throw e
         }
     }
-
     private fun sendUnifiedReleaseNotification(
         artist: SavedArtist,
         album: UnifiedAlbum,
         releaseHash: Int,
         releaseDate: Long,
         releaseTypeEnum: ReleaseType,
-        isFutureRelease: Boolean
+        isFutureRelease: Boolean,
+        apiSource: String?
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -484,7 +510,8 @@ class FetchReleasesWorker(
                                 albumArtBitmap = resource,
                                 releaseTypeEnum = releaseTypeEnum,
                                 channelId = RELEASE_CHANNEL_ID,
-                                isFutureRelease = isFutureRelease
+                                isFutureRelease = isFutureRelease,
+                                apiSource = apiSource
                             )
 
                             try {
@@ -519,7 +546,8 @@ class FetchReleasesWorker(
                                 albumArtBitmap = null,
                                 releaseTypeEnum = releaseTypeEnum,
                                 channelId = RELEASE_CHANNEL_ID,
-                                isFutureRelease = isFutureRelease
+                                isFutureRelease = isFutureRelease,
+                                apiSource = apiSource
                             )
 
                             try {
@@ -546,7 +574,8 @@ class FetchReleasesWorker(
         albumArtBitmap: Bitmap?,
         releaseTypeEnum: ReleaseType,
         channelId: String,
-        isFutureRelease: Boolean
+        isFutureRelease: Boolean,
+        apiSource: String?
     ): Notification {
         val releaseTypeString = when (releaseTypeEnum) {
             ReleaseType.ALBUM -> applicationContext.getString(R.string.release_type_album)
@@ -612,11 +641,33 @@ class FetchReleasesWorker(
             album.title
         )
 
+        val intent = Intent(applicationContext, ReleaseDetailsActivity::class.java).apply {
+            putExtra("releaseId", album.deezerId ?: album.itunesId ?: -1L)
+            putExtra("deezerId", album.deezerId ?: -1L)
+            putExtra("itunesId", album.itunesId ?: -1L)
+            putExtra("apiSource", apiSource)
+            putExtra("releaseTitle", album.title)
+            putExtra("artistName", artist.name)
+            putExtra("albumArtUrl", album.coverUrl)
+            putExtra("releaseDate", album.releaseDate)
+
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            album.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val builder = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(notificationTitle)
             .setContentText(notificationText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
 
         if (albumArtBitmap != null) {
             builder.setStyle(
