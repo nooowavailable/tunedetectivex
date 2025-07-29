@@ -13,8 +13,7 @@ This app uses by default the Deezer API (and via in-app settings (opt-in) the iT
 
 ### Disclaimer on Code Generation
 
-This app was developed primarily using AI tools such as ChatGPT, Gemini, and others.
-
+This app was developed primarily using AI tools such as ChatGPT, Gemini, and others. (just like the previous tunedetective)
 
 ## Features
 
