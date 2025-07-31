@@ -579,8 +579,6 @@ class MainActivity : ComponentActivity() {
                     progressBar.visibility = View.GONE
                 }
             })
-        unifiedAlbum.deezerId?.let { selectedArtist?.id = it }
-        unifiedAlbum.itunesId?.let { selectedArtist?.itunesId = it }
 
         updateSaveButton()
 
