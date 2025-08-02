@@ -10,7 +10,7 @@
     <string name="fabMenu">Menü</string>
     <string name="button_open_discography">Diskographie</string>
     <string name="editTextArtist">Suche nach einem Künstler</string>
-    <string name="textViewname">Künstler Name</string>
+    <string name="textViewArtistName">Künstler Name</string>
     <string name="textViewAlbumTitle">Album Titel</string>
     <string name="textViewrelease_date">Erscheinungsdatum</string>
     <string name="searchViewArtists">Suche nach einem Künstler…</string>

@@ -44,7 +44,6 @@ import com.dev.tunedetectivex.api.ITunesApiService
 import com.dev.tunedetectivex.models.UnifiedAlbum
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
@@ -73,7 +72,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var recyclerViewArtists: RecyclerView
     private lateinit var editTextArtist: EditText
     private lateinit var buttonSaveArtist: ImageButton
-    private lateinit var textViewname: TextView
     private lateinit var imageViewAlbumArt: ImageView
     private lateinit var textViewAlbumTitle: TextView
     private lateinit var textViewrelease_date: TextView
@@ -83,13 +81,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var progressBar: ProgressBar
     private var isFabMenuOpen = false
     private lateinit var notificationManager: NotificationManagerCompat
-    private lateinit var buttonOpenDiscography: MaterialButton
     private lateinit var fabAbout: FloatingActionButton
     private lateinit var artistInfoContainer: LinearLayout
     private lateinit var recyclerViewReleases: RecyclerView
     private lateinit var fabScrollToTop: FloatingActionButton
     private lateinit var textViewNoSavedArtists: TextView
     private lateinit var imageViewArtistProfile: ImageView
+    private lateinit var textViewArtistName: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,13 +114,13 @@ class MainActivity : ComponentActivity() {
 
         editTextArtist = findViewById(R.id.editTextArtist)
         buttonSaveArtist = findViewById(R.id.buttonSaveArtist)
-        buttonOpenDiscography = findViewById(R.id.button_open_discography)
 
         artistInfoContainer = findViewById(R.id.artistInfoContainer)
-        textViewname = findViewById(R.id.textViewname)
         textViewAlbumTitle = findViewById(R.id.textViewAlbumTitle)
         textViewrelease_date = findViewById(R.id.textViewrelease_date)
         imageViewAlbumArt = findViewById(R.id.imageViewAlbumArt)
+        imageViewArtistProfile = findViewById(R.id.imageViewArtistProfile)
+        textViewArtistName = findViewById(R.id.textViewArtistName)
 
         progressBar = findViewById(R.id.progressBarLoading)
         notificationManager = NotificationManagerCompat.from(this)
@@ -257,7 +255,13 @@ class MainActivity : ComponentActivity() {
             saveArtist()
         }
 
-        buttonOpenDiscography.setOnClickListener {
+        imageViewArtistProfile.setOnClickListener {
+            selectedArtist?.let { artist ->
+                openArtistDiscography(artist)
+            } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
+        }
+
+        textViewArtistName.setOnClickListener {
             selectedArtist?.let { artist ->
                 openArtistDiscography(artist)
             } ?: Toast.makeText(this, R.string.Noartistselected, Toast.LENGTH_SHORT).show()
@@ -341,7 +345,6 @@ class MainActivity : ComponentActivity() {
             val adapter = SimilarArtistsAdapter(this, artists) { artist ->
                 selectedArtist = artist
                 recyclerViewArtists.visibility = View.GONE
-                buttonOpenDiscography.visibility = View.VISIBLE
                 buttonSaveArtist.visibility = View.GONE
 
                 saveSearchHistory(artist)
@@ -473,7 +476,7 @@ class MainActivity : ComponentActivity() {
 
 
         artistInfoContainer.visibility = View.VISIBLE
-        textViewname.text = unifiedAlbum.artistName
+        textViewArtistName.text = unifiedAlbum.artistName
 
         val primaryTypedValue = TypedValue()
         theme.resolveAttribute(android.R.attr.textColorPrimary, primaryTypedValue, true)
@@ -1109,7 +1112,6 @@ class MainActivity : ComponentActivity() {
 
 
     private fun openArtistDiscography(artist: DeezerArtist) {
-
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
         if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()

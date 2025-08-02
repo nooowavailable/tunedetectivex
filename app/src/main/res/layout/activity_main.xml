@@ -53,13 +53,12 @@
                 android:clickable="true"
                 android:layout_marginTop="16dp"
                 android:minHeight="250dp"
-                android:background="@drawable/rounded_background"
                 android:clipToOutline="true"
                 android:elevation="2dp"
                 android:focusable="true"
                 android:outlineProvider="background"
                 android:paddingBottom="16dp"
-                android:visibility="invisible">
+                android:visibility="visible">
 
                 <ImageView
                     android:id="@+id/imageViewAlbumArt"
@@ -78,46 +77,42 @@
                     android:layout_height="wrap_content"
                     android:gravity="start"
                     android:orientation="vertical"
-                    android:paddingStart="16dp"
                     android:paddingTop="8dp"
-                    android:paddingEnd="16dp">
+                    android:paddingBottom="16dp">
 
                     <TextView
                         android:id="@+id/textViewAlbumTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
-                        android:layout_marginTop="4dp"
-                        android:gravity="start"
                         android:text="@string/textViewAlbumTitle"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                        android:layout_marginBottom="8dp" />
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="8dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
 
                         <ImageView
                             android:id="@+id/imageViewArtistProfile"
-                            android:layout_width="25dp"
-                            android:layout_height="25dp"
-                            android:background="@drawable/circle_shape"
+                            android:layout_width="45dp"
+                            android:layout_height="45dp"
                             android:clipToOutline="true"
                             android:importantForAccessibility="no"
                             android:scaleType="centerCrop"
+                            android:layout_marginEnd="8dp"
                             tools:src="@tools:sample/avatars" />
 
                         <TextView
-                            android:id="@+id/textViewname"
+                            android:id="@+id/textViewArtistName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
                             android:gravity="start"
-                            android:text="@string/textViewname"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                            android:text="@string/textViewArtistName"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -125,24 +120,10 @@
                         android:id="@+id/textViewrelease_date"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
                         android:gravity="start"
                         android:text="@string/textViewrelease_date"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/button_open_discography"
-                        style="@style/Widget.Material3.Button.ElevatedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="start"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="8dp"
-                        android:text="@string/button_open_discography"
-                        app:icon="@drawable/ic_discography"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_marginTop="4dp" />
                 </LinearLayout>
             </LinearLayout>
 
