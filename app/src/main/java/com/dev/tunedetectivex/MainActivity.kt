@@ -37,6 +37,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.GranularRoundedCorners
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.dev.tunedetectivex.api.ITunesApiService
@@ -543,35 +544,31 @@ class MainActivity : ComponentActivity() {
             .into(imageViewArtistProfile)
 
         progressBar.visibility = View.VISIBLE
+
+        imageViewAlbumArt.setImageDrawable(null)
+        imageViewAlbumArt.visibility = View.INVISIBLE
+
+        progressBar.visibility = View.VISIBLE
+
         val cornerRadius = 30f
         val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
 
         Glide.with(imageViewAlbumArt)
             .load(highResUrl)
             .placeholder(R.drawable.ic_discography)
-            .error(
-                Glide.with(imageViewAlbumArt)
-                    .load(unifiedAlbum.coverUrl)
-                    .transform(
-                        CenterCrop(),
-                        GranularRoundedCorners(
-                            cornerRadius,
-                            cornerRadius,
-                            cornerRadius,
-                            cornerRadius
-                        )
-                    )
-            )
+            .error(R.drawable.error_image)
             .transform(
                 CenterCrop(),
                 GranularRoundedCorners(cornerRadius, cornerRadius, cornerRadius, cornerRadius)
             )
+            .transition(DrawableTransitionOptions.withCrossFade())
             .into(object : CustomTarget<Drawable>() {
                 override fun onResourceReady(
                     resource: Drawable,
                     transition: Transition<in Drawable>?
                 ) {
                     imageViewAlbumArt.setImageDrawable(resource)
+                    imageViewAlbumArt.visibility = View.VISIBLE
                     progressBar.visibility = View.GONE
                 }
 
