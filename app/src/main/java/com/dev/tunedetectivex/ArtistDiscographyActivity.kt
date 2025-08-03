@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -15,6 +18,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.dev.tunedetectivex.api.ITunesApiService
 import com.dev.tunedetectivex.models.ITunesAlbumSearchResponse
 import com.dev.tunedetectivex.models.UnifiedAlbum
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -27,21 +31,35 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var apiService: DeezerApiService
-    private lateinit var db: AppDatabase
+    private lateinit var db: AppDatabase // Assuming this is defined elsewhere
     private var selectedArtist: DeezerArtist? = null
 
     private lateinit var artistName: String
     private lateinit var artistImageUrl: String
     private lateinit var progressBar: ProgressBar
+//    private lateinit var toolbar: Toolbar // Declare toolbar
+    private lateinit var imageViewArtist: ImageView // Declare imageViewArtist
+    private lateinit var collapsingToolbar: CollapsingToolbarLayout // Declare CollapsingToolbarLayout
+
+    private lateinit var textViewArtistInfo: TextView // Declare this
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_artist_discography)
 
+//        toolbar = findViewById(R.id.toolbar)
+//        setSupportActionBar(toolbar)
+//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // Add this line to explicitly clear the ActionBar's title
+        supportActionBar?.title = "" // Or null, though empty string is often safer
+        collapsingToolbar = findViewById(R.id.collapsing_toolbar) // Initialize CollapsingToolbarLayout
+        imageViewArtist = findViewById(R.id.imageViewArtist) // Initialize imageViewArtist
+
+        textViewArtistInfo = findViewById(R.id.textViewArtistInfo) // Initialize the TextView
+
 
         recyclerView = findViewById(R.id.recyclerViewDiscography)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -51,9 +69,10 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         artistName = intent.getStringExtra("artistName") ?: "Unknown Artist"
         artistImageUrl = intent.getStringExtra("artistImageUrl") ?: ""
 
+        textViewArtistInfo.text = artistName
+
         Log.d("DiscographyInit", "Deezer Artist ID: $deezerId")
         Log.d("DiscographyInit", "iTunes Artist ID: $itunesId")
-
 
         selectedArtist = DeezerArtist(
             id = deezerId.takeIf { it > 0 } ?: -1L,
@@ -67,17 +86,15 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         )
 
         progressBar = findViewById(R.id.progressBarLoading)
-        supportActionBar?.title = artistName
-
 
         setupApiService()
-        db = AppDatabase.getDatabase(applicationContext)
+        db = AppDatabase.getDatabase(applicationContext) // Assuming AppDatabase is accessible
         loadCombinedDiscography(selectedArtist?.id ?: -1L, selectedArtist?.itunesId ?: -1L)
     }
 
     private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
         getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
+        val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext) // Assuming WorkManagerUtil is accessible
 
         if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
             Toast.makeText(this, getString(R.string.network_type_not_available), Toast.LENGTH_SHORT).show()
@@ -91,7 +108,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             .baseUrl("https://itunes.apple.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        val iTunesService = retrofit.create(ITunesApiService::class.java)
+        val iTunesService = retrofit.create(ITunesApiService::class.java) // Assuming ITunesApiService is defined
 
         var deezerLoaded = false
         var itunesLoaded = false
@@ -114,7 +131,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     }
                 }
 
-                recyclerView.adapter = UnifiedDiscographyAdapter(sorted) { album ->
+                recyclerView.adapter = UnifiedDiscographyAdapter(sorted) { album -> // Assuming UnifiedDiscographyAdapter is defined
                     album.deezerId?.let { selectedArtist?.id = it }
                     album.itunesId?.let { selectedArtist?.itunesId = it }
 
@@ -136,7 +153,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     val validCoverUrl =
                         album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
 
-                    Intent(this, ReleaseDetailsActivity::class.java).apply {
+                    Intent(this, ReleaseDetailsActivity::class.java).apply { // Assuming ReleaseDetailsActivity is defined
                         putExtra("releaseId", releaseIdForDetails)
                         putExtra("releaseTitle", album.title)
                         putExtra("artistName", album.artistName)
@@ -155,25 +172,26 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     }.also { startActivity(it) }
                 }
 
+                // Load artist image into the ImageView
                 Glide.with(this)
                     .load(artistImageUrl)
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.error_image)
                     .transform(RoundedCorners(30))
-                    .into(findViewById(R.id.imageViewArtist))
+                    .into(imageViewArtist) // Use the initialized imageViewArtist
 
                 recyclerView.visibility = View.VISIBLE
             }
         }
 
-        apiService.getArtistReleases(deezerId).enqueue(object : Callback<DeezerAlbumsResponse> {
+        apiService.getArtistReleases(deezerId).enqueue(object : Callback<DeezerAlbumsResponse> { // Assuming DeezerAlbumsResponse and DeezerApiService are defined
             override fun onResponse(
                 call: Call<DeezerAlbumsResponse>,
                 response: Response<DeezerAlbumsResponse>
             ) {
                 response.body()?.data.orEmpty().forEach { album ->
                     unifiedAlbums.add(
-                        UnifiedAlbum(
+                        UnifiedAlbum( // Assuming UnifiedAlbum is defined
                             id = album.id.toString(),
                             title = album.title,
                             releaseDate = album.release_date,
@@ -199,7 +217,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
         if (itunesId > 0) {
             iTunesService.lookupArtistWithAlbums(itunesId)
-                .enqueue(object : Callback<ITunesAlbumSearchResponse> {
+                .enqueue(object : Callback<ITunesAlbumSearchResponse> { // Assuming ITunesAlbumSearchResponse is defined
                     override fun onResponse(
                         call: Call<ITunesAlbumSearchResponse>,
                         response: Response<ITunesAlbumSearchResponse>
@@ -289,7 +307,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
             .baseUrl("https://api.deezer.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        apiService = retrofit.create(DeezerApiService::class.java)
+        apiService = retrofit.create(DeezerApiService::class.java) // Assuming DeezerApiService is defined
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
