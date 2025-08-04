@@ -168,7 +168,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
                 Glide.with(this)
                     .load(artistImageUrl)
-                    .placeholder(R.drawable.placeholder_image)
+                    .placeholder(R.drawable.placeholder_circle_shape)
                     .error(R.drawable.error_image)
                     .transform(RoundedCorners(30))
                     .into(imageViewArtist)

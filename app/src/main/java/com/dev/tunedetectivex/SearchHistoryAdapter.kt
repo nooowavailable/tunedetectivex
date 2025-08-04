@@ -69,8 +69,8 @@ class SearchHistoryAdapter(
         if (isNetworkTypeAllowed()) {
             Glide.with(context)
                 .load(historyItem.profileImageUrl)
-                .placeholder(R.drawable.placeholder_image)
-                .error(R.drawable.placeholder_image)
+                .placeholder(R.drawable.placeholder_circle_shape)
+                .error(R.drawable.error_image)
                 .circleCrop()
                 .into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
@@ -86,7 +86,7 @@ class SearchHistoryAdapter(
                     }
                 })
         } else {
-            holder.imageViewArtistProfile.setImageResource(R.drawable.placeholder_image)
+            holder.imageViewArtistProfile.setImageResource(R.drawable.placeholder_circle_shape)
             progressBar.visibility = View.GONE
         }
     }

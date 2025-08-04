@@ -31,7 +31,7 @@ class SimilarArtistsAdapter(
         holder.nameTextView.text = artist.name
 
         val artistPictureUrl = getBestArtistPicture(artist)
-        val placeholderResId = R.drawable.placeholder_image
+        val placeholderResId = R.drawable.placeholder_circle_shape
         val progressBar: ProgressBar = holder.itemView.findViewById(R.id.progressBarLoading)
 
         progressBar.visibility = View.VISIBLE

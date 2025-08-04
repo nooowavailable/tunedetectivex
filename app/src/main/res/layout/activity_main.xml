@@ -43,88 +43,98 @@
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <LinearLayout
-                android:id="@+id/artistInfoContainer"
+            <include
+                android:id="@+id/releaseInfoPlaceholder"
+                layout="@layout/layout_release_info_placeholder"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
-                android:orientation="vertical"
-                android:gravity="start"
-                android:clickable="true"
                 android:layout_marginTop="16dp"
                 android:minHeight="250dp"
-                android:clipToOutline="true"
-                android:elevation="2dp"
-                android:focusable="true"
-                android:outlineProvider="background"
-                android:paddingBottom="16dp"
-                android:visibility="visible">
+                android:visibility="gone" />
 
-                <ImageView
-                    android:id="@+id/imageViewAlbumArt"
-                    android:layout_width="match_parent"
+            <LinearLayout
+            android:id="@+id/artistInfoContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:orientation="vertical"
+            android:gravity="start"
+            android:clickable="true"
+            android:layout_marginTop="16dp"
+            android:minHeight="250dp"
+            android:clipToOutline="true"
+            android:elevation="2dp"
+            android:focusable="true"
+            android:outlineProvider="background"
+            android:paddingBottom="16dp"
+            android:visibility="visible">
+
+            <ImageView
+                android:id="@+id/imageViewAlbumArt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                android:adjustViewBounds="true"
+                android:background="@android:color/transparent"
+                android:scaleType="centerCrop"
+                android:importantForAccessibility="no"
+                android:maxHeight="500dp"
+                tools:src="@tools:sample/backgrounds/scenic" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:id="@+id/textViewAlbumTitle"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="0dp"
-                    android:adjustViewBounds="true"
-                    android:background="@android:color/transparent"
-                    android:scaleType="centerCrop"
-                    android:importantForAccessibility="no"
-                    android:maxHeight="500dp"
-                    tools:src="@tools:sample/backgrounds/scenic" />
+                    android:textStyle="bold"
+                    android:text="@string/textViewAlbumTitle"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/textViewrelease_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:text="@string/textViewrelease_date"
+                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                    android:layout_marginBottom="8dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="start"
-                    android:orientation="vertical"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="16dp">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/imageViewArtistProfile"
+                        android:layout_width="45dp"
+                        android:layout_height="45dp"
+                        android:clipToOutline="true"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerCrop"
+                        android:layout_marginEnd="8dp"
+                        tools:src="@tools:sample/avatars" />
 
                     <TextView
-                        android:id="@+id/textViewAlbumTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textStyle="bold"
-                        android:text="@string/textViewAlbumTitle"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:id="@+id/textViewrelease_date"
+                        android:id="@+id/textViewArtistName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="start"
-                        android:text="@string/textViewrelease_date"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:layout_marginBottom="8dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="8dp">
-
-                        <ImageView
-                            android:id="@+id/imageViewArtistProfile"
-                            android:layout_width="45dp"
-                            android:layout_height="45dp"
-                            android:clipToOutline="true"
-                            android:importantForAccessibility="no"
-                            android:scaleType="centerCrop"
-                            android:layout_marginEnd="8dp"
-                            tools:src="@tools:sample/avatars" />
-
-                        <TextView
-                            android:id="@+id/textViewArtistName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="start"
-                            android:text="@string/textViewArtistName"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
-                    </LinearLayout>
+                        android:text="@string/textViewArtistName"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
                 </LinearLayout>
             </LinearLayout>
+        </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewArtists"

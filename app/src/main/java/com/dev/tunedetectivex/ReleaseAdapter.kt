@@ -144,7 +144,7 @@ class ReleaseAdapter(
                     })
                     .into(albumArt)
             } else {
-                albumArt.setImageResource(R.drawable.placeholder_image)
+                albumArt.setImageResource(R.drawable.placeholder_rect_shape)
                 progressBar.visibility = View.GONE
             }
 
@@ -152,11 +152,11 @@ class ReleaseAdapter(
                 if (!item.artistImageUrl.isNullOrBlank()) {
                     Glide.with(itemView.context)
                         .load(item.artistImageUrl)
-                        .placeholder(R.drawable.placeholder_image)
+                        .placeholder(R.drawable.placeholder_circle_shape)
                         .circleCrop()
                         .into(it)
                 } else {
-                    it.setImageResource(R.drawable.placeholder_image)
+                    it.setImageResource(R.drawable.placeholder_rect_shape)
                 }
             }
 

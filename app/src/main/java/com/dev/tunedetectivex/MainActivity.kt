@@ -1,6 +1,8 @@
 package com.dev.tunedetectivex
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -88,6 +90,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var textViewNoSavedArtists: TextView
     private lateinit var imageViewArtistProfile: ImageView
     private lateinit var textViewArtistName: TextView
+    private lateinit var releaseInfoPlaceholder: LinearLayout
+    private lateinit var placeholderAlbumArt: View
+    private var breathingAnimator: ValueAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,6 +132,8 @@ class MainActivity : ComponentActivity() {
 
         textViewNoSavedArtists = findViewById(R.id.textViewNoSavedArtists)
         imageViewArtistProfile = findViewById(R.id.imageViewArtistProfile)
+        releaseInfoPlaceholder = findViewById(R.id.releaseInfoPlaceholder)
+        placeholderAlbumArt = releaseInfoPlaceholder.findViewById(R.id.placeholderAlbumArt)
 
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
@@ -310,6 +317,30 @@ class MainActivity : ComponentActivity() {
 
     }
 
+    private fun startBreathingAnimation() {
+        if (breathingAnimator == null) {
+            breathingAnimator = ValueAnimator.ofFloat(0.5f, 1.0f).apply {
+                duration = 600
+                repeatMode = ValueAnimator.REVERSE
+                repeatCount = ValueAnimator.INFINITE
+                addUpdateListener { animator ->
+                    releaseInfoPlaceholder.alpha = animator.animatedValue as Float
+                }
+            }
+        }
+        if (!breathingAnimator!!.isStarted) {
+            breathingAnimator?.start()
+        }
+    }
+
+    private fun stopBreathingAnimation() {
+        breathingAnimator?.cancel()
+        breathingAnimator?.removeAllUpdateListeners()
+        breathingAnimator = null
+        releaseInfoPlaceholder.alpha = 1.0f
+    }
+
+
     private fun isAutoLoadReleasesEnabled(): Boolean {
         val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         return prefs.getBoolean("autoLoadReleases", true)
@@ -474,8 +505,23 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        artistInfoContainer.visibility = View.INVISIBLE
+        releaseInfoPlaceholder.visibility = View.VISIBLE
 
-        artistInfoContainer.visibility = View.VISIBLE
+        placeholderAlbumArt.post {
+            val width = placeholderAlbumArt.width
+            if (width > 0) {
+                val params = placeholderAlbumArt.layoutParams
+                if (params.height != width) {
+                    params.height = width
+                    placeholderAlbumArt.layoutParams = params
+                }
+            }
+        }
+
+        startBreathingAnimation()
+
+
         textViewArtistName.text = unifiedAlbum.artistName
 
         val primaryTypedValue = TypedValue()
@@ -539,22 +585,47 @@ class MainActivity : ComponentActivity() {
         }
         textViewrelease_date.text = formattedDate
 
-        Glide.with(imageViewArtistProfile.context)
-            .load(selectedArtist?.getBestPictureUrl())
-            .placeholder(R.drawable.placeholder_image)
-            .error(R.drawable.error_image)
-            .circleCrop()
-            .into(imageViewArtistProfile)
-
-        progressBar.visibility = View.VISIBLE
-
-        imageViewAlbumArt.setImageDrawable(null)
-        imageViewAlbumArt.visibility = View.INVISIBLE
-
-        progressBar.visibility = View.VISIBLE
-
         val cornerRadius = 30f
         val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
+
+        var artistProfileImageLoaded = false
+        var albumArtLoaded = false
+
+        val revealContentIfReady = {
+            if (artistProfileImageLoaded && albumArtLoaded) {
+                stopBreathingAnimation()
+                releaseInfoPlaceholder.visibility = View.GONE
+
+                artistInfoContainer.alpha = 0f
+                artistInfoContainer.visibility = View.VISIBLE
+                ObjectAnimator.ofFloat(artistInfoContainer, "alpha", 0f, 1f).apply {
+                    duration = 400
+                    start()
+                }
+                updateSaveButton()
+            }
+        }
+
+        Glide.with(imageViewArtistProfile.context)
+            .load(selectedArtist?.getBestPictureUrl())
+            .placeholder(R.drawable.placeholder_circle_shape)
+            .error(R.drawable.error_image)
+            .circleCrop()
+            .into(object : CustomTarget<Drawable>() {
+                override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
+                    imageViewArtistProfile.setImageDrawable(resource)
+                    artistProfileImageLoaded = true
+                    revealContentIfReady()
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {}
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+                    super.onLoadFailed(errorDrawable)
+                    imageViewArtistProfile.setImageDrawable(errorDrawable)
+                    artistProfileImageLoaded = true
+                    revealContentIfReady()
+                }
+            })
 
         Glide.with(imageViewAlbumArt)
             .load(highResUrl)
@@ -566,21 +637,20 @@ class MainActivity : ComponentActivity() {
             )
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(object : CustomTarget<Drawable>() {
-                override fun onResourceReady(
-                    resource: Drawable,
-                    transition: Transition<in Drawable>?
-                ) {
+                override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
                     imageViewAlbumArt.setImageDrawable(resource)
-                    imageViewAlbumArt.visibility = View.VISIBLE
-                    progressBar.visibility = View.GONE
+                    albumArtLoaded = true
+                    revealContentIfReady()
                 }
 
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    progressBar.visibility = View.GONE
+                override fun onLoadCleared(placeholder: Drawable?) {}
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+                    super.onLoadFailed(errorDrawable)
+                    imageViewAlbumArt.setImageDrawable(errorDrawable)
+                    albumArtLoaded = true
+                    revealContentIfReady()
                 }
             })
-
-        updateSaveButton()
 
         artistInfoContainer.setOnClickListener {
             val deezerId = unifiedAlbum.deezerId ?: -1L
@@ -628,7 +698,6 @@ class MainActivity : ComponentActivity() {
                     "deezerId=${intent.getLongExtra("deezerId", -1L)}, " +
                     "itunesId=${intent.getLongExtra("itunesId", -1L)}, " +
                     "apiSource=${intent.getStringExtra("apiSource")}")
-
 
             startActivity(intent)
         }
