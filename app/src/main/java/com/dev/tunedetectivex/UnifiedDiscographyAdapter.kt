@@ -15,9 +15,13 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class UnifiedDiscographyAdapter(
-    private val albums: List<UnifiedAlbum>,
+    val albums: List<UnifiedAlbum>,
+    private val isListLayout: Boolean,
     private val onAlbumClick: (UnifiedAlbum) -> Unit
-) : RecyclerView.Adapter<UnifiedDiscographyAdapter.AlbumViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    private val VIEW_TYPE_LIST = 1
+    private val VIEW_TYPE_GRID = 2
 
     init {
         val deezerCount = albums.count { it.deezerId != null }
@@ -31,26 +35,43 @@ class UnifiedDiscographyAdapter(
         Log.d("UnifiedDiscography", "• Both IDs present: $bothCount")
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_album, parent, false)
-        return AlbumViewHolder(view)
+    override fun getItemViewType(position: Int): Int {
+        return if (isListLayout) VIEW_TYPE_LIST else VIEW_TYPE_GRID
     }
 
-    override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            VIEW_TYPE_LIST -> {
+                val view = inflater.inflate(R.layout.item_album, parent, false)
+                ListViewHolder(view)
+            }
+            VIEW_TYPE_GRID -> {
+                val view = inflater.inflate(R.layout.item_release_grid, parent, false)
+                GridViewHolder(view)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val album = albums[position]
-        holder.bind(album)
-        holder.itemView.setOnClickListener { onAlbumClick(album) }
+        when (holder) {
+            is ListViewHolder -> holder.bind(album, onAlbumClick)
+            is GridViewHolder -> holder.bind(album, onAlbumClick)
+        }
     }
 
     override fun getItemCount(): Int = albums.size
 
-    class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class ListViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val albumCover: ImageView = view.findViewById(R.id.imageViewAlbumCover)
         private val releaseDate: TextView = view.findViewById(R.id.textViewReleaseDate)
         private val progressBar: ProgressBar = view.findViewById(R.id.progressBarLoading)
+        private val titleMain: TextView = itemView.findViewById(R.id.textViewTitleMain)
+        private val titleType: TextView = itemView.findViewById(R.id.textViewTitleType)
 
-        fun bind(album: UnifiedAlbum) {
+        fun bind(album: UnifiedAlbum, onAlbumClick: (UnifiedAlbum) -> Unit) {
             Log.d("UnifiedDiscography", "Album: ${album.title}")
             Log.d("UnifiedDiscography", "  Deezer ID: ${album.deezerId ?: "❌"}")
             Log.d("UnifiedDiscography", "  iTunes ID: ${album.itunesId ?: "❌"}")
@@ -73,9 +94,6 @@ class UnifiedDiscographyAdapter(
                 .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
                 .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
                 .trim()
-
-            val titleMain: TextView = itemView.findViewById(R.id.textViewTitleMain)
-            val titleType: TextView = itemView.findViewById(R.id.textViewTitleType)
 
             titleMain.text = cleanedTitle
             if (!finalType.isNullOrBlank()) {
@@ -128,6 +146,42 @@ class UnifiedDiscographyAdapter(
                     }
                 })
                 .into(albumCover)
+
+            itemView.setOnClickListener { onAlbumClick(album) }
+        }
+    }
+
+    class GridViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val albumArt: ImageView = view.findViewById(R.id.imageViewAlbumArt)
+        private val artistName: TextView = view.findViewById(R.id.textViewArtistName)
+        private val titleMain: TextView = view.findViewById(R.id.textViewTitleMain)
+
+        fun bind(album: UnifiedAlbum, onAlbumClick: (UnifiedAlbum) -> Unit) {
+            val rawTitle = album.title
+            val cleanedTitle = rawTitle
+                .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
+                .trim()
+
+            titleMain.text = cleanedTitle
+            artistName.text = album.artistName
+
+            Glide.with(itemView.context).clear(albumArt)
+
+            if (!album.coverUrl.isNullOrBlank()) {
+                Glide.with(itemView.context)
+                    .load(album.coverUrl)
+                    .error(R.drawable.ic_discography)
+                    .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
+                    .transform(RoundedCorners(30))
+                    .into(albumArt)
+            } else {
+                albumArt.setImageResource(R.drawable.ic_discography)
+            }
+
+            itemView.setOnClickListener {
+                onAlbumClick(album)
+            }
         }
     }
 }

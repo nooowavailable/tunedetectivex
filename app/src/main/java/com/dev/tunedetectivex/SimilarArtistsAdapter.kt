@@ -17,12 +17,16 @@ import com.bumptech.glide.request.transition.Transition
 class SimilarArtistsAdapter(
     private val context: Context,
     private val artists: List<DeezerArtist>,
-    private val itemClick: (DeezerArtist) -> Unit
+    private val itemClick: (DeezerArtist) -> Unit,
+    private val isListLayout: Boolean
 ) : RecyclerView.Adapter<SimilarArtistsAdapter.ArtistViewHolder>() {
 
+    fun getCurrentList(): List<DeezerArtist> = artists
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArtistViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.artist_item, parent, false)
-        return ArtistViewHolder(view)
+        val layoutId = if (isListLayout) R.layout.artist_item else R.layout.artist_grid_item
+        val view = LayoutInflater.from(context).inflate(layoutId, parent, false)
+        return ArtistViewHolder(view, isListLayout)
     }
 
     override fun onBindViewHolder(holder: ArtistViewHolder, position: Int) {
@@ -84,7 +88,7 @@ class SimilarArtistsAdapter(
         return WorkManagerUtil.isSelectedNetworkTypeAvailable(context, networkPreference)
     }
 
-    class ArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class ArtistViewHolder(view: View, private val isListLayout: Boolean) : RecyclerView.ViewHolder(view) {
         val nameTextView: TextView = view.findViewById(R.id.name)
         val artistImageView: ImageView = view.findViewById(R.id.artistImage)
     }
