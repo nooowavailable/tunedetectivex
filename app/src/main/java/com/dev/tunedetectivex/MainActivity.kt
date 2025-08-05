@@ -42,8 +42,6 @@ import com.bumptech.glide.load.resource.bitmap.GranularRoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.dev.tunedetectivex.api.ITunesApiService
-import com.dev.tunedetectivex.models.UnifiedAlbum
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.dialog.MaterialAlertDialogBuilder

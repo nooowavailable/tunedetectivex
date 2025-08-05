@@ -1,4 +1,4 @@
-package com.dev.tunedetectivex.model.enums
+package com.dev.tunedetectivex
 
 enum class ReleaseType {
     ALBUM, SINGLE, EP, DEFAULT;

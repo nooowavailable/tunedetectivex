@@ -1,7 +1,5 @@
-package com.dev.tunedetectivex.api
+package com.dev.tunedetectivex
 
-import com.dev.tunedetectivex.models.ITunesAlbumSearchResponse
-import com.dev.tunedetectivex.models.ITunesArtistSearchResponse
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.GET

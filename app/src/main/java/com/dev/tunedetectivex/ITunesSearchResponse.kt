@@ -1,4 +1,4 @@
-package com.dev.tunedetectivex.models
+package com.dev.tunedetectivex
 
 data class ITunesArtistSearchResponse(
     val resultCount: Int,
