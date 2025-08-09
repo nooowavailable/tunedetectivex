@@ -48,7 +48,7 @@ class SavedArtistAdapter(
             R.layout.saved_artist_grid_item
         }
         val view = LayoutInflater.from(parent.context).inflate(layoutId, parent, false)
-        return SavedArtistViewHolder(view, isListLayout)
+        return SavedArtistViewHolder(view)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -58,7 +58,6 @@ class SavedArtistAdapter(
 
         holder.bind(
             artist = artist,
-            onArtistClick = onArtistClick,
             onToggleNotifications = onToggleNotifications,
             isSelected = isSelected,
             selectionMode = selectionMode
@@ -105,8 +104,6 @@ class SavedArtistAdapter(
         onSelectionChanged?.invoke(emptyList())
     }
 
-    fun isInSelectionMode(): Boolean = selectionMode
-
     override fun onViewRecycled(holder: SavedArtistViewHolder) {
         super.onViewRecycled(holder)
         Glide.with(holder.itemView.context)
@@ -126,7 +123,7 @@ class SavedArtistAdapter(
 
     fun isSelected(id: Long): Boolean = selectedItems.contains(id)
 
-    class SavedArtistViewHolder(view: View, private val isListLayout: Boolean) : RecyclerView.ViewHolder(view) {
+    class SavedArtistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val artistNameTextView: TextView = view.findViewById(R.id.textViewArtistName)
         private val profileImageView: ImageView = view.findViewById(R.id.imageViewProfile)
         private val progressBar: ProgressBar? = view.findViewById(R.id.progressBarItemLoading)
@@ -135,7 +132,6 @@ class SavedArtistAdapter(
         @SuppressLint("SetTextI18n")
         fun bind(
             artist: SavedArtistItem,
-            onArtistClick: (SavedArtistItem) -> Unit,
             onToggleNotifications: (SavedArtistItem, Boolean) -> Unit,
             isSelected: Boolean,
             selectionMode: Boolean
@@ -191,7 +187,7 @@ class SavedArtistAdapter(
                 profileImageView.setImageResource(R.drawable.error_image)
             }
 
-            if (isListLayout && notifyIcon != null) {
+            if (notifyIcon != null) {
                 notifyIcon.setImageResource(
                     if (artist.notifyOnNewRelease) R.drawable.ic_saved_artist else R.drawable.ic_save_artist
                 )
@@ -215,8 +211,6 @@ class SavedArtistAdapter(
                         )
                     }
                 }
-            } else {
-                notifyIcon?.visibility = View.GONE
             }
 
             val selectedColor = MaterialColors.getColor(
@@ -224,13 +218,8 @@ class SavedArtistAdapter(
                 com.google.android.material.R.attr.colorSurfaceVariant,
                 "fallback"
             )
-            val normalColor = android.graphics.Color.TRANSPARENT
-            itemView.setBackgroundColor(if (isSelected) selectedColor else normalColor)
-
-            if (isListLayout) {
-                notifyIcon?.isEnabled = !selectionMode
-                notifyIcon?.visibility = if (selectionMode) View.INVISIBLE else View.VISIBLE
-            }
+            android.graphics.Color.TRANSPARENT
+            itemView.setBackgroundColor(if (isSelected) selectedColor else 0)
         }
     }
 

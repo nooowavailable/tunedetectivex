@@ -195,6 +195,16 @@
             android:textColor="@color/md_theme_onBackground"
             android:textSize="16sp" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_list_layout"
+            style="@style/Widget.Material3.CompoundButton.Switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="12dp"
+            android:checked="true"
+            android:layout_marginBottom="16dp"
+            android:text="@string/list_layout_toggle" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -272,6 +272,9 @@ Make sure to resave your artists manually, since they don’t have any iTunes re
     <string name="notification_upcoming_release_title_single">%1$s - Upcoming %2$s</string>
     <string name="notification_upcoming_release_title_ep">%1$s - Upcoming %2$s</string>
     <string name="notification_upcoming_release_title_default">%1$s - Upcoming %2$s</string>
+    <string name="list_layout_enabled_toast">List layout is now the default.</string>
+    <string name="grid_layout_enabled_toast">Grid layout is now the default.</string>
+    <string name="list_layout_toggle">Use List Layout by Default</string>
     <string-array name="view_type_options">
         <item>Artists</item>
         <item>Releases</item>

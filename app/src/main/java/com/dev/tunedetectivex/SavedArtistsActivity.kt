@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Spinner
@@ -19,7 +18,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.dev.tunedetectivex.ITunesApiService
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -81,6 +79,8 @@ class SavedArtistsActivity : AppCompatActivity() {
             sharedPreferences.edit { putBoolean("isFirstRunSavedArtists", false) }
         }
 
+        isListLayout = sharedPreferences.getBoolean("isListLayout", true)
+
         selectionBackCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 artistAdapter.clearSelection()
@@ -88,8 +88,6 @@ class SavedArtistsActivity : AppCompatActivity() {
             }
         }
         onBackPressedDispatcher.addCallback(this, selectionBackCallback)
-
-
     }
 
     private fun checkNetworkTypeAndSetFlag() {
@@ -172,7 +170,12 @@ class SavedArtistsActivity : AppCompatActivity() {
         val actionButtonsContainer = findViewById<LinearLayout>(R.id.actionButtonsContainer)
         val ignoreBtn = findViewById<FloatingActionButton>(R.id.buttonIgnoreSelected)
         val deleteBtn = findViewById<FloatingActionButton>(R.id.buttonDeleteSelected)
-        val fabToggleLayout: ImageButton = findViewById(R.id.buttonToggleLayout)
+
+        if (isListLayout) {
+            recyclerView.layoutManager = LinearLayoutManager(this)
+        } else {
+            recyclerView.layoutManager = GridLayoutManager(this, 2)
+        }
 
         artistAdapter = SavedArtistAdapter(
             onDelete = { artist -> deleteArtistFromDb(artist) },
@@ -251,95 +254,9 @@ class SavedArtistsActivity : AppCompatActivity() {
             isListLayout = isListLayout
         )
 
-        recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = artistAdapter
         enableSwipeToDelete()
 
-        fabToggleLayout.setOnClickListener {
-            toggleLayoutManager()
-        }
-    }
-
-    private fun toggleLayoutManager() {
-        isListLayout = !isListLayout
-
-        val fabToggleLayout: ImageButton = findViewById(R.id.buttonToggleLayout)
-        val selectedViewType = spinnerViewType.selectedItemPosition
-
-        if (isListLayout) {
-            fabToggleLayout.setImageResource(R.drawable.ic_grid_layout)
-            recyclerView.layoutManager = LinearLayoutManager(this)
-        } else {
-            fabToggleLayout.setImageResource(R.drawable.ic_list_layout)
-            recyclerView.layoutManager = GridLayoutManager(this, 2)
-        }
-
-        if (selectedViewType == 0) {
-            val currentArtistList = artistAdapter.currentList
-            artistAdapter = createSavedArtistAdapter()
-            recyclerView.adapter = artistAdapter
-            artistAdapter.submitList(currentArtistList)
-
-        } else if (selectedViewType == 1) {
-            val currentReleaseList = releaseAdapter.currentList
-            releaseAdapter = createReleaseAdapter()
-            recyclerView.adapter = releaseAdapter
-            releaseAdapter.submitList(currentReleaseList)
-        }
-    }
-
-    private fun createSavedArtistAdapter(): SavedArtistAdapter {
-        return SavedArtistAdapter(
-            onDelete = { artist -> deleteArtistFromDb(artist) },
-            onArtistClick = { artist -> openArtistDiscography(artist) },
-            onToggleNotifications = { artistItem, newValue ->
-                lifecycleScope.launch(Dispatchers.IO) {
-                    db.savedArtistDao().setNotifyOnNewRelease(artistItem.id, newValue)
-                }
-            },
-            isListLayout = isListLayout
-        ).apply {
-            onSelectionChanged = { selectedItems ->
-                val actionButtonsContainer = findViewById<LinearLayout>(R.id.actionButtonsContainer)
-                val visible = selectedItems.isNotEmpty()
-                actionButtonsContainer.visibility = if (visible) View.VISIBLE else View.GONE
-                selectionBackCallback.isEnabled = visible
-            }
-        }
-    }
-
-    private fun createReleaseAdapter(): ReleaseAdapter {
-        return ReleaseAdapter(
-            onReleaseClick = { release ->
-                val actualApiSource = when {
-                    release.deezerId != null && release.deezerId > 0 -> "Deezer"
-                    release.itunesId != null && release.itunesId > 0 && isItunesSupportEnabled() -> "iTunes"
-                    else -> {
-                        Log.e("SavedArtistsActivity", "No valid Deezer/iTunes ID or iTunes support for release: ${release.title}. Cannot determine API source.")
-                        "Unknown"
-                    }
-                }
-
-                val intent = Intent(
-                    this@SavedArtistsActivity,
-                    ReleaseDetailsActivity::class.java
-                ).apply {
-                    putExtra("releaseId", when(actualApiSource) {
-                        "Deezer" -> release.deezerId ?: -1L
-                        "iTunes" -> release.itunesId ?: -1L
-                        else -> -1L
-                    })
-                    putExtra("releaseTitle", release.title)
-                    putExtra("artistName", release.artistName)
-                    putExtra("albumArtUrl", release.albumArtUrl)
-                    putExtra("apiSource", actualApiSource)
-                    putExtra("deezerId", release.deezerId ?: -1L)
-                    putExtra("itunesId", release.itunesId ?: -1L)
-                }
-                startActivity(intent)
-            },
-            isListLayout = isListLayout
-        )
     }
 
     private fun openArtistDiscography(artist: SavedArtistItem) {
@@ -450,6 +367,12 @@ class SavedArtistsActivity : AppCompatActivity() {
 
                 withContext(Dispatchers.Main) {
                     allArtists = currentArtists
+
+                    if (isListLayout) {
+                        recyclerView.layoutManager = LinearLayoutManager(this@SavedArtistsActivity)
+                    } else {
+                        recyclerView.layoutManager = GridLayoutManager(this@SavedArtistsActivity, 2)
+                    }
 
                     artistAdapter = SavedArtistAdapter(
                         onDelete = { artist -> deleteArtistFromDb(artist) },

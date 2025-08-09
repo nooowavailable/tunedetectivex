@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.google.android.material.appbar.CollapsingToolbarLayout
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -38,10 +37,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
     private lateinit var imageViewArtist: ImageView
     private lateinit var collapsingToolbar: CollapsingToolbarLayout
     private lateinit var textViewArtistInfo: TextView
-    private lateinit var buttonToggleLayout: FloatingActionButton
     private var isListLayout = true
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,14 +48,16 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         imageViewArtist = findViewById(R.id.imageViewArtist)
 
         textViewArtistInfo = findViewById(R.id.textViewArtistInfo)
-
-        buttonToggleLayout = findViewById(R.id.fabToggleLayout)
-        buttonToggleLayout.setOnClickListener {
-            toggleLayoutManager()
-        }
-
         recyclerView = findViewById(R.id.recyclerViewDiscography)
-        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        isListLayout = prefs.getBoolean("isListLayout", true)
+
+        if (isListLayout) {
+            recyclerView.layoutManager = LinearLayoutManager(this)
+        } else {
+            recyclerView.layoutManager = GridLayoutManager(this, 2)
+        }
 
         val deezerId = intent.getLongExtra("deezerId", -1L)
         val itunesId = intent.getLongExtra("itunesId", -1L)
@@ -88,9 +86,7 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         db = AppDatabase.getDatabase(applicationContext)
         loadCombinedDiscography(selectedArtist?.id ?: -1L, selectedArtist?.itunesId ?: -1L)
     }
-
     private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
-        getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
 
         if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
@@ -317,58 +313,4 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         }
     }
 
-    private fun toggleLayoutManager() {
-        isListLayout = !isListLayout
-
-        if (isListLayout) {
-            recyclerView.layoutManager = LinearLayoutManager(this)
-            buttonToggleLayout.setImageResource(R.drawable.ic_grid_layout)
-        } else {
-            recyclerView.layoutManager = GridLayoutManager(this, 2)
-            buttonToggleLayout.setImageResource(R.drawable.ic_list_layout)
-        }
-
-        val currentReleases = (recyclerView.adapter as? UnifiedDiscographyAdapter)?.albums ?: emptyList()
-        val newAdapter = UnifiedDiscographyAdapter(currentReleases, isListLayout) { album ->
-            album.deezerId?.let { selectedArtist?.id = it }
-            album.itunesId?.let { selectedArtist?.itunesId = it }
-
-            val determinedApiSource = when {
-                album.deezerId != null && album.deezerId > 0 -> "Deezer"
-                album.itunesId != null && album.itunesId > 0 -> "iTunes"
-                else -> {
-                    Log.e("ArtistDiscographyActivity", "Cannot determine API source for album: ${album.title}. DeezerID=${album.deezerId}, iTunesID=${album.itunesId}")
-                    null
-                }
-            }
-
-            val releaseIdForDetails = when (determinedApiSource) {
-                "Deezer" -> album.deezerId ?: -1L
-                "iTunes" -> album.itunesId ?: -1L
-                else -> -1L
-            }
-
-            val validCoverUrl =
-                album.coverUrl.takeIf { it.isNotBlank() && it.startsWith("http") } ?: ""
-
-            Intent(this, ReleaseDetailsActivity::class.java).apply {
-                putExtra("releaseId", releaseIdForDetails)
-                putExtra("releaseTitle", album.title)
-                putExtra("artistName", album.artistName)
-                putExtra("albumArtUrl", validCoverUrl)
-                putExtra("deezerId", album.deezerId ?: -1L)
-                putExtra("itunesId", album.itunesId ?: -1L)
-                putExtra("apiSource", determinedApiSource)
-
-                Log.d("ArtistDiscographyActivity", "Sending to ReleaseDetails: " +
-                        "releaseId=${releaseIdForDetails}, " +
-                        "releaseTitle=${album.title}, " +
-                        "deezerId=${album.deezerId}, " +
-                        "itunesId=${album.itunesId}, " +
-                        "apiSource=${determinedApiSource}")
-
-            }.also { startActivity(it) }
-        }
-        recyclerView.adapter = newAdapter
-    }
 }

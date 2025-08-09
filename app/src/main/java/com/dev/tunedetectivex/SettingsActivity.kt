@@ -48,6 +48,10 @@ class SettingsActivity : AppCompatActivity() {
     private var ignoreNextToggleChange = false
     private lateinit var futureReleaseMonthsSlider: Slider
     private lateinit var futureReleaseMonthsLabel: TextView
+    private lateinit var listLayoutSwitch: SwitchMaterial
+    private val PREF_IS_LIST_LAYOUT = "isListLayout"
+
+
     private val backupManager by lazy {
         val apiService = DeezerApiService.create()
         val savedArtistDao = AppDatabase.getDatabase(this).savedArtistDao()
@@ -122,6 +126,21 @@ class SettingsActivity : AppCompatActivity() {
         futureReleaseMonthsSlider = findViewById(R.id.futureReleaseMonthsSlider)
         futureReleaseMonthsLabel = findViewById(R.id.futureReleaseMonthsLabel)
         futureReleaseMonthsSlider.isEnabled = true
+
+        listLayoutSwitch = findViewById(R.id.switch_list_layout)
+        listLayoutSwitch.isChecked = sharedPreferences.getBoolean(PREF_IS_LIST_LAYOUT, true)
+
+
+        listLayoutSwitch.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit {
+                putBoolean(PREF_IS_LIST_LAYOUT, isChecked)
+            }
+            Toast.makeText(
+                this,
+                if (isChecked) getString(R.string.list_layout_enabled_toast) else getString(R.string.grid_layout_enabled_toast),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
 
         if (!sharedPreferences.contains("futureReleaseMonths")) {
             saveFutureReleaseMonthsPreference(0)

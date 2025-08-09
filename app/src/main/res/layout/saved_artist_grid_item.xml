@@ -1,44 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="12dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:descendantFocusability="blocksDescendants"
+    android:focusable="true">
 
-    <FrameLayout
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_gravity="center">
+    <ImageView
+        android:id="@+id/imageViewProfile"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:clickable="false"
+        android:focusable="false"
+        tools:srcCompat="@tools:sample/avatars" />
 
-        <ImageView
-            android:id="@+id/imageViewProfile"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:importantForAccessibility="no"
-            android:scaleType="centerCrop"
-            tools:src="@tools:sample/avatars" />
-
-        <ProgressBar
-            android:id="@+id/progressBarItemLoading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:indeterminate="true"
-            android:visibility="gone" />
-    </FrameLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/buttonNotifyToggle"
+        style="@style/Widget.Material3.FloatingActionButton.Surface"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:contentDescription="@string/notify"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        app:fabSize="auto"
+        app:layout_constraintTop_toTopOf="@id/imageViewProfile"
+        app:layout_constraintBottom_toBottomOf="@id/imageViewProfile"
+        app:layout_constraintStart_toEndOf="@id/imageViewProfile"
+        app:srcCompat="@drawable/ic_save_artist"
+        app:tint="?attr/colorOnSurface" />
 
     <TextView
         android:id="@+id/textViewArtistName"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:ellipsize="end"
-        android:maxLines="1"
         android:textAlignment="center"
         android:textSize="14sp"
         android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@id/imageViewProfile"
+        app:layout_constraintEnd_toEndOf="@id/buttonNotifyToggle"
+        app:layout_constraintTop_toBottomOf="@id/imageViewProfile"
         tools:text="Artist Name" />
-</LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBarItemLoading"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/imageViewProfile"
+        app:layout_constraintEnd_toEndOf="@id/imageViewProfile"
+        app:layout_constraintStart_toStartOf="@id/imageViewProfile"
+        app:layout_constraintTop_toTopOf="@id/imageViewProfile" />
+
+    <TextView
+        android:id="@+id/textViewLoadingStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -50,15 +50,6 @@
                         android:inputType="text"
                         android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
-
-                <ImageButton
-                    android:id="@+id/buttonToggleLayout"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_grid_layout"
-                    app:tint="?attr/colorOnSurface" />
-
             </LinearLayout>
 
             <include

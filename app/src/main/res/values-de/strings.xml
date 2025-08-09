@@ -270,6 +270,9 @@ Speichere deine Künstler anschließend manuell erneut, da sie keine iTunes-Verk
     <string name="notification_upcoming_release_title_single">%1$s – Bevorstehende %2$s</string>
     <string name="notification_upcoming_release_title_ep">%1$s – Bevorstehende %2$s</string>
     <string name="notification_upcoming_release_title_default">%1$s – Bevorstehende %2$s</string>
+    <string name="list_layout_enabled_toast">List layout is now the default.</string>
+    <string name="grid_layout_enabled_toast">Grid layout is now the default.</string>
+    <string name="list_layout_toggle">Use List Layout by Default</string>
     <string name="enabled">Aktiviert</string>
     <string name="disabled">Deaktiviert</string>
     <string-array name="view_type_options">
