@@ -2,8 +2,6 @@ package com.dev.tunedetectivex
 
 import android.Manifest
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
-import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -361,7 +359,7 @@ class MainActivity : ComponentActivity() {
         if (artists.isNotEmpty()) {
             recyclerViewArtists.visibility = View.VISIBLE
 
-            val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
             val isListLayout = prefs.getBoolean("isListLayout", true)
 
             val adapter = SimilarArtistsAdapter(
@@ -1454,7 +1452,7 @@ class MainActivity : ComponentActivity() {
 
         savedReleasesJob?.cancel()
 
-        val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         val isListLayout = prefs.getBoolean("isListLayout", true)
 
         savedReleasesJob = lifecycleScope.launch(Dispatchers.IO) {
