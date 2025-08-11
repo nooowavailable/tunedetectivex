@@ -50,9 +50,11 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -90,9 +92,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var textViewNoSavedArtists: TextView
     private lateinit var imageViewArtistProfile: ImageView
     private lateinit var textViewArtistName: TextView
-    private lateinit var releaseInfoPlaceholder: LinearLayout
-    private lateinit var placeholderAlbumArt: View 
     private var isListLayout = true
+    private var savedReleasesJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -134,9 +135,6 @@ class MainActivity : ComponentActivity() {
 
         textViewNoSavedArtists = findViewById(R.id.textViewNoSavedArtists)
         imageViewArtistProfile = findViewById(R.id.imageViewArtistProfile)
-        releaseInfoPlaceholder = findViewById(R.id.releaseInfoPlaceholder)
-        placeholderAlbumArt = releaseInfoPlaceholder.findViewById(R.id.placeholderAlbumArt)
-
         val fabMenu: FloatingActionButton = findViewById(R.id.fabMenu)
         val fabSavedArtists: FloatingActionButton = findViewById(R.id.fabSavedArtists)
         val fabSettings: FloatingActionButton = findViewById(R.id.fabSettings)
@@ -508,18 +506,6 @@ class MainActivity : ComponentActivity() {
         }
 
         artistInfoContainer.visibility = View.INVISIBLE
-        releaseInfoPlaceholder.visibility = View.VISIBLE
-
-        placeholderAlbumArt.post {
-            val width = placeholderAlbumArt.width
-            if (width > 0) {
-                val params = placeholderAlbumArt.layoutParams
-                if (params.height != width) {
-                    params.height = width
-                    placeholderAlbumArt.layoutParams = params
-                }
-            }
-        }
 
         textViewArtistName.text = unifiedAlbum.artistName
 
@@ -592,7 +578,6 @@ class MainActivity : ComponentActivity() {
 
         val revealContentIfReady = {
             if (artistProfileImageLoaded && albumArtLoaded) {
-                releaseInfoPlaceholder.visibility = View.GONE
 
                 artistInfoContainer.alpha = 0f
                 artistInfoContainer.visibility = View.VISIBLE
@@ -711,11 +696,12 @@ class MainActivity : ComponentActivity() {
 
     private fun triggerArtistSearch() {
 
+        savedReleasesJob?.cancel()
+
         val query = editTextArtist.text.toString().trim()
         if (query.isNotEmpty()) {
             recyclerViewArtists.visibility = View.GONE
             recyclerViewReleases.visibility = View.GONE
-            releaseInfoPlaceholder.visibility = View.GONE
             buttonSaveArtist.visibility = View.GONE
         }
 
@@ -733,7 +719,6 @@ class MainActivity : ComponentActivity() {
             hideKeyboard()
         }
     }
-
 
     private fun hideKeyboard() {
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
@@ -1466,13 +1451,17 @@ class MainActivity : ComponentActivity() {
         textViewNoSavedArtists.visibility = View.GONE
         recyclerViewReleases.visibility = View.GONE
 
+        savedReleasesJob?.cancel()
+
         val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         val isListLayout = prefs.getBoolean("isListLayout", true)
 
-        lifecycleScope.launch(Dispatchers.IO) {
+        savedReleasesJob = lifecycleScope.launch(Dispatchers.IO) {
+            if (!isActive) return@launch
             val savedArtists = db.savedArtistDao().getAll()
             if (savedArtists.isEmpty()) {
                 withContext(Dispatchers.Main) {
+                    if (!isActive) return@withContext
                     progressBar.visibility = View.GONE
                     if (editTextArtist.text.isNullOrBlank()) {
                         textViewNoSavedArtists.visibility = View.VISIBLE
@@ -1488,6 +1477,8 @@ class MainActivity : ComponentActivity() {
                     async { fetchReleasesForArtist(artist) }
                 }.awaitAll().flatten()
             }
+
+            if (!isActive) return@launch
 
             val uniqueReleases = releaseItems.groupBy {
                 val normTitle = normalizeTitle(it.title)
@@ -1521,6 +1512,7 @@ class MainActivity : ComponentActivity() {
                 }
 
             withContext(Dispatchers.Main) {
+                if (!isActive) return@withContext
                 progressBar.visibility = View.GONE
 
                 if (sortedReleaseItems.isEmpty()) {
@@ -1558,6 +1550,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     private fun fetchReleasesForArtist(artist: SavedArtist): List<ReleaseItem> {
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
         if (!WorkManagerUtil.isSelectedNetworkTypeAvailable(this, networkPreference)) {
