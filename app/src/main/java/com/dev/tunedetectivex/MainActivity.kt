@@ -497,6 +497,7 @@ class MainActivity : ComponentActivity() {
         }
         setMenuButtonEnabled(true)
     }
+
     private fun displayReleaseInfo(unifiedAlbum: UnifiedAlbum) {
 
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
@@ -505,8 +506,9 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        artistInfoContainer.visibility = View.INVISIBLE
+        showLoading(true)
 
+        artistInfoContainer.visibility = View.INVISIBLE
         textViewArtistName.text = unifiedAlbum.artistName
 
         val primaryTypedValue = TypedValue()
@@ -572,17 +574,17 @@ class MainActivity : ComponentActivity() {
 
         val cornerRadius = 30f
         val highResUrl = getHighResArtworkUrl(unifiedAlbum.coverUrl)
-
         var artistProfileImageLoaded = false
         var albumArtLoaded = false
 
         val revealContentIfReady = {
             if (artistProfileImageLoaded && albumArtLoaded) {
+                showLoading(false)
 
                 artistInfoContainer.alpha = 0f
                 artistInfoContainer.visibility = View.VISIBLE
                 ObjectAnimator.ofFloat(artistInfoContainer, "alpha", 0f, 1f).apply {
-                    duration = 400
+                    duration = 100
                     start()
                 }
                 updateSaveButton()
@@ -715,6 +717,7 @@ class MainActivity : ComponentActivity() {
 
         val artistName = editTextArtist.text.toString().trim()
         if (artistName.isNotEmpty()) {
+            showLoading(true)
             fetchArtistBasedOnApi(artistName)
             hideKeyboard()
         }
@@ -742,7 +745,6 @@ class MainActivity : ComponentActivity() {
         setMenuButtonEnabled(false)
         buttonSaveArtist.visibility = View.GONE
         artistInfoContainer.visibility = View.GONE
-
         textViewNoSavedArtists.visibility = View.GONE
 
         apiService.searchArtist(artist).enqueue(object : Callback<DeezerSimilarArtistsResponse> {
@@ -776,7 +778,6 @@ class MainActivity : ComponentActivity() {
             }
         })
     }
-
     private fun checkDeezerStatus() {
 
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
