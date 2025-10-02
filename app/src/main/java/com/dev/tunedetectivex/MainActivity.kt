@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var textViewArtistName: TextView
     private var isListLayout = true
     private var savedReleasesJob: Job? = null
+    private var backPressedTime: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -836,23 +837,15 @@ class MainActivity : ComponentActivity() {
     private fun setupBackGesture() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                showExitConfirmationDialog()
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - backPressedTime > 3000) {
+                    Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                    backPressedTime = currentTime
+                } else {
+                    finish()
+                }
             }
         })
-    }
-
-    private fun showExitConfirmationDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.exit_confirmation_title))
-            .setMessage(getString(R.string.exit_confirmation_message))
-            .setPositiveButton(getString(R.string.exit_confirmation_positive)) { _: DialogInterface, _: Int ->
-                finish()
-            }
-            .setNegativeButton(getString(R.string.exit_confirmation_negative)) { dialog: DialogInterface, _: Int ->
-                dialog.dismiss()
-            }
-            .setCancelable(false)
-            .show()
     }
 
     private fun saveSearchHistory(artist: DeezerArtist) {
