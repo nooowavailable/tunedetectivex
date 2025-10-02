@@ -86,6 +86,11 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         db = AppDatabase.getDatabase(applicationContext)
         loadCombinedDiscography(selectedArtist?.id ?: -1L, selectedArtist?.itunesId ?: -1L)
     }
+
+    private fun isSafeToProceed(): Boolean {
+        return !(isFinishing || isDestroyed)
+    }
+
     private fun loadCombinedDiscography(deezerId: Long, itunesId: Long) {
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(applicationContext)
 
@@ -108,6 +113,11 @@ class ArtistDiscographyActivity : AppCompatActivity() {
 
         fun maybeDisplayCombined() {
             if (deezerLoaded && itunesLoaded) {
+                if (!isSafeToProceed()) {
+                    Log.w("Discography", "Activity already destroyed, aborting UI update.")
+                    return
+                }
+
                 showLoading(false)
 
                 val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -165,12 +175,14 @@ class ArtistDiscographyActivity : AppCompatActivity() {
                     }.also { startActivity(it) }
                 }
 
-                Glide.with(this)
-                    .load(artistImageUrl)
-                    .placeholder(R.drawable.placeholder_circle_shape)
-                    .error(R.drawable.error_image)
-                    .transform(RoundedCorners(30))
-                    .into(imageViewArtist)
+                if (isSafeToProceed()) {
+                    Glide.with(this@ArtistDiscographyActivity)
+                        .load(artistImageUrl)
+                        .placeholder(R.drawable.placeholder_circle_shape)
+                        .error(R.drawable.error_image)
+                        .transform(RoundedCorners(30))
+                        .into(imageViewArtist)
+                }
 
                 recyclerView.visibility = View.VISIBLE
             }
