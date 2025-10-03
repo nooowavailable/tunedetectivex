@@ -19,5 +19,3 @@
 # DeezerApiService und Model-Klassen nicht obfuskieren
 -keep class com.dev.tunedetectivex.FetchReleasesWorker { *; }
 -keepclassmembers class * extends androidx.work.Worker { *; }
--keep class androidx.work.Worker { *; }
--keep class androidx.work.impl.** { *; }
