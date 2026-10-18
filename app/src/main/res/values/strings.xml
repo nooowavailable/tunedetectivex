@@ -146,7 +146,7 @@
     <string name="exit_confirmation_positive">Yes</string>
     <string name="exit_confirmation_negative">No</string>
     <string name="toggle_folder_import">Toggle folder / meta-data import function, may be removed one day.</string>
-    <string name="experimental_settings">Advanced / Experimental Options</string>
+    <string name="experimental_settings">Extra Options</string>
     <string name="folder_import_feature_title">Folder Import (Meta-Data)</string>
     <string name="folder_import_feature_enabled_message">The folder import is currently enabled. Do you want to turn it off?</string>
     <string name="folder_import_feature_disabled_message">The folder import is currently disabled. Do you want to turn it on?</string>

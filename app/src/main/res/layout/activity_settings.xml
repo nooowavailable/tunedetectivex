@@ -151,7 +151,6 @@
             android:textSize="16sp"
             android:textColor="@color/md_theme_onBackground"
             android:layout_marginBottom="12dp" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -187,11 +186,20 @@
                 tools:ignore="TextContrastCheck" />
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"
+            android:weightSum="2">
+        </LinearLayout>
+
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="@string/tweaks"
+            android:layout_marginBottom="6dp"
+            android:text="@string/experimental_settings"
             android:textColor="@color/md_theme_onBackground"
             android:textSize="16sp" />
 
@@ -200,64 +208,17 @@
             style="@style/Widget.Material3.CompoundButton.Switch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingVertical="12dp"
             android:checked="true"
-            android:layout_marginBottom="16dp"
-            android:text="@string/list_layout_toggle" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="16dp"
-            android:weightSum="2">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_change_icon"
-                style="@style/Widget.Material3.Button.IconButton.Filled"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="@string/button_change_icon"
-                app:icon="@drawable/ic_appicon_changer"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                tools:ignore="TextContrastCheck" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonNotificationSettings"
-                style="@style/Widget.Material3.Button.IconButton.Filled"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="@string/button_notification_settings"
-                app:icon="@drawable/ic_hide"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                tools:ignore="TextContrastCheck" />
-        </LinearLayout>
-
-        <com.google.android.material.textview.MaterialTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_marginBottom="6dp"
-            android:alpha="0.7"
-            android:text="@string/experimental_settings"
-            android:textColor="@color/md_theme_onBackground"
-            android:textSize="16sp" />
+            android:text="@string/list_layout_toggle" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_itunes_support"
             style="@style/Widget.Material3.CompoundButton.Switch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:alpha="0.8"
+            android:layout_marginBottom="6dp"
             android:checked="false"
-            android:paddingVertical="12dp"
             android:text="@string/enable_itunes_support"
             tools:ignore="TextContrastCheck" />
     </LinearLayout>

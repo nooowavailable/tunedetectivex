@@ -140,7 +140,7 @@
     <string name="folder_import_feature_title">Ordner-Import</string>
     <string name="folder_import_feature_enabled_message">Der Ordner-Import ist derzeit aktiviert. Möchtest du ihn deaktivieren?</string>
     <string name="folder_import_feature_disabled_message">Der Ordner-Import ist derzeit deaktiviert. Möchtest du ihn aktivieren?</string>
-    <string name="experimental_settings">Experimentelle Einstellungen (auf eigene Gefahr!)</string>
+    <string name="experimental_settings">Extra Einstellungen</string>
     <string name="enable">Aktivieren</string>
     <string name="disable">Deaktivieren</string>
     <string name="folder_import_feature_enabled_toast">Ordnerimport-Funktion aktiviert.</string>

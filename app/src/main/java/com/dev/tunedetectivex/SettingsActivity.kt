@@ -1,10 +1,8 @@
 package com.dev.tunedetectivex
 
-import android.content.ComponentName
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -295,22 +293,22 @@ class SettingsActivity : AppCompatActivity() {
             editor.putBoolean("isFirstRunSettings", false).apply()
         }
 
-        findViewById<MaterialButton>(R.id.button_change_icon).setOnClickListener {
-            showIconChooserDialog()
-        }
+//        findViewById<MaterialButton>(R.id.button_change_icon).setOnClickListener {
+//            showIconChooserDialog()
+//        }
 
-        val buttonNotificationSettings: MaterialButton = findViewById(R.id.buttonNotificationSettings)
-        buttonNotificationSettings.setOnClickListener {
-            openDebugNotificationSettings()
-        }
+//        val buttonNotificationSettings: MaterialButton = findViewById(R.id.buttonNotificationSettings)
+//        buttonNotificationSettings.setOnClickListener {
+//            openDebugNotificationSettings()
+//        }
     }
-    private fun openDebugNotificationSettings() {
-        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-            putExtra(Settings.EXTRA_CHANNEL_ID, "debug_channel")
-        }
-        startActivity(intent)
-    }
+//    private fun openDebugNotificationSettings() {
+//        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+//            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+//            putExtra(Settings.EXTRA_CHANNEL_ID, "debug_channel")
+//        }
+//        startActivity(intent)
+//    }
 
     private fun showIntervalSelectionDialog() {
         val intervals = arrayOf(15, 30, 60, 120, 240, 360, 720, 1440)
@@ -360,44 +358,44 @@ class SettingsActivity : AppCompatActivity() {
     }
 
 
-    private fun showIconChooserDialog() {
-        val iconOptions = arrayOf("Standard", "Minimal")
-        val aliasNames = arrayOf(
-            "com.dev.tunedetectivex.AliasDefault",
-            "com.dev.tunedetectivex.AliasMin",
-        )
+//    private fun showIconChooserDialog() {
+//        val iconOptions = arrayOf("Standard", "Minimal")
+//        val aliasNames = arrayOf(
+//            "com.dev.tunedetectivex.AliasDefault",
+//            "com.dev.tunedetectivex.AliasMin",
+//        )
+//
+//        val currentEnabled = aliasNames.indexOfFirst { alias ->
+//            packageManager.getComponentEnabledSetting(ComponentName(this, alias)) ==
+//                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+//        }
+//
+//        MaterialAlertDialogBuilder(this)
+//            .setTitle(getString(R.string.select_app_icon))
+//            .setSingleChoiceItems(iconOptions, currentEnabled) { dialog, which ->
+//                setAppIcon(aliasNames, which)
+//                dialog.dismiss()
+//            }
+//            .setNegativeButton(getString(R.string.select_app_icon), null)
+//            .show()
+//    }
 
-        val currentEnabled = aliasNames.indexOfFirst { alias ->
-            packageManager.getComponentEnabledSetting(ComponentName(this, alias)) ==
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-        }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.select_app_icon))
-            .setSingleChoiceItems(iconOptions, currentEnabled) { dialog, which ->
-                setAppIcon(aliasNames, which)
-                dialog.dismiss()
-            }
-            .setNegativeButton(getString(R.string.select_app_icon), null)
-            .show()
-    }
-
-    private fun setAppIcon(aliasNames: Array<String>, selectedIndex: Int) {
-        val packageManager = packageManager
-
-        for ((i, alias) in aliasNames.withIndex()) {
-            val state = if (i == selectedIndex)
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            else
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-
-            packageManager.setComponentEnabledSetting(
-                ComponentName(this, alias),
-                state,
-                PackageManager.DONT_KILL_APP
-            )
-        }
-    }
+//    private fun setAppIcon(aliasNames: Array<String>, selectedIndex: Int) {
+//        val packageManager = packageManager
+//
+//        for ((i, alias) in aliasNames.withIndex()) {
+//            val state = if (i == selectedIndex)
+//                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+//            else
+//                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+//
+//            packageManager.setComponentEnabledSetting(
+//                ComponentName(this, alias),
+//                state,
+//                PackageManager.DONT_KILL_APP
+//            )
+//        }
+//    }
 
 
     private fun enableItunesSupport(enabled: Boolean) {
