@@ -148,6 +148,29 @@ class UnifiedDiscographyAdapter(
                 .into(albumCover)
 
             itemView.setOnClickListener { onAlbumClick(album) }
+
+            itemView.setOnLongClickListener {
+                val context = itemView.context
+                val text = "${album.artistName.trim()} - ${
+                    cleanedTitle.trim()
+                }"
+
+                val clipboard = context.getSystemService(
+                    android.content.Context.CLIPBOARD_SERVICE
+                ) as android.content.ClipboardManager
+
+                clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText("Release", text)
+                )
+
+                android.widget.Toast.makeText(
+                    context,
+                    "Copied: $text",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+
+                true
+            }
         }
     }
 
@@ -181,6 +204,29 @@ class UnifiedDiscographyAdapter(
 
             itemView.setOnClickListener {
                 onAlbumClick(album)
+
+                itemView.setOnLongClickListener {
+                    val context = itemView.context
+                    val text = "${album.artistName.trim()} - ${
+                        cleanedTitle.trim()
+                    }"
+
+                    val clipboard = context.getSystemService(
+                        android.content.Context.CLIPBOARD_SERVICE
+                    ) as android.content.ClipboardManager
+
+                    clipboard.setPrimaryClip(
+                        android.content.ClipData.newPlainText("Release", text)
+                    )
+
+                    android.widget.Toast.makeText(
+                        context,
+                        "Copied: $text",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+
+                    true
+                }
             }
         }
     }

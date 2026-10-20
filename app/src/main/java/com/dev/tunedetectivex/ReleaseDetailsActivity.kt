@@ -33,6 +33,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 
 class ReleaseDetailsActivity : AppCompatActivity() {
 
@@ -54,6 +57,20 @@ class ReleaseDetailsActivity : AppCompatActivity() {
         albumCover = findViewById(R.id.imageViewAlbumCover)
         releaseTitle = findViewById(R.id.textViewReleaseTitle)
         artistName = findViewById(R.id.textViewArtistName)
+        releaseTitle.setOnLongClickListener {
+            copyReleaseToClipboard()
+            true
+        }
+
+        artistName.setOnLongClickListener {
+            copyReleaseToClipboard()
+            true
+        }
+
+        albumCover.setOnLongClickListener {
+            copyReleaseToClipboard()
+            true
+        }
         recyclerView = findViewById(R.id.recyclerViewTracks)
         progressBar = findViewById(R.id.progressBarLoading)
         trackAdapter = TrackAdapter()
@@ -149,6 +166,29 @@ class ReleaseDetailsActivity : AppCompatActivity() {
             title.contains(" - Album", ignoreCase = true) -> "Album"
             else -> null
         }
+    }
+
+    private fun copyReleaseToClipboard() {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+
+        val artist = artistName.text.toString().trim()
+        val title = releaseTitle.text.toString()
+            .trim()
+            .replace(Regex("\\s*\\((Single|EP|Album)\\)$", RegexOption.IGNORE_CASE), "")
+            .trim()
+
+        val text = "$artist - $title"
+
+        clipboard.setPrimaryClip(
+            ClipData.newPlainText("Release", text)
+        )
+
+        Toast.makeText(
+            this,
+            "Copied: $text",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun loadImageWithGlide(url: String, imageView: ImageView, isInitialLoad: Boolean = false) {

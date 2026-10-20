@@ -20,6 +20,10 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 
 @Entity(tableName = "release_item")
 data class ReleaseItem(
@@ -46,6 +50,23 @@ class ReleaseAdapter(
         private const val TYPE_ITEM = 1
     }
 
+    private fun copyReleaseToClipboard(context: Context, item: ReleaseItem) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+
+        val text = "${item.artistName} - ${item.title}"
+
+        clipboard.setPrimaryClip(
+            ClipData.newPlainText("Release", text)
+        )
+
+        Toast.makeText(
+            context,
+            "Copied: $text",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     override fun getItemViewType(position: Int): Int {
         return if (getItem(position).isHeader) TYPE_HEADER else TYPE_ITEM
     }
@@ -68,12 +89,26 @@ class ReleaseAdapter(
         }
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int
+    ) {
         val item = getItem(position)
+
         when (holder) {
             is ListViewHolder.HeaderViewHolder -> holder.bind(item)
-            is ListViewHolder -> holder.bind(item, onReleaseClick)
-            is ListViewHolder.GridViewHolder -> holder.bind(item, onReleaseClick)
+
+            is ListViewHolder.GridViewHolder -> holder.bind(
+                item,
+                onReleaseClick,
+                ::copyReleaseToClipboard
+            )
+
+            is ListViewHolder -> holder.bind(
+                item,
+                onReleaseClick,
+                ::copyReleaseToClipboard
+            )
         }
     }
 
@@ -87,7 +122,11 @@ class ReleaseAdapter(
         private val progressBar: ProgressBar = view.findViewById(R.id.progressBarLoading)
 
         @SuppressLint("SetTextI18n")
-        fun bind(item: ReleaseItem, onReleaseClick: (ReleaseItem) -> Unit) {
+        fun bind(
+            item: ReleaseItem,
+            onReleaseClick: (ReleaseItem) -> Unit,
+            onLongPress: (Context, ReleaseItem) -> Unit
+        ) {
             val rawTitle = item.title
 
             val parenMatch =
@@ -168,6 +207,11 @@ class ReleaseAdapter(
             itemView.setOnClickListener {
                 onReleaseClick(item)
             }
+
+            itemView.setOnLongClickListener {
+                onLongPress(itemView.context, item)
+                true
+            }
         }
 
         class GridViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -175,8 +219,11 @@ class ReleaseAdapter(
             private val artistName: TextView = view.findViewById(R.id.textViewArtistName)
             private val titleMain: TextView = view.findViewById(R.id.textViewTitleMain)
 
-            fun bind(item: ReleaseItem, onReleaseClick: (ReleaseItem) -> Unit) {
-                val rawTitle = item.title
+            fun bind(
+                item: ReleaseItem,
+                onReleaseClick: (ReleaseItem) -> Unit,
+                onLongPress: (Context, ReleaseItem) -> Unit
+            ) {                val rawTitle = item.title
                 val cleanedTitle = rawTitle
                     .replace(Regex("\\s*-\\s*(Single|EP|Album)", RegexOption.IGNORE_CASE), "")
                     .replace(Regex("\\s*\\((Single|EP|Album)\\)", RegexOption.IGNORE_CASE), "")
@@ -200,6 +247,11 @@ class ReleaseAdapter(
 
                 itemView.setOnClickListener {
                     onReleaseClick(item)
+                }
+
+                itemView.setOnLongClickListener {
+                    onLongPress(itemView.context, item)
+                    true
                 }
             }
         }

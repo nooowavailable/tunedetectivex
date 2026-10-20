@@ -23,6 +23,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 
 class ArtistDiscographyActivity : AppCompatActivity() {
 
@@ -85,6 +88,35 @@ class ArtistDiscographyActivity : AppCompatActivity() {
         setupApiService()
         db = AppDatabase.getDatabase(applicationContext)
         loadCombinedDiscography(selectedArtist?.id ?: -1L, selectedArtist?.itunesId ?: -1L)
+    }
+
+    private fun copyReleaseToClipboard(artist: String, releaseTitle: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+
+        val cleanedTitle = releaseTitle
+            .trim()
+            .replace(
+                Regex("\\s*\\((Single|EP|Album)\\)$", RegexOption.IGNORE_CASE),
+                ""
+            )
+            .replace(
+                Regex("\\s*-\\s*(Single|EP|Album)$", RegexOption.IGNORE_CASE),
+                ""
+            )
+            .trim()
+
+        val text = "${artist.trim()} - $cleanedTitle"
+
+        clipboard.setPrimaryClip(
+            ClipData.newPlainText("Release", text)
+        )
+
+        Toast.makeText(
+            this,
+            "Copied: $text",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun isSafeToProceed(): Boolean {

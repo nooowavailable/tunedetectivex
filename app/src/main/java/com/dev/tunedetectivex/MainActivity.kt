@@ -63,6 +63,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 
 class MainActivity : ComponentActivity() {
 
@@ -497,6 +500,23 @@ class MainActivity : ComponentActivity() {
         setMenuButtonEnabled(true)
     }
 
+    private fun copyReleaseToClipboard(unifiedAlbum: UnifiedAlbum) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+
+        val text = "${unifiedAlbum.artistName} - ${unifiedAlbum.title}"
+
+        clipboard.setPrimaryClip(
+            ClipData.newPlainText("Release", text)
+        )
+
+        Toast.makeText(
+            this,
+            "Copied: $text",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     private fun displayReleaseInfo(unifiedAlbum: UnifiedAlbum) {
 
         val networkPreference = WorkManagerUtil.getNetworkPreferenceFromPrefs(this)
@@ -635,6 +655,11 @@ class MainActivity : ComponentActivity() {
                     revealContentIfReady()
                 }
             })
+
+        artistInfoContainer.setOnLongClickListener {
+            copyReleaseToClipboard(unifiedAlbum)
+            true
+        }
 
         artistInfoContainer.setOnClickListener {
             val deezerId = unifiedAlbum.deezerId ?: -1L
